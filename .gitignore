@@ -13,6 +13,9 @@ Debug/
 Release/
 **/Debug/
 **/Release/
+***/Debug/
+***/Release/
+
 
 # .NET build artifacts
 *.dll
