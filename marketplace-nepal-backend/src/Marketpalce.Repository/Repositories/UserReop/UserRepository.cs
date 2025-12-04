@@ -31,7 +31,7 @@ namespace Marketpalce.Repository.Repositories.UserReop
     last_login_at AS LastLoginAt
 FROM dbo.users WHERE isnull(approve_fg,'n')='y'";
             if (email != null)
-                sql += "LOWER(email) = LOWER(@Email);  ";
+                sql += "AND LOWER(email) = LOWER(@Email);  ";
             else if (googleId != null)
                 sql += " google_id = @GoogleId; ";
             else if (facebookId != null)
