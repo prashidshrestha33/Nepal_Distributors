@@ -1,50 +1,40 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
+﻿# Build folders
+bin/
+obj/
+**/bin/
+**/obj/
+
 # Visual Studio
 .vs/
-*.suo
+**/.vs/
+
+# Debug + Release
+Debug/
+Release/
+**/Debug/
+**/Release/
+
+# .NET build artifacts
+*.dll
+*.pdb
+*.exe
+*.cache
+*.db
+*.log
+
+# User-specific
 *.user
+*.suo
 *.userosscache
 *.sln.docstates
 
-# Build
-bin/
-obj/
-Debug/
-Release/
-
-# .NET
-*.dll
-*.pdb
-*.cache
-*.json
-*.exe
-*.db
+# NuGet
+packages/
+*.nupkg
+*.snupkg
 
 # Copilot / Indexing
 **/CopilotIndices/
 **/FileContentIndex/
 **/SemanticSymbols.db*
 **/CodeChunks.db*
-
-# NuGet
-*.nupkg
-packages/
-*.snupkg
-
-# Logs
-*.log
-
-# Rider / JetBrains
-.idea/
-*.iml
-
-# Temporary
-*.tmp
-*.temp
-
-/marketplace-nepal-backend/src/Marketplace.Api/.vs
-/marketplace-nepal-backend/src/Marketpalce.Repository/obj
-/marketplace-nepal-backend/src/Marketpalce.Repository/obj/Debug/net8.0/Marketpalce.Repository.AssemblyInfo.cs
-/marketplace-nepal-backend/src/Marketplace.Model/obj/Debug/net8.0/Marketplace.Model.AssemblyInfoInputs.cache
