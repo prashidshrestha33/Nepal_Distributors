@@ -1,5 +1,50 @@
 ﻿################################################################################
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
 
-/marketplace-nepal-backend/src/Marketplace.Api/.vs/Marketplace/FileContentIndex/3c4cb7d1-05a2-40f5-9b7c-44a081c64040.vsidx
+# Build
+bin/
+obj/
+Debug/
+Release/
+
+# .NET
+*.dll
+*.pdb
+*.cache
+*.json
+*.exe
+*.db
+
+# Copilot / Indexing
+**/CopilotIndices/
+**/FileContentIndex/
+**/SemanticSymbols.db*
+**/CodeChunks.db*
+
+# NuGet
+*.nupkg
+packages/
+*.snupkg
+
+# Logs
+*.log
+
+# Rider / JetBrains
+.idea/
+*.iml
+
+# Temporary
+*.tmp
+*.temp
+
+/marketplace-nepal-backend/src/Marketplace.Api/.vs
+/marketplace-nepal-backend/src/Marketpalce.Repository/obj
+/marketplace-nepal-backend/src/Marketpalce.Repository/obj/Debug/net8.0/Marketpalce.Repository.AssemblyInfo.cs
+/marketplace-nepal-backend/src/Marketplace.Model/obj/Debug/net8.0/Marketplace.Model.AssemblyInfoInputs.cache
