@@ -55,23 +55,23 @@ namespace Marketplace.Api.Controllers
         /// Register a user. Optionally create a company (req.Company) in the same transaction.
         /// If CompanyId provided it will be used instead of creating a new company.
         /// </summary>
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest req)
+        [HttpPost("registerNewUser")]
+        public async Task<IActionResult> Register([FromBody] NewRegisterRequest req)
         {
             if (req == null) return BadRequest(new { error = "Request body required." });
-            if (string.IsNullOrWhiteSpace(req.Email) || string.IsNullOrWhiteSpace(req.Password))
+            if (string.IsNullOrWhiteSpace(req.user.Email) || string.IsNullOrWhiteSpace(req.user.Password))
                 return BadRequest(new { error = "Email and password required." });
 
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
-            try { _ = new MailAddress(req.Email); }
+            try { _ = new MailAddress(req.user.Email); }
             catch
             {
-                ModelState.AddModelError(nameof(req.Email), "Invalid email format.");
+                ModelState.AddModelError(nameof(req.user.Email), "Invalid email format.");
                 return ValidationProblem(ModelState);
             }
 
-            var email = req.Email.Trim().ToLowerInvariant();
+            var email = req.user.Email.Trim().ToLowerInvariant();
             var existing = await _users.GetByEmailAsync(email);
             if (existing != null) return Conflict(new { error = "Email exists." });
 
@@ -79,7 +79,7 @@ namespace Marketplace.Api.Controllers
             using var tx = _db.BeginTransaction();
             try
             {
-                long? companyId = req.CompanyId;
+                long? companyId = req.user.CompanyId;
 
                 // If no CompanyId provided and Company payload present, create it
                 if (companyId == null && req.Company != null)
@@ -90,30 +90,33 @@ namespace Marketplace.Api.Controllers
                         Name = compReq.Name?.Trim() ?? string.Empty,
                         CompanyType = compReq.CompanyType,
                         RegistrationDocument = compReq.RegistrationDocument,
+                        MobilePhone = compReq.MobilePhone,
+                        UserType = compReq.UserType,
                         Location = compReq.Address,
                         GoogleMapLocation = compReq.GoogleMapLocation,
                         Status = "pending",
+                        ApproveTs="n",
                         Credits = 0
                     };
 
                     companyId = await _companies.CreateAsync(company, tx);
                 }
 
-                var role = (req.Role ?? string.Empty).Trim().ToLowerInvariant();
+                var role = (req.user.Role ?? string.Empty).Trim().ToLowerInvariant();
                 if (string.IsNullOrEmpty(role) || !AllowedRoles.Contains(role)) role = "retailer";
 
                 var user = new MarketplaceUser
                 {
                     Email = email,
-                    FullName = req.FullName,
-                    Phone = req.Phone,
+                    FullName = req.user.FullName,
+                    Phone = req.user.Phone,
                     CompanyId = companyId,
                     Role = role,
-                    Status = req.Status ?? "pending",
-                    Credits = req.Credits ?? 0
+                    Status = req.user.Status ?? "pending",
+                    Credits = req.user.Credits ?? 0
                 };
 
-                user.PasswordHash = _hasher.HashPassword(user, req.Password);
+                user.PasswordHash = _hasher.HashPassword(user, req.user.Password);
                 var userId = await _users.CreateAsync(user, tx);
 
                 tx.Commit();

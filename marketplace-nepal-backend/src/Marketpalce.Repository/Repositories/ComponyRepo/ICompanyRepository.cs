@@ -1,7 +1,6 @@
-﻿using Marketplace.Model;
+﻿using Marketplace.Models;
 using System.Data;
 using System.Collections.Generic;
-using Marketplace.Models;
 
 namespace Marketpalce.Repository.Repositories.ComponyRepo
 {

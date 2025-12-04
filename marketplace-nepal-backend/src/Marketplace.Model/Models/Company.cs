@@ -34,6 +34,6 @@ namespace Marketplace.Models
         public string? ApproveDt { get; set; }
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
-        public DateTimeOffset? ApproveTs { get; set; }
+        public string? ApproveTs { get; set; }
     }
 }

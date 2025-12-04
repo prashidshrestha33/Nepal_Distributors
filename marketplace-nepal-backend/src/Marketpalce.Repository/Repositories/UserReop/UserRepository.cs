@@ -94,5 +94,140 @@ VALUES (@CompanyId, @Email, @PasswordHash, @FullName, @Phone, @Role, @Status, @C
             const string sql = "UPDATE dbo.users SET facebook_id = @FacebookId, updated_at = SYSUTCDATETIME() WHERE id = @Id";
             await _db.ExecuteAsync(sql, new { Id = id, FacebookId = facebookId });
         }
+        public async Task<MarketplaceUser?> GetuserByid(string userid)
+        {
+            string sql = @"SELECT TOP (1) *
+            FROM dbo.users WHERE id = @id";
+            return await _db.QueryFirstOrDefaultAsync<MarketplaceUser>(sql, new { id = userid });
+        }
+        public async Task<MarketplaceUser?> GetAllid(string companyid)
+        {
+            string sql = @"SELECT *
+            FROM dbo.users WHERE company_id = @companyid";
+            return await _db.QueryFirstOrDefaultAsync<MarketplaceUser>(sql, new { company_id = companyid });
+        }
+        public async Task<MarketplaceUser?> GetByIdAsync(long id)
+        {
+            const string sql = "SELECT * FROM dbo.users WHERE id = @Id";
+            return await _db.QuerySingleOrDefaultAsync<MarketplaceUser>(sql, new { Id = id });
+        }
+        public async Task<bool> UpdateUserAsync(MarketplaceUser user, IDbTransaction? transaction = null)
+        {
+            try
+            {
+                const string sql = @"
+UPDATE dbo.users
+SET
+    company_id    = @CompanyId,
+    email         = @Email,
+    password_hash = @PasswordHash,
+    full_name     = @FullName,
+    phone         = @Phone,
+    role          = @Role,
+    tier          = @Tier,
+    google_id     = @GoogleId,
+    facebook_id   = @FacebookId,
+    updated_at    = SYSUTCDATETIME()
+WHERE
+    id = @Id;
+";
+
+                var rowsAffected = await _db.ExecuteAsync(sql, new
+                {
+                    user.CompanyId,
+                    user.Email,
+                    user.PasswordHash,
+                    user.FullName,
+                    user.Phone,
+                    user.Role,
+                    user.Status,
+                    user.Credits,
+                    user.Tier,
+                    user.GoogleId,
+                    user.FacebookId,
+                    user.Id
+                }, transaction: transaction);
+
+                return rowsAffected > 0;
+            }
+            catch (Exception)
+            {
+                // preserve previous behavior: return false on error (consider throwing/logging in future)
+                return false;
+            }
+        }
+        public async Task<bool> ApproveUserWithLogAsync(long userId, string approvedBy, string details, IDbTransaction? transaction = null)
+        {
+            try
+            {
+                // Approve user
+                const string approveSql = @"
+UPDATE dbo.users
+SET
+    approve_dt = SYSUTCDATETIME(),
+    approve_fg = 1,
+    updated_at = SYSUTCDATETIME()
+WHERE
+    id = @Id;
+";
+
+                // Insert log
+                const string logSql = @"
+INSERT INTO dbo.user_logs (user_id, action, logged_dt, details, performed_by)
+VALUES (@UserId, @Action, SYSUTCDATETIME(), @Details, @PerformedBy);
+";
+
+                var approveRows = await _db.ExecuteAsync(approveSql, new { Id = userId }, transaction);
+
+                if (approveRows > 0)
+                {
+                    await _db.ExecuteAsync(logSql, new
+                    {
+                        UserId = userId,
+                        Action = "approve",
+                        Details = details,
+                        PerformedBy = approvedBy
+                    }, transaction);
+
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+        public async Task<bool> ApproveUserAsync(long userId, string approvedBy, string details, IDbTransaction? transaction = null)
+        {
+            try
+            {
+                const string approveSql = @"
+UPDATE dbo.users
+SET
+    approve_dt = SYSUTCDATETIME(),
+    approve_fg = 1,
+    updated_at = SYSUTCDATETIME()
+WHERE
+    id = @Id;
+";
+
+                var approveRows = await _db.ExecuteAsync(approveSql, new { Id = userId }, transaction);
+
+                if (approveRows > 0)
+                {
+                    await UserLogRepository.LogUserActionAsync(_db, userId, "approve", details, approvedBy, transaction);
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
     }
+
 }

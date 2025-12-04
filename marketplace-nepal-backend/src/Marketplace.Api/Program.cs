@@ -1,8 +1,5 @@
-using System;
-using System.Data;
-using System.Reflection;
-using System.Text;
 using Marketpalce.Repository.Repositories.ComponyRepo;
+using Marketpalce.Repository.Repositories.StaticValueReop;
 using Marketpalce.Repository.Repositories.UserReop;
 using Marketplace.Api.Services.FacebookToken;
 using Marketplace.Api.Services.GoogleTokenVerifier;
@@ -14,6 +11,10 @@ using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System;
+using System.Data;
+using System.Reflection;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -30,6 +31,7 @@ builder.Services.AddSingleton(typeof(IPasswordHasher<>), typeof(CustomPasswordHa
 
 // --- Repositories ---
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IStaticValueRepository, StaticValueRepository>();
 builder.Services.AddScoped<ICompanyRepository, CompanyRepository>();
 
 // --- Services ---

@@ -85,5 +85,34 @@ OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
 
             return await _db.QueryAsync<Company>(sql, new { Skip = (page - 1) * pageSize, Take = pageSize });
         }
+        public async Task<bool> ApprovecompaniesAsync(long companieId, string approvedBy, string details, IDbTransaction? transaction = null)
+        {
+            try
+            {
+                const string approveSql = @"
+                UPDATE dbo.companies
+                SET
+                    approve_dt = SYSUTCDATETIME(),
+                    approve_fg = 1,
+                    updated_at = SYSUTCDATETIME()
+                WHERE
+                    id = @Id;
+                ";
+
+                var approveRows = await _db.ExecuteAsync(approveSql, new { Id = companieId }, transaction);
+
+                if (approveRows > 0)
+                {
+                    await UserLogRepository.LogUserActionAsync(_db, companieId, "approve", details, approvedBy, transaction);
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
     }
 }

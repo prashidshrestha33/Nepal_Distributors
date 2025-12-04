@@ -34,6 +34,7 @@ namespace Marketplace.Api.Services.Hassing
 
             var claims = new List<Claim>
             {
+                new Claim("company_id", user.CompanyId?.ToString() ?? string.Empty),
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
             };

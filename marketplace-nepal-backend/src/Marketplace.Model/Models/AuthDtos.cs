@@ -6,11 +6,25 @@ namespace Marketplace.Models
     {
         [Required]
         public string Name { get; set; } = string.Empty;
-
-        public string? CompanyType { get; set; }
+        public long? CompanyId { get; set; }
+        public string? CompamyPerson { get; set; }
+        public string? MobilePhone { get; set; }
+        public string? LandLinePhone { get; set; }
         public string? RegistrationDocument { get; set; }
+        public string? CompanyType { get; set; }
+        public string? UserType { get; set; }
+        public long? Credits { get; set; }
+        public string? Tire { get; set; }
+        public string? Status { get; set; }
         public string? Address { get; set; }
         public string? GoogleMapLocation { get; set; }
+    }
+
+    public class NewRegisterRequest
+    {
+        public RegisterRequest? user { get; set; }
+        // Optional company payload to create during registration
+        public CompanyCreateRequest? Company { get; set; }
     }
 
     public class RegisterRequest
@@ -26,10 +40,6 @@ namespace Marketplace.Models
         public string? FullName { get; set; }
         public string? Phone { get; set; }
         public long? CompanyId { get; set; }
-
-        // Optional company payload to create during registration
-        public CompanyCreateRequest? Company { get; set; }
-
         public string? Role { get; set; }
         public string? Status { get; set; }
         public long? Credits { get; set; }
