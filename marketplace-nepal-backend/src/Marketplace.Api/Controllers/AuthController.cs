@@ -1,7 +1,10 @@
 using Google.Apis.Auth;
-using Marketplace.Api.Models;
-using Marketplace.Api.Repositories;
-using Marketplace.Api.Services;
+using Marketpalce.Repository.Repositories.ComponyRepo;
+using Marketpalce.Repository.Repositories.UserReop;
+using Marketplace.Api.Services.FacebookToken;
+using Marketplace.Api.Services.GoogleTokenVerifier;
+using Marketplace.Api.Services.Hassing;
+using Marketplace.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -176,7 +179,7 @@ namespace Marketplace.Api.Controllers
             var name = payload.Name;
 
             // Try find user by google_id
-            var user = await _users.GetByGoogleIdAsync(googleId);
+            var user = await _users.GetByEmailAsync(googleId:googleId);
 
             // If not found, try by email (and possibly link)
             if (user == null && !string.IsNullOrEmpty(email))
@@ -250,11 +253,14 @@ namespace Marketplace.Api.Controllers
             }
 
             var fbId = profile.Id;
+            if (string.IsNullOrEmpty(fbId))
+                return BadRequest(new { error = "Facebook profile did not provide an ID." });
+
             var email = profile.Email?.Trim().ToLowerInvariant();
             var name = profile.Name;
 
             // Try find user by facebook_id
-            var user = await _users.GetByFacebookIdAsync(fbId);
+            var user = await _users.GetByEmailAsync(facebookId:fbId);
 
             // If not found, try by email (and possibly link)
             if (user == null && !string.IsNullOrEmpty(email))
