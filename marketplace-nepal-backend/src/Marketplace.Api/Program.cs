@@ -1,4 +1,5 @@
 using Marketpalce.Repository.Repositories.ComponyRepo;
+using Marketpalce.Repository.Repositories.ProductRepo;
 using Marketpalce.Repository.Repositories.StaticValueReop;
 using Marketpalce.Repository.Repositories.UserReop;
 using Marketplace.Api.Services.FacebookToken;
@@ -33,6 +34,7 @@ builder.Services.AddSingleton(typeof(IPasswordHasher<>), typeof(CustomPasswordHa
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IStaticValueRepository, StaticValueRepository>();
 builder.Services.AddScoped<ICompanyRepository, CompanyRepository>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
 // --- Services ---
 builder.Services.AddScoped<IJwtService, JwtService>();
@@ -91,7 +93,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Marketplace API", Version = "v1" });
-
+    
     var jwtSecurityScheme = new OpenApiSecurityScheme
     {
         Scheme = "bearer",
@@ -144,7 +146,19 @@ app.UseSwaggerUI(c =>
 
 app.UseCors();
 app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
+app.UseAuthorization(); 
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/swagger"))
+    {
+        // skip auth for swagger
+        await next();
+        return;
+    }
+
+    await next();
+});
+app.MapControllers()
+   .AllowAnonymous();
 
 app.Run();

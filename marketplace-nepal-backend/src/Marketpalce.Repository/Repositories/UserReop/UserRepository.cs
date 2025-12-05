@@ -217,7 +217,7 @@ WHERE
 
                 if (approveRows > 0)
                 {
-                    await UserLogRepository.LogUserActionAsync(_db, userId, "approve", details, approvedBy, transaction);
+                    await UserLogRepository.LogUserActionAsync(_db, userId, "approveUser", details, approvedBy, transaction);
                     return true;
                 }
 

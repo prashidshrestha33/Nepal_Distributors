@@ -82,7 +82,7 @@ namespace Marketplace.Api.Controllers
                 long? companyId = req.user.CompanyId;
 
                 // If no CompanyId provided and Company payload present, create it
-                if (companyId == null && req.Company != null)
+                if (companyId == null && req.Company != null||companyId == 0)
                 {
                     var compReq = req.Company;
                     var company = new Company
