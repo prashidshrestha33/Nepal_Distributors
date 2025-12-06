@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -10,79 +10,92 @@ import { AuthService } from '../../services/auth.service';
     standalone: false
 })
 export class LoginComponent implements OnInit {
-  loginForm!: FormGroup;
-  loading = false;
-  error: string | null = null;
-  hidePassword = true;
 
-  constructor(
-    private fb: FormBuilder,
-    private auth: AuthService,
-    private router: Router
-  ) {}
+    loginForm!: FormGroup;
+    loading = false;
+    error: string | null = null;
+    hidePassword = true;
 
-  ngOnInit(): void {
-    this.loginForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required]],
-      remember: [false]
-    });
-  }
+    constructor(
+        private fb: FormBuilder,
+        private auth: AuthService,
+        private router: Router
+    ) { }
 
-  get f() {
-    return this.loginForm.controls;
-  }
-
-  onSubmit(): void {
-    this.error = null;
-    if (this.loginForm.invalid) {
-      this.loginForm.markAllAsTouched();
-      return;
+    ngOnInit(): void {
+        this.loginForm = this.fb.group({
+            email: ['', [Validators.required, Validators.email]],
+            password: ['', [Validators.required]],
+            remember: [false]   // ✅ Remember Me checkbox
+        });
     }
 
-    this.loading = true;
-    const { email, password, remember } = this.loginForm.value;
+    // Shortcut getter
+    get f() {
+        return this.loginForm.controls;
+    }
 
-    this.auth.login(email, password).subscribe({
-      next: () => {
-        this.loading = false;
-        // Navigate to dashboard/home after successful login
-        this.router.navigateByUrl('/');
-      },
-      error: (err) => {
-        this.loading = false;
-        this.error = err?.message || 'Invalid email or password';
-      }
-    });
-  }
+    onSubmit(): void {
+        this.error = null;
 
-  signInWithGoogle(): void {
-    this.error = null;
-    this.loading = true;
-    this.auth.signInWithProvider('google').subscribe({
-      next: () => {
-        this.loading = false;
-        this.router.navigateByUrl('/');
-      },
-      error: (e) => {
-        this.loading = false;
-        this.error = e?.message || 'Google sign-in failed';
-      }
-    });
-  }
+        if (this.loginForm.invalid) {
+            this.loginForm.markAllAsTouched();
+            return;
+        }
 
-  signInWithFacebook(): void {
-    this.error = null;
-    this.loading = true;
-    this.auth.signInWithProvider('facebook').subscribe({
-      next: () => {
-        this.loading = false;
-        this.router.navigateByUrl('/');
-      },
-      error: (e) => {
-        this.loading = false;
-        this.error = e?.message || 'Facebook sign-in failed';
-      }
-    });
-  }
+        this.loading = true;
+        const { email, password, remember } = this.loginForm.value;
+
+        this.auth.login(email, password).subscribe({
+            next: (res: any) => {
+                this.loading = false;
+
+                // ✅ Store login token based on Remember me
+                //    localStorage → stays after browser restart
+                //    sessionStorage → removes on browser close
+                const storage = remember ? localStorage : sessionStorage;
+                storage.setItem('token', res.token);
+
+                // Redirect to dashboard
+                this.router.navigateByUrl('/dashboard');
+            },
+
+            error: (err) => {
+                this.loading = false;
+                this.error = 'Invalid email or password';
+            }
+        });
+    }
+
+    signInWithGoogle(): void {
+        this.error = null;
+        this.loading = true;
+
+        this.auth.signInWithProvider('google').subscribe({
+            next: () => {
+                this.loading = false;
+                this.router.navigateByUrl('/dashboard');
+            },
+            error: (e) => {
+                this.loading = false;
+                this.error = e?.message || 'Google sign-in failed';
+            }
+        });
+    }
+
+    signInWithFacebook(): void {
+        this.error = null;
+        this.loading = true;
+
+        this.auth.signInWithProvider('facebook').subscribe({
+            next: () => {
+                this.loading = false;
+                this.router.navigateByUrl('/');
+            },
+            error: (e) => {
+                this.loading = false;
+                this.error = e?.message || 'Facebook sign-in failed';
+            }
+        });
+    }
 }

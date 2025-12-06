@@ -20,7 +20,7 @@ export class AuthService {
 
   // Register endpoint (calls backend and saves token)
   register(payload: any): Observable<any> {
-    return this.http.post<any>(`${this.api}/api/auth/register`, payload)
+    return this.http.post<any>(`${this.api}/api/auth/registernewuser`, payload)
       .pipe(tap(res => this.saveToken(res?.token)));
   }
 
@@ -49,7 +49,7 @@ export class AuthService {
       return throwError(() => new Error('Provider is required'));
     }
 
-    const popupUrl = `${this.api}/api/auth/${provider}/redirect`; // adjust to your backend route
+    const popupUrl = `${this.api}/api/auth/${provider}`; // adjust to your backend route
     const width = 600;
     const height = 700;
     const left = window.screenX + (window.outerWidth - width) / 2;
