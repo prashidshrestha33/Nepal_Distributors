@@ -5,6 +5,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --proxy-config proxy.conf.json",
+    "oauth-server": "node src/app/services/oauth-server.js",
     "build": "ng build",
     "test": "ng test",
     "lint": "ng lint"

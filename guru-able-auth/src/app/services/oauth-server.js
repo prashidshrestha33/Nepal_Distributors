@@ -10,10 +10,13 @@ const cookieParser = require('cookie-parser');
 const app = express();
 app.use(cookieParser());
 
-const PORT = 49856;
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID; // set in environment, or hardcode for testing
+const PORT = 49857;
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '936699258306-jojc9ufg55ut1055s3nufrju2h9dldj4.apps.googleusercontent.com'; // set in environment, or hardcode for testing
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const REDIRECT_URI = `https://localhost:${PORT}/api/auth/google/redirect`; // or http://localhost:....
+const REDIRECT_URI = `http://localhost:${PORT}/api/auth/google/redirect`; // redirect URI the Google OAuth will call
+const FB_APP_ID = process.env.FACEBOOK_APP_ID;
+const FB_APP_SECRET = process.env.FACEBOOK_APP_SECRET;
+const FB_REDIRECT_URI = `http://localhost:${PORT}/api/auth/facebook/redirect`;
 
 // Utility: render a small HTML page that posts a message to the opener
 function renderPostMessagePage(payload, origin = '*') {
@@ -64,6 +67,51 @@ app.get('/api/auth/google', (req, res) => {
     prompt: 'select_account',
     state
   });
+
+// Start Facebook OAuth flow (redirect user to Facebook Auth)
+app.get('/api/auth/facebook', (req, res) => {
+  const state = req.query.state || 'state-' + Math.random().toString(36).slice(2);
+  const scope = ['email', 'public_profile'].join(',');
+  const url = 'https://www.facebook.com/v12.0/dialog/oauth?' + qs.stringify({
+    client_id: FB_APP_ID,
+    redirect_uri: FB_REDIRECT_URI,
+    state,
+    scope
+  });
+  res.redirect(url);
+});
+
+// Facebook callback
+app.get('/api/auth/facebook/redirect', async (req, res) => {
+  const code = req.query.code;
+  if (!code) {
+    const payload = { type: 'oauth-error', message: 'No code returned from Facebook' };
+    return res.send(renderPostMessagePage(payload, req.headers.referer || '*'));
+  }
+
+  try {
+    // Exchange code for access token
+    const tokenResp = await axios.get('https://graph.facebook.com/v12.0/oauth/access_token', {
+      params: {
+        client_id: FB_APP_ID,
+        redirect_uri: FB_REDIRECT_URI,
+        client_secret: FB_APP_SECRET,
+        code
+      }
+    });
+
+    const tokenData = tokenResp.data; // contains access_token
+    const accessToken = tokenData.access_token;
+
+    const payload = { type: 'oauth-success', token: accessToken, provider: 'facebook' };
+    const origin = (req.headers.origin || req.headers.referer || '*');
+    return res.send(renderPostMessagePage(payload, origin));
+  } catch (err) {
+    console.error('Facebook token exchange failed', err?.response?.data || err.message || err);
+    const payload = { type: 'oauth-error', message: 'Facebook token exchange failed' };
+    return res.send(renderPostMessagePage(payload, req.headers.referer || '*'));
+  }
+});
   res.redirect(url);
 });
 
@@ -109,5 +157,5 @@ app.get('/api/auth/google/redirect', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`OAuth helper server listening on https://localhost:${PORT}`);
+  console.log(`OAuth helper server listening on http://localhost:${PORT}`);
 });

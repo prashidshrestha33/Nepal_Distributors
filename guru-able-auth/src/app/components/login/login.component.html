@@ -61,11 +61,9 @@
 
     <!-- Social Login -->
     <div class="social-section">
-      <div class="social-btn google" (click)="signInWithGoogle()">
-        <i class="fa-brands fa-google"></i>
-        <span>Sign in with Google</span>
-      </div>
+      <div id="google-btn-container"></div>
 
+      <!-- fallback (clickable area if SDK not rendered) -->
       <div class="social-btn facebook" (click)="signInWithFacebook()">
         <i class="fa-brands fa-facebook-f"></i>
         <span>Sign in with Facebook</span>

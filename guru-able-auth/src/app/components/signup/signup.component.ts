@@ -87,7 +87,7 @@ export class SignupComponent implements OnInit {
         this.auth.register(payload).subscribe({
             next: () => {
                 this.loading = false;
-                this.router.navigate(['/dashboard']);
+                this.router.navigate(['/login']);
             },
             error: (err) => {
                 this.loading = false;
