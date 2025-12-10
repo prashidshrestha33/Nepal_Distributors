@@ -13,7 +13,6 @@ namespace Marketplace.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [AllowAnonymous]
     public class ProductController : ControllerBase
     {
         private readonly IProductRepository repositorysitory;

@@ -1,13 +1,17 @@
+using Azure.Core;
 using Google.Apis.Auth;
 using Marketpalce.Repository.Repositories.ComponyRepo;
 using Marketpalce.Repository.Repositories.UserReop;
+using Marketplace.Api.DOTModels;
 using Marketplace.Api.Services.FacebookToken;
 using Marketplace.Api.Services.GoogleTokenVerifier;
 using Marketplace.Api.Services.Hassing;
+using Marketplace.Api.Services.Helper;
 using Marketplace.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Data;
 using System.Net.Mail;
@@ -20,6 +24,7 @@ namespace Marketplace.Api.Controllers
     [AllowAnonymous]
     public class AuthController : ControllerBase
     {
+        private readonly IWebHostEnvironment _env;
         private readonly IUserRepository _users;
         private readonly ICompanyRepository _companies;
         private readonly IPasswordHasher<MarketplaceUser> _hasher;
@@ -27,14 +32,15 @@ namespace Marketplace.Api.Controllers
         private readonly IGoogleTokenVerifier _googleVerifier;
         private readonly IFacebookTokenVerifier _facebookVerifier;
         private readonly IDbConnection _db; // scoped connection to allow transactions
-
+        ModuleToCommon moduleToCommon = new ModuleToCommon();
         private static readonly string[] AllowedRoles = new[]
         {
             "super_admin", "portal_manager", "importer", "manufacturer", "wholesaler", "retailer"
         };
 
         public AuthController(
-            IUserRepository users,
+        IWebHostEnvironment env,
+        IUserRepository users,
             ICompanyRepository companies,
             IPasswordHasher<MarketplaceUser> hasher,
             IJwtService jwt,
@@ -42,6 +48,7 @@ namespace Marketplace.Api.Controllers
             IFacebookTokenVerifier facebookVerifier,
             IDbConnection db)
         {
+            _env = env;
             _users = users ?? throw new ArgumentNullException(nameof(users));
             _companies = companies ?? throw new ArgumentNullException(nameof(companies));
             _hasher = hasher ?? throw new ArgumentNullException(nameof(hasher));
@@ -51,13 +58,14 @@ namespace Marketplace.Api.Controllers
             _db = db ?? throw new ArgumentNullException(nameof(db));
         }
 
-        /// <summary>
-        /// Register a user. Optionally create a company (req.Company) in the same transaction.
-        /// If CompanyId provided it will be used instead of creating a new company.
-        /// </summary>
         [HttpPost("registerNewUser")]
-        public async Task<IActionResult> Register([FromBody] NewRegisterRequest req)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> Register([FromForm] ComponieCommonModel common)
         {
+            Reasult response= new Reasult();
+            NewRegisterRequest req = new NewRegisterRequest();
+            req.user = moduleToCommon.Map<RegisterRequest>(common.Register);
+            req.Company = moduleToCommon.Map<CompanyCreateRequest>(common.Company);
             if (req == null) return BadRequest(new { error = "Request body required." });
             if (string.IsNullOrWhiteSpace(req.user.Email) || string.IsNullOrWhiteSpace(req.user.Password))
                 return BadRequest(new { error = "Email and password required." });
@@ -75,6 +83,54 @@ namespace Marketplace.Api.Controllers
             var existing = await _users.GetByEmailAsync(email);
             if (existing != null) return Conflict(new { error = "Email exists." });
 
+            // --- handle file upload (if any) ---
+            IFormFile uploadedFile = null;
+            if (Request?.Form?.Files?.Count > 0)
+            {
+                // try to find a file named RegistrationDocument first, otherwise take the first file
+                
+                uploadedFile = Request.Form.Files.FirstOrDefault(f =>
+                    string.Equals(f.Name, "RegistrationDocument", StringComparison.OrdinalIgnoreCase))
+                    ?? Request.Form.Files.FirstOrDefault();
+            }
+
+            string savedFileUrl = null;
+            string originalFileName = null;
+            if (uploadedFile != null && uploadedFile.Length > 0)
+            {
+                // Basic validation (adjust as needed)
+                const long MaxFileBytes = 10 * 1024 * 1024; 
+                if (uploadedFile.Length > MaxFileBytes)
+                {
+                    return BadRequest(new { error = "Uploaded file is too large." });
+                }
+
+                // Optionally check extension
+                var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png" ,".xlsx"};
+                var ext = Path.GetExtension(uploadedFile.FileName).ToLowerInvariant();
+                if (!allowedExtensions.Contains(ext))
+                {
+                    response.code = 500;
+                    response.Message = "Invalid file type. Allowed: pdf, jpg, jpeg, png.";
+                    return BadRequest(response);
+                }
+
+                originalFileName = Path.GetFileName(uploadedFile.FileName);
+                var uniqueFileName = $"{Guid.NewGuid()}{ext}";
+
+                // Save under wwwroot/uploads/companies/
+                var webRoot = _env.WebRootPath;
+                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "ComponeyDetails");
+                if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+                var filePath = Path.Combine(uploads, uniqueFileName);
+                using (var fs = new FileStream(filePath, FileMode.Create))
+                {
+                    await uploadedFile.CopyToAsync(fs);
+                }
+                req.Company.RegistrationDocument = uniqueFileName;
+            }
+            // --- end file upload handling ---
+
             if (_db.State != ConnectionState.Open) _db.Open();
             using var tx = _db.BeginTransaction();
             try
@@ -82,22 +138,37 @@ namespace Marketplace.Api.Controllers
                 long? companyId = req.user.CompanyId;
 
                 // If no CompanyId provided and Company payload present, create it
-                if (companyId == null && req.Company != null||companyId == 0)
+                if ((companyId == null && req.Company != null) || companyId == 0)
                 {
                     var compReq = req.Company;
                     var company = new Company
                     {
                         Name = compReq.Name?.Trim() ?? string.Empty,
                         CompanyType = compReq.CompanyType,
+                        // If compReq contains a value already, keep it; otherwise we'll set from uploaded file
                         RegistrationDocument = compReq.RegistrationDocument,
                         MobilePhone = compReq.MobilePhone,
                         UserType = compReq.UserType,
                         Location = compReq.Address,
                         GoogleMapLocation = compReq.GoogleMapLocation,
                         Status = "pending",
-                        ApproveTs="n",
+                        ApproveTs = "n",
                         Credits = 0
                     };
+
+                    // If a file was uploaded, set RegistrationDocument to the public URL
+                    if (!string.IsNullOrEmpty(savedFileUrl))
+                    {
+                        company.RegistrationDocument = savedFileUrl;
+
+                        // If company has a property to store the original filename (e.g. RegistrationDocumentName),
+                        // set it via reflection to avoid compile-time dependency.
+                        var nameProp = company.GetType().GetProperty("RegistrationDocumentName");
+                        if (nameProp != null && nameProp.CanWrite)
+                        {
+                            nameProp.SetValue(company, originalFileName);
+                        }
+                    }
 
                     companyId = await _companies.CreateAsync(company, tx);
                 }
@@ -120,15 +191,21 @@ namespace Marketplace.Api.Controllers
                 var userId = await _users.CreateAsync(user, tx);
 
                 tx.Commit();
+                response.code = 0;
+                response.Message = "Your Componey and has been Registered Succesfully Please wait for Admin to Approve your Request";
+   
+                // return 201 Created with location header for the created resource
+                return CreatedAtAction(nameof(Register), new { id = userId }, response);
 
-                user.Id = userId;
-                var token = _jwt.GenerateToken(user);
-                return CreatedAtAction(nameof(Register), new { id = userId }, new { id = userId, token });
             }
             catch (Exception ex)
             {
                 try { tx.Rollback(); } catch { /* ignore rollback error */ }
-                return StatusCode(500, new { error = "Registration failed", details = ex.Message });
+
+                    response.code = 500;
+                    response.Message = "Registration failed";
+                    response.details = ex.Message;
+                return StatusCode(500, response);
             }
         }
 

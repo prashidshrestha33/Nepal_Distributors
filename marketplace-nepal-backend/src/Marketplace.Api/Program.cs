@@ -5,6 +5,7 @@ using Marketpalce.Repository.Repositories.UserReop;
 using Marketplace.Api.Services.FacebookToken;
 using Marketplace.Api.Services.GoogleTokenVerifier;
 using Marketplace.Api.Services.Hassing;
+using Marketplace.Api.Services.Helper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -27,8 +28,6 @@ builder.Services.AddScoped<IDbConnection>(_ => new SqlConnection(connectionStrin
 
 // --- Password hasher: register custom PBKDF2+SHA256 hasher (or swap to default if desired) ---
 builder.Services.AddSingleton(typeof(IPasswordHasher<>), typeof(CustomPasswordHasher<>));
-// If you prefer to configure per-user-type iteration count, register concrete:
-// builder.Services.AddSingleton<IPasswordHasher<MarketplaceUser>>(sp => new CustomPasswordHasher<MarketplaceUser>(iterationCount: 150_000));
 
 // --- Repositories ---
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -39,7 +38,7 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 // --- Services ---
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IGoogleTokenVerifier, GoogleTokenVerifier>();
-// Register Facebook verifier (was missing, causing DI resolution failure)
+// Register Facebook verifier
 builder.Services.AddScoped<IFacebookTokenVerifier, FacebookTokenVerifier>();
 
 // --- HttpClient for Facebook Graph API ---
@@ -73,18 +72,18 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
         ValidateLifetime = true,
-        // Map "role" claim from JWT into ASP.NET Core roles so [Authorize(Roles="...")] works
         RoleClaimType = "role"
     };
 });
 
-// --- Require authentication globally by default (AuthController endpoints use [AllowAnonymous]) ---
+// --- Require authentication globally by default (AuthController endpoints should use [AllowAnonymous]) ---
 var requireAuthenticatedPolicy = new AuthorizationPolicyBuilder()
     .RequireAuthenticatedUser()
     .Build();
 
 builder.Services.AddControllers(options =>
 {
+    // Apply global authorize filter - controllers can opt-out using [AllowAnonymous]
     options.Filters.Add(new AuthorizeFilter(requireAuthenticatedPolicy));
 });
 
@@ -93,7 +92,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Marketplace API", Version = "v1" });
-    
+
     var jwtSecurityScheme = new OpenApiSecurityScheme
     {
         Scheme = "bearer",
@@ -129,14 +128,21 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Redirect root to swagger UI
-app.MapGet("/", () => Results.Redirect("/swagger"));
-
+// Developer exception page (only in Development)
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
 }
 
+// Add DelegateHaldelerMiddleware early so it wraps the rest of the pipeline.
+// This middleware captures response and can wrap into ApiResponse or log, timing, etc.
+app.UseMiddleware<DelegateHaldelerMiddleware>();
+
+// Redirect root to swagger UI
+app.MapGet("/", () => Results.Redirect("/swagger"));
+
+// Expose swagger UI and JSON (place Swagger middleware before auth so the UI and JSON are accessible without JWT)
+// If you want swagger protected, move these calls after UseAuthentication/UseAuthorization.
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -144,21 +150,16 @@ app.UseSwaggerUI(c =>
     c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
 });
 
+// CORS, Routing, Auth
 app.UseCors();
-app.UseAuthentication();
-app.UseAuthorization(); 
-app.Use(async (context, next) =>
-{
-    if (context.Request.Path.StartsWithSegments("/swagger"))
-    {
-        // skip auth for swagger
-        await next();
-        return;
-    }
 
-    await next();
-});
-app.MapControllers()
-   .AllowAnonymous();
+app.UseRouting();
+
+// Authentication & Authorization
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Map controllers (controllers can use [AllowAnonymous] for endpoints that don't require auth)
+app.MapControllers();
 
 app.Run();
