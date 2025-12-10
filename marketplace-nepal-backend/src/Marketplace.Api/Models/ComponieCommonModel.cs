@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Marketplace.Api.DOTModels
+namespace Marketplace.Api.Models
 {
     public class ComponieCommonModel
     {

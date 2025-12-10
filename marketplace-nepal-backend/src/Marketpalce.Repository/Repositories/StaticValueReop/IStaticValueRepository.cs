@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Marketplace.Model.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,6 +14,11 @@ namespace Marketpalce.Repository.Repositories.StaticValueReop
         Task<bool> UpdateAsync(string key, string data);
         Task<bool> DeleteAsync(string key);
         Task<IEnumerable<StaticValue>> ListAllAsync();
+        Task<long> CreateCatalogAsync(StaticValueCatalog model);
+        Task<StaticValueCatalog?> GetCatalogAsync(long id);
+        Task<bool> UpdateCatalogAsync(StaticValueCatalog model);
+        Task<bool> DeleteCatalogAsync(long id);
+        Task<IEnumerable<StaticValueCatalog>> ListAllCatalogAsync();
 
     }
 }

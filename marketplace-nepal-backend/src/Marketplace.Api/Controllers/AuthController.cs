@@ -2,7 +2,7 @@ using Azure.Core;
 using Google.Apis.Auth;
 using Marketpalce.Repository.Repositories.ComponyRepo;
 using Marketpalce.Repository.Repositories.UserReop;
-using Marketplace.Api.DOTModels;
+using Marketplace.Api.Models;
 using Marketplace.Api.Services.FacebookToken;
 using Marketplace.Api.Services.GoogleTokenVerifier;
 using Marketplace.Api.Services.Hassing;
@@ -32,7 +32,7 @@ namespace Marketplace.Api.Controllers
         private readonly IGoogleTokenVerifier _googleVerifier;
         private readonly IFacebookTokenVerifier _facebookVerifier;
         private readonly IDbConnection _db; // scoped connection to allow transactions
-        ModuleToCommon moduleToCommon = new ModuleToCommon();
+        private ModuleToCommon moduleToCommon = new ModuleToCommon();
         private static readonly string[] AllowedRoles = new[]
         {
             "super_admin", "portal_manager", "importer", "manufacturer", "wholesaler", "retailer"
@@ -55,7 +55,8 @@ namespace Marketplace.Api.Controllers
             _jwt = jwt ?? throw new ArgumentNullException(nameof(jwt));
             _googleVerifier = googleVerifier ?? throw new ArgumentNullException(nameof(googleVerifier));
             _facebookVerifier = facebookVerifier ?? throw new ArgumentNullException(nameof(facebookVerifier));
-            _db = db ?? throw new ArgumentNullException(nameof(db));
+            _db = db ?? throw new ArgumentNullException(nameof(db)); 
+           
         }
 
         [HttpPost("registerNewUser")]
@@ -145,7 +146,6 @@ namespace Marketplace.Api.Controllers
                     {
                         Name = compReq.Name?.Trim() ?? string.Empty,
                         CompanyType = compReq.CompanyType,
-                        // If compReq contains a value already, keep it; otherwise we'll set from uploaded file
                         RegistrationDocument = compReq.RegistrationDocument,
                         MobilePhone = compReq.MobilePhone,
                         UserType = compReq.UserType,
@@ -153,16 +153,11 @@ namespace Marketplace.Api.Controllers
                         GoogleMapLocation = compReq.GoogleMapLocation,
                         Status = "pending",
                         ApproveTs = "n",
-                        Credits = 0
+                        Credits = 5
                     };
-
-                    // If a file was uploaded, set RegistrationDocument to the public URL
                     if (!string.IsNullOrEmpty(savedFileUrl))
                     {
                         company.RegistrationDocument = savedFileUrl;
-
-                        // If company has a property to store the original filename (e.g. RegistrationDocumentName),
-                        // set it via reflection to avoid compile-time dependency.
                         var nameProp = company.GetType().GetProperty("RegistrationDocumentName");
                         if (nameProp != null && nameProp.CanWrite)
                         {
@@ -194,7 +189,6 @@ namespace Marketplace.Api.Controllers
                 response.code = 0;
                 response.Message = "Your Componey and has been Registered Succesfully Please wait for Admin to Approve your Request";
    
-                // return 201 Created with location header for the created resource
                 return CreatedAtAction(nameof(Register), new { id = userId }, response);
 
             }
@@ -209,9 +203,6 @@ namespace Marketplace.Api.Controllers
             }
         }
 
-        /// <summary>
-        /// Email/password login
-        /// </summary>
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest req)
         {

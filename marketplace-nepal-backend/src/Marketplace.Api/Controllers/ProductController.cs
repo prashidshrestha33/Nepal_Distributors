@@ -1,5 +1,5 @@
 ﻿using Marketpalce.Repository.Repositories.ProductRepo;
-using Marketplace.Api.DOTModels;
+using Marketplace.Api.Models;
 using Marketplace.Model.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
