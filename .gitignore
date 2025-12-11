@@ -75,3 +75,7 @@ packages/
 
 # End of file
 /guru-able-auth/.angular/cache/20.3.13/guru-able-auth/.tsbuildinfo
+FrontEnd/.postcssrc.json
+FrontEnd/angular-tailwind.png
+/FrontEnd/public/images
+/FrontEnd/public
