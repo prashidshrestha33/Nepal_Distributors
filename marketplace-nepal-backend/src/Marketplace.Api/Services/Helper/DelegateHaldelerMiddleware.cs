@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Marketplace.Api.DOTModels;
+using Marketplace.Api.Models;
 
 namespace Marketplace.Api.Services.Helper
 {
@@ -44,49 +44,55 @@ namespace Marketplace.Api.Services.Helper
             _logger.LogDebug("DelegateHaldelerMiddleware - Entering request {Method} {Path}", context.Request.Method, context.Request.Path);
 
             var originalBodyStream = context.Response.Body;
+
+            // Use a buffer to capture downstream output
             await using var buffer = new MemoryStream();
             context.Response.Body = buffer;
 
             try
             {
+                // Invoke downstream middleware / MVC
                 await _next(context);
 
-                // If the response has a known large content-length and exceeds our buffer limit, forward without wrapping
+                // If downstream set a large content-length, or our buffer exceeded limit, forward raw
                 if (context.Response.ContentLength.HasValue && context.Response.ContentLength.Value > MaxBufferSizeBytes)
                 {
-                    buffer.Seek(0, SeekOrigin.Begin);
-                    context.Response.Body = originalBodyStream;
-                    await buffer.CopyToAsync(originalBodyStream);
-                    _logger.LogDebug("DelegateHaldelerMiddleware - Skipped wrapping due to Content-Length > MaxBufferSize");
+                    _logger.LogDebug("DelegateHaldelerMiddleware - Skipping wrap due to Content-Length > MaxBufferSize");
+                    await ForwardBufferAsync(buffer, originalBodyStream);
                     return;
                 }
 
-                // If buffer is already larger than allowed, forward raw
                 if (buffer.Length > MaxBufferSizeBytes)
                 {
-                    buffer.Seek(0, SeekOrigin.Begin);
-                    context.Response.Body = originalBodyStream;
-                    await buffer.CopyToAsync(originalBodyStream);
-                    _logger.LogDebug("DelegateHaldelerMiddleware - Skipped wrapping because buffer exceeded MaxBufferSize");
+                    _logger.LogDebug("DelegateHaldelerMiddleware - Skipping wrap because buffer exceeded MaxBufferSize");
+                    await ForwardBufferAsync(buffer, originalBodyStream);
                     return;
                 }
 
-                // Read the downstream response body
-                context.Response.Body.Seek(0, SeekOrigin.Begin);
-                var responseBodyText = await new StreamReader(context.Response.Body, Encoding.UTF8).ReadToEndAsync();
+                // Read captured response
+                buffer.Seek(0, SeekOrigin.Begin);
+                var responseBodyText = await new StreamReader(buffer, Encoding.UTF8).ReadToEndAsync();
 
-                // Detect JSON responses (if content type not set or contains application/json)
+                // Detect JSON responses by Content-Type or by content start
                 var contentType = context.Response.ContentType ?? string.Empty;
-                var isJson = string.IsNullOrEmpty(contentType) ||
-                             contentType.IndexOf("application/json", StringComparison.OrdinalIgnoreCase) >= 0;
+                var isJsonByContentType = !string.IsNullOrEmpty(contentType) && contentType.IndexOf("application/json", StringComparison.OrdinalIgnoreCase) >= 0;
+                var startsWithJsonChar = false;
+                for (int i = 0; i < responseBodyText.Length; i++)
+                {
+                    var ch = responseBodyText[i];
+                    if (char.IsWhiteSpace(ch)) continue;
+                    startsWithJsonChar = ch == '{' || ch == '[';
+                    break;
+                }
+
+                var isJson = isJsonByContentType || startsWithJsonChar;
 
                 // Don't wrap non-JSON responses (files, images, HTML pages, etc.)
                 if (!isJson)
                 {
-                    context.Response.Body.Seek(0, SeekOrigin.Begin);
-                    await buffer.CopyToAsync(originalBodyStream);
-                    context.Response.Body = originalBodyStream;
                     _logger.LogDebug("DelegateHaldelerMiddleware - Forwarding non-JSON response without wrapping. ContentType={ContentType}", contentType);
+                    // Copy buffer to original stream
+                    await ForwardBufferAsync(buffer, originalBodyStream);
                     return;
                 }
 
@@ -95,11 +101,7 @@ namespace Marketplace.Api.Services.Helper
                 {
                     var apiEmpty = ApiResponse.Create(context.Response.StatusCode, null, GetDefaultMessageForStatus(context.Response.StatusCode));
                     var apiJson = JsonSerializer.Serialize(apiEmpty, _jsonOptions);
-                    var bytes = Encoding.UTF8.GetBytes(apiJson);
-                    context.Response.Body = originalBodyStream;
-                    context.Response.ContentType = "application/json; charset=utf-8";
-                    context.Response.ContentLength = bytes.Length;
-                    await context.Response.Body.WriteAsync(bytes, 0, bytes.Length);
+                    await WriteStringToOriginalAsync(originalBodyStream, apiJson, context);
                     _logger.LogDebug("DelegateHaldelerMiddleware - Returned wrapped empty response. StatusCode={StatusCode}", context.Response.StatusCode);
                     return;
                 }
@@ -120,27 +122,25 @@ namespace Marketplace.Api.Services.Helper
                         }
                         else
                         {
-                            resultPayload = root.Clone();
+                            resultPayload = root.Clone(); // JsonElement
                         }
                     }
                     else
                     {
+                        // array or primitive
                         resultPayload = root.Clone();
                     }
                 }
                 catch (JsonException)
                 {
-                    // Not valid JSON; embed raw string as result if JSON content type indicated (rare)
+                    // Not valid JSON; embed raw string as result
                     resultPayload = responseBodyText;
                 }
 
                 if (alreadyWrapped)
                 {
-                    // Return original body unchanged
-                    context.Response.Body.Seek(0, SeekOrigin.Begin);
-                    await buffer.CopyToAsync(originalBodyStream);
-                    context.Response.Body = originalBodyStream;
-                    _logger.LogDebug("DelegateHaldelerMiddleware - Response already wrapped, forwarded original body");
+                    _logger.LogDebug("DelegateHaldelerMiddleware - Response already wrapped, forwarding original body");
+                    await ForwardBufferAsync(buffer, originalBodyStream);
                     return;
                 }
 
@@ -149,17 +149,14 @@ namespace Marketplace.Api.Services.Helper
                 var message = GetDefaultMessageForStatus(statusCode);
                 var apiResponse = ApiResponse.Create(statusCode, resultPayload, message);
                 var outJson = JsonSerializer.Serialize(apiResponse, _jsonOptions);
-                var outBytes = Encoding.UTF8.GetBytes(outJson);
 
-                context.Response.Body = originalBodyStream;
-                context.Response.ContentType = "application/json; charset=utf-8";
-                context.Response.ContentLength = outBytes.Length;
-                await context.Response.Body.WriteAsync(outBytes, 0, outBytes.Length);
+                await WriteStringToOriginalAsync(originalBodyStream, outJson, context);
 
                 _logger.LogDebug("DelegateHaldelerMiddleware - Response wrapped into ApiResponse. StatusCode={StatusCode}", statusCode);
             }
             catch (Exception ex)
             {
+                // Log and return a standardized error; do NOT attempt to write if response already started.
                 _logger.LogError(ex, "Unhandled exception while processing request {Method} {Path}", context.Request.Method, context.Request.Path);
 
                 if (!context.Response.HasStarted)
@@ -170,25 +167,40 @@ namespace Marketplace.Api.Services.Helper
 
                     var errorResponse = ApiResponse.Error("An unexpected error occurred.", new[] { ex.Message });
                     var json = JsonSerializer.Serialize(errorResponse, _jsonOptions);
-                    await context.Response.WriteAsync(json);
+                    await WriteStringToOriginalAsync(originalBodyStream, json, context);
                 }
                 else
                 {
                     _logger.LogWarning("Response already started, cannot return error body.");
                 }
 
-                // Re-throw so global exception middleware can also observe it, if you have one.
-                throw;
+                // Do not rethrow — we've handled the response here.
             }
             finally
             {
-                if (context.Response.Body != originalBodyStream)
-                {
-                    context.Response.Body = originalBodyStream;
-                }
-
+                // Always restore the original response body stream
+                context.Response.Body = originalBodyStream;
                 _logger.LogDebug("DelegateHaldelerMiddleware - Leaving request {Method} {Path}", context.Request.Method, context.Request.Path);
             }
+        }
+
+        private static async Task ForwardBufferAsync(MemoryStream buffer, Stream originalStream)
+        {
+            buffer.Seek(0, SeekOrigin.Begin);
+            await buffer.CopyToAsync(originalStream);
+            await originalStream.FlushAsync();
+        }
+
+        private static async Task WriteStringToOriginalAsync(Stream originalStream, string json, HttpContext context)
+        {
+            var outBytes = Encoding.UTF8.GetBytes(json);
+            // Ensure response headers reflect JSON; Content-Length optional (chunked is fine)
+            context.Response.ContentType = "application/json; charset=utf-8";
+            context.Response.ContentLength = outBytes.Length;
+
+            // Write to original stream
+            await originalStream.WriteAsync(outBytes, 0, outBytes.Length);
+            await originalStream.FlushAsync();
         }
 
         private static string GetDefaultMessageForStatus(int status)
