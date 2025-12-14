@@ -20,19 +20,23 @@
               <input
                 formControlName="name"
                 placeholder="Enter company name"
+                required
                 class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 bg-transparent text-gray-800 border-gray-300"
               />
+              <p *ngIf="name?.invalid && name?.touched" class="mt-1 text-sm text-red-600">Company name is required</p>
             </div>
 
             <div>
               <label class="block text-xs font-medium mb-1 text-gray-700">
-                Contact Person <span class="text-error-500">*</span>
+                Company Person <span class="text-error-500">*</span>
               </label>
               <input
                 formControlName="companyPerson"
-                placeholder="Contact person name"
+                placeholder="Company person name"
+                required
                 class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 bg-transparent text-gray-800 border-gray-300"
               />
+              <p *ngIf="companyPerson?.invalid && companyPerson?.touched" class="mt-1 text-sm text-red-600">Contact person is required</p>
             </div>
           </div>
         </section>
@@ -50,12 +54,13 @@
                 Mobile Phone <span class="text-error-500">*</span>
               </label>
               <input
-                type="number"
+                type="text"
                 formControlName="mobilePhone"
                 placeholder="Mobile phone number"
-                min="0"
+                required
                 class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 bg-transparent text-gray-800 border-gray-300"
               />
+              <p *ngIf="mobilePhone?.invalid && mobilePhone?.touched" class="mt-1 text-sm text-red-600">Mobile phone is required</p>
             </div>
 
             <div>
@@ -63,12 +68,13 @@
                 Landline Phone <span class="text-error-500">*</span>
               </label>
               <input
-                type="number"
+                type="text"
                 formControlName="landLinePhone"
                 placeholder="Landline phone number"
-                min="0"
+                required
                 class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 bg-transparent text-gray-800 border-gray-300"
               />
+              <p *ngIf="landLinePhone?.invalid && landLinePhone?.touched" class="mt-1 text-sm text-red-600">Landline phone is required</p>
             </div>
           </div>
         </section>
@@ -86,14 +92,15 @@
                 Registration Document <span class="text-error-500">*</span>
               </label>
 
-              <!-- Hidden file input -->
+              <!-- Hidden file input (do NOT bind formControlName to file inputs) -->
               <input
                 type="file"
-                formControlName="registrationDocument"
                 id="registrationDocument"
                 class="hidden"
                 (change)="onFileChange($event)"
+                required
               />
+              <p *ngIf="registrationDocument?.invalid && registrationDocument?.touched" class="mt-1 text-sm text-red-600">Registration document is required</p>
 
               <!-- Custom button with icon -->
               <label
@@ -121,6 +128,7 @@
               </label>
               <select
                 formControlName="companyType"
+                required
                 class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs bg-white focus:outline-none focus:ring-3 text-gray-800 border-gray-300"
               >
                 <option value="" class="text-gray-400">Select company type</option>
@@ -129,6 +137,7 @@
                 <option value="Manufacturer">Manufacturer</option>
                 <option value="Wholesaler">Wholesaler</option>
               </select>
+              <p *ngIf="companyType?.invalid && companyType?.touched" class="mt-1 text-sm text-red-600">Company type is required</p>
             </div>
           </div>
         </section>
@@ -148,8 +157,10 @@
               <input
                 formControlName="status"
                 placeholder="Status"
+                required
                 class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 bg-transparent text-gray-800 border-gray-300"
               />
+              <p *ngIf="status?.invalid && status?.touched" class="mt-1 text-sm text-red-600">Status is required</p>
             </div>
 
             <div>
@@ -159,8 +170,10 @@
               <input
                 formControlName="address"
                 placeholder="Company address"
+                required
                 class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 bg-transparent text-gray-800 border-gray-300"
               />
+              <p *ngIf="address?.invalid && address?.touched" class="mt-1 text-sm text-red-600">Address is required</p>
             </div>
 
             <div class="sm:col-span-2">
@@ -170,8 +183,10 @@
               <input
                 formControlName="googleMapLocation"
                 placeholder="Google Maps URL / coordinates"
+                required
                 class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 bg-transparent text-gray-800 border-gray-300"
               />
+              <p *ngIf="googleMapLocation?.invalid && googleMapLocation?.touched" class="mt-1 text-sm text-red-600">Google Map Location is required</p>
             </div>
           </div>
         </section>

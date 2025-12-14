@@ -111,8 +111,24 @@ export class AuthService {
    * Register company (step 1) - multipart/form-data
    * Expects FormData containing Company.* fields and CompanyDocument file
    */
+  
   registerStep1(formData: FormData): Observable<any> {
-    return this.http.post<any>(`${this.api}/api/auth/registernewuser`, formData);
+    // For multipart/form-data uploads we MUST NOT set the Content-Type header here.
+    // The browser will set the correct Content-Type including the multipart boundary.
+    // We do, however, want to explicitly accept JSON responses from the backend.
+    const headers = new HttpHeaders({ Accept: 'application/json' });
+
+    return this.http.post<any>(`${this.api}/api/auth/registernewuser`, formData, { headers });
+  }
+
+  /**
+   * Create a company using multipart/form-data
+   * Endpoint: POST /api/auth/companies
+   * Returns an object containing `companyId` on success
+   */
+  createCompany(formData: FormData): Observable<any> {
+    const headers = new HttpHeaders({ Accept: 'application/json' });
+    return this.http.post<any>(`${this.api}/api/companies`, formData, { headers });
   }
 
   /**
@@ -120,7 +136,10 @@ export class AuthService {
    * Expects FormData containing Register.* fields and Company.Id
    */
   registerStep2(formData: FormData): Observable<any> {
-    return this.http.post<any>(`${this.api}/api/auth/registernewuser`, formData);
+    // Step 2 is also a FormData multipart upload; do not set Content-Type.
+    // Explicitly accept JSON so we consistently receive a JSON body from the API.
+    const headers = new HttpHeaders({ Accept: 'application/json' });
+    return this.http.post<any>(`${this.api}/api/auth/registernewuser`, formData, { headers });
   }
 
   /**

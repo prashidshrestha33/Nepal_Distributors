@@ -16,6 +16,18 @@
     </div>
     }
 
+    <!-- Company summary -->
+    <div *ngIf="flow.getCompanyForm()" class="p-3 mb-6 text-sm text-gray-700 bg-gray-50 rounded-lg">
+      <strong>Company:</strong> {{ flow.getCompanyForm().name }} — {{ flow.getCompanyForm().companyType }}
+    </div>
+
+    <!-- If company document is missing, allow re-upload in this step -->
+    <div *ngIf="flow.getCompanyForm() && !flow.getCompanyForm().file" class="mb-4">
+      <p class="text-sm text-gray-600 mb-2">Registration document not found. You can re-upload it here:</p>
+      <input type="file" (change)="onCompanyFileChange($event)" />
+      <div *ngIf="companyFileName" class="text-sm text-gray-500 mt-2">Selected: {{ companyFileName }}</div>
+    </div>
+
     <!-- Form -->
     <form [formGroup]="signupForm" (ngSubmit)="onSignUp()" class="space-y-6">
       <!-- Two Column Grid -->
@@ -172,6 +184,17 @@
         }
       </div>
 
+      <!-- Agree to terms -->
+      <div class="flex items-center gap-3">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" formControlName="agreeToTerms" class="w-4 h-4 rounded border-gray-300" />
+          <span class="text-sm text-gray-700 dark:text-gray-400">I agree to the Terms and Conditions <span class="text-error-500">*</span></span>
+        </label>
+        @if (agreeToTerms?.invalid && agreeToTerms?.touched) {
+        <p class="mt-1 text-sm text-red-600 dark:text-red-400">You must agree to the terms</p>
+        }
+      </div>
+
       <!-- Confirm Password -->
       <!-- <div>
         <app-label>Confirm Password <span class="text-error-500">*</span></app-label>
@@ -200,7 +223,7 @@
       <!-- Submit Button -->
       <button
         type="submit"
-        [disabled]="isLoading"
+        [disabled]="isLoading || signupForm.invalid"
         class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         @if (isLoading) {
@@ -210,6 +233,11 @@
           Sign Up
         }
       </button>
+
+      <!-- If the form is invalid, show which fields are missing to help the user -->
+      <div *ngIf="signupForm.invalid && (signupForm.touched || signupForm.dirty)" class="mt-3 text-sm text-red-600">
+        Missing: {{ getInvalidControls().join(', ') }}
+      </div>
     </form>
 
     <!-- Sign In Link -->

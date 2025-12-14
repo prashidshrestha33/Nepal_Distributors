@@ -13,7 +13,7 @@ import { AuthService } from './shared/services/auth.service';
   styleUrl: './app.component.css',
 })
 export class AppComponent implements OnInit {
-  title = 'Angular Ecommerce Dashboard | TailAdmin';
+  title = 'Nepal Distributors';
 
   constructor(
     private inactivityService: InactivityService,

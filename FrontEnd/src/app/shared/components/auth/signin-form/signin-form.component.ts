@@ -1,8 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { LabelComponent } from '../../form/label/label.component';
-import { ButtonComponent } from '../../ui/button/button.component';
-import { InputFieldComponent } from '../../form/input/input-field.component';
 import { RouterModule, Router } from '@angular/router';
 import { FormGroup, FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
@@ -13,8 +11,6 @@ import { InactivityService } from '../../../services/inactivity.service';
   imports: [
     CommonModule,
     LabelComponent,
-    ButtonComponent,
-    InputFieldComponent,
     RouterModule,
     ReactiveFormsModule,
   ],
