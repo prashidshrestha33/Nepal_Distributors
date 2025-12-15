@@ -25,6 +25,8 @@ export class SignupFormComponent implements OnInit {
   isLoading = false;
   // optional: preview/filename for uploaded company document when re-uploading in step2
   companyFileName: string | null = null;
+  showSuccessMessage = false;
+  successMessage = '';
 
   constructor(
     private formBuilder: FormBuilder,
@@ -142,14 +144,23 @@ export class SignupFormComponent implements OnInit {
           localStorage.setItem('token', token);
         }
 
+        // Get company name before clearing
+        const companyName = this.flow.getCompanyForm()?.name || 'Your Company';
+
         // Clear transient company data
         this.flow.clearCompanyForm();
+
+        // Show success message
+        this.successMessage = `${companyName} has been Registered Successfully. Please wait for Admin to Approve your Request.`;
+        this.showSuccessMessage = true;
 
         // Initialize inactivity timer
         this.inactivityService.initInactivityTimer();
 
-        // Navigate to dashboard
-        this.router.navigate(['/dashboard'], { replaceUrl: true });
+        // Navigate to signin after 3 seconds
+        setTimeout(() => {
+          this.router.navigate(['/signin'], { replaceUrl: true });
+        }, 3000);
       },
       error: (error: any) => {
         this.isLoading = false;

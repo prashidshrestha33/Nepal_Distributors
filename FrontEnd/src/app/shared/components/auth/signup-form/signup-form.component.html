@@ -1,4 +1,35 @@
 <div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
+  <!-- Success Modal Overlay -->
+  @if (showSuccessMessage) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div class="w-full max-w-md p-8 bg-white rounded-lg shadow-lg dark:bg-gray-800">
+      <!-- Success Icon -->
+      <div class="flex justify-center mb-4">
+        <div class="flex items-center justify-center w-16 h-16 bg-green-100 rounded-full dark:bg-green-900/30">
+          <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+        </div>
+      </div>
+      
+      <!-- Success Message -->
+      <h2 class="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white">
+        Registration Successful
+      </h2>
+      <p class="text-sm text-center text-gray-600 dark:text-gray-300 mb-6">
+        {{ successMessage }}
+      </p>
+
+      <!-- Loading indicator -->
+      <div class="flex justify-center">
+        <div class="text-sm text-gray-500 dark:text-gray-400">
+          Redirecting to Sign In...
+        </div>
+      </div>
+    </div>
+  </div>
+  }
+
   <div>
     <div class="mb-5 sm:mb-8">
       <h1 class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">

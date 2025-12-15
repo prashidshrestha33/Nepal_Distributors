@@ -152,19 +152,6 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-medium mb-1 text-gray-700">
-                Status <span class="text-error-500">*</span>
-              </label>
-              <input
-                formControlName="status"
-                placeholder="Status"
-                required
-                class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 bg-transparent text-gray-800 border-gray-300"
-              />
-              <p *ngIf="status?.invalid && status?.touched" class="mt-1 text-sm text-red-600">Status is required</p>
-            </div>
-
-            <div>
-              <label class="block text-xs font-medium mb-1 text-gray-700">
                 Address <span class="text-error-500">*</span>
               </label>
               <input
@@ -176,17 +163,36 @@
               <p *ngIf="address?.invalid && address?.touched" class="mt-1 text-sm text-red-600">Address is required</p>
             </div>
 
-            <div class="sm:col-span-2">
+            <div>
               <label class="block text-xs font-medium mb-1 text-gray-700">
-                Google Map Location <span class="text-error-500">*</span>
+                Geographical Location <span class="text-error-500">*</span>
               </label>
-              <input
-                formControlName="googleMapLocation"
-                placeholder="Google Maps URL / coordinates"
-                required
-                class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 bg-transparent text-gray-800 border-gray-300"
-              />
-              <p *ngIf="googleMapLocation?.invalid && googleMapLocation?.touched" class="mt-1 text-sm text-red-600">Google Map Location is required</p>
+
+              <!-- Input + picker button -->
+              <div class="relative">
+                <input
+                  formControlName="googleMapLocation"
+                  placeholder="latitude,longitude — click the pin to pick"
+                  readonly
+                  required
+                  class="h-11 w-full rounded-lg border px-4 pr-10 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 bg-transparent text-gray-800 border-gray-300"
+                />
+                <button
+                  type="button"
+                  (click)="openMapPicker()"
+                  title="Open location picker"
+                  class="absolute inset-y-0 right-0 pr-1 flex items-center"
+                >
+                  <span class="inline-flex items-center justify-center h-8 w-8 rounded-md bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700">
+                    <!-- simple pin icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C8.686 2 6 4.686 6 8c0 5.25 6 12 6 12s6-6.75 6-12c0-3.314-2.686-6-6-6zm0 8.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/>
+                    </svg>
+                  </span>
+                </button>
+              </div>
+
+              <p *ngIf="googleMapLocation?.invalid && googleMapLocation?.touched" class="mt-1 text-sm text-red-600">Geographical location is required</p>
             </div>
           </div>
         </section>
@@ -220,3 +226,26 @@
     </form>
   </div>
 </div>
+
+
+      <!-- Map picker modal -->
+      <div *ngIf="showMapModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl h-[70vh] flex flex-col overflow-hidden">
+          <div class="flex items-center justify-between p-3 border-b">
+            <h3 class="text-sm font-semibold">Select location</h3>
+            <div class="space-x-2">
+              <button class="px-3 py-1 rounded-md text-sm bg-gray-100 hover:bg-gray-200" (click)="closeMapPicker()">Cancel</button>
+              <button class="px-3 py-1 rounded-md text-sm bg-brand-500 text-white hover:bg-brand-600" (click)="saveLocation()">Save Location</button>
+            </div>
+          </div>
+
+          <!-- map container -->
+          <div class="flex-1" style="min-height:200px">
+            <div #mapContainer id="company-map" class="w-full h-full"></div>
+          </div>
+
+          <div class="p-3 border-t text-xs text-gray-600">
+            Tip: click on the map or drag the marker to pick a location. The value saved will be latitude,longitude (e.g. 27.7172,85.3240)
+          </div>
+        </div>
+      </div>
