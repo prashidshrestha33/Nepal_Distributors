@@ -1,0 +1,226 @@
+import { CommonModule } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
+import { LabelComponent } from '../../form/label/label.component';
+import { RouterModule, Router } from '@angular/router';
+import { FormGroup, FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
+import { AuthService } from '../../../services/auth.service';
+import { InactivityService } from '../../../services/inactivity.service';
+import { SignupFlowService } from '../../../services/signup-flow.service';
+
+@Component({
+  selector: 'app-signup-form',
+  imports: [
+    CommonModule,
+    LabelComponent,
+    RouterModule,
+    ReactiveFormsModule,
+  ],
+  templateUrl: './signup-form.component.html',
+  styles: ``
+})
+export class SignupFormComponent implements OnInit {
+  showPassword = false;
+  signupForm!: FormGroup;
+  errorMessage = '';
+  isLoading = false;
+  // optional: preview/filename for uploaded company document when re-uploading in step2
+  companyFileName: string | null = null;
+
+  constructor(
+    private formBuilder: FormBuilder,
+    private authService: AuthService,
+    private inactivityService: InactivityService,
+    private router: Router,
+    public flow: SignupFlowService
+  ) {}
+
+  ngOnInit() {
+    this.signupForm = this.formBuilder.group({
+      firstName: ['', [Validators.required]],
+      phoneNo: ['', [Validators.required]],
+      role: ['', [Validators.required]],
+      tier: ['', [Validators.required]],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      agreeToTerms: [false, [Validators.requiredTrue]]
+    });
+
+    // Ensure we have company data from Step 1. If not present, redirect user back.
+    const companyData = this.flow.getCompanyForm();
+    if (!companyData) {
+      // No company data found (possibly page refresh). Redirect to company step.
+      this.router.navigate(['/register-company']);
+    }
+  }
+
+  // Allow re-uploading the company document while on step 2 if the file was lost
+  onCompanyFileChange(event?: Event) {
+    const input = (event?.target as HTMLInputElement) || null;
+    if (input && input.files && input.files.length > 0) {
+      const file = input.files[0];
+      this.companyFileName = file.name;
+      const existing = this.flow.getCompanyForm() || {};
+      existing.file = file;
+      this.flow.setCompanyForm(existing);
+    }
+  }
+
+  togglePasswordVisibility() {
+    this.showPassword = !this.showPassword;
+  }
+
+  async onSignUp(): Promise<void> {
+    if (this.signupForm.invalid) {
+      this.errorMessage = 'Please fill in all required fields correctly';
+      return;
+    }
+    const { firstName, phoneNo, role, tier, email, password } = this.signupForm.value;
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    // Get company data saved in step 1
+    const companyData = this.flow.getCompanyForm();
+    if (!companyData) {
+      this.isLoading = false;
+      this.errorMessage = 'Company information is missing. Please go back and complete Step 1.';
+      return;
+    }
+
+    // Build a single FormData payload containing both Company.* and Register.* fields
+    const formData = new FormData();
+
+    // Company fields (use backend expected keys; include the misspelled `CompamyPerson`)
+    formData.append('Company.Name', companyData.name || '');
+    formData.append('Company.CompamyPerson', companyData.companyPerson || '');
+    formData.append('Company.MobilePhone', companyData.mobilePhone || '');
+    formData.append('Company.LandLinePhone', companyData.landLinePhone || '');
+    formData.append('Company.CompanyType', companyData.companyType || '');
+    formData.append('Company.Address', companyData.address || '');
+    formData.append('Company.GoogleMapLocation', companyData.googleMapLocation || '');
+    formData.append('Company.Status', companyData.status || '');
+
+    // Append file if available (file might be null after full page refresh)
+    let fileFromFlow: File | undefined = companyData.file;
+    // If the File object isn't in-memory (lost after a refresh), first try DataURL, then IndexedDB
+    if (!fileFromFlow) {
+      fileFromFlow = this.flow.getCompanyFileFromStorage() || undefined;
+    }
+    if (!fileFromFlow) {
+      // try IndexedDB (async)
+      fileFromFlow = (await this.flow.getCompanyFileFromIDB()) || undefined;
+    }
+
+    if (fileFromFlow) {
+      formData.append('CompanyDocument', fileFromFlow, fileFromFlow.name);
+    } else {
+      // If the file is missing, require the user to re-upload or go back to Step 1
+      this.isLoading = false;
+      this.errorMessage = 'Company document is missing. Please re-upload it or go back to Step 1.';
+      return;
+    }
+    // Register (user) fields
+    formData.append('Register.FullName', firstName || '');
+    formData.append('Register.Phone', phoneNo || '');
+    formData.append('Register.Role', role || '');
+    formData.append('Register.Tier', tier || '');
+    formData.append('Register.Email', email || '');
+    formData.append('Register.Password', password || '');
+
+    // Debug log (dev only)
+    try {
+      for (const pair of (formData as any).entries()) {
+        console.debug('[registernewuser] formData', pair[0], pair[1]);
+      }
+    } catch (e) {}
+
+    // Submit combined payload to backend (single call)
+    this.authService.registerStep2(formData).subscribe({
+      next: (response: any) => {
+        this.isLoading = false;
+        const token = response?.token;
+        if (token) {
+          localStorage.setItem('token', token);
+        }
+
+        // Clear transient company data
+        this.flow.clearCompanyForm();
+
+        // Initialize inactivity timer
+        this.inactivityService.initInactivityTimer();
+
+        // Navigate to dashboard
+        this.router.navigate(['/dashboard'], { replaceUrl: true });
+      },
+      error: (error: any) => {
+        this.isLoading = false;
+        // Try to surface server validation messages
+        if (error?.error) {
+          const payload = error.error;
+          if (payload?.errors && typeof payload.errors === 'object') {
+            const messages: string[] = [];
+            Object.keys(payload.errors).forEach(k => {
+              const v = payload.errors[k];
+              if (Array.isArray(v)) messages.push(...v.map((m: any) => m.toString()));
+              else if (typeof v === 'string') messages.push(v);
+            });
+            this.errorMessage = messages.join('; ') || payload?.message || 'Validation failed during signup.';
+          } else {
+            this.errorMessage = payload?.message || 'An error occurred during signup. Please try again.';
+          }
+        } else {
+          this.errorMessage = 'An error occurred during signup. Please try again.';
+        }
+        console.error('Signup error:', error);
+      }
+    });
+  }
+
+  /**
+   * Returns a list of invalid controls' friendly names for display
+   */
+  getInvalidControls(): string[] {
+    if (!this.signupForm) return [];
+    const map: Record<string, string> = {
+      firstName: 'Full Name',
+      phoneNo: 'Phone Number',
+      role: 'Role',
+      tier: 'Tier',
+      email: 'Email',
+      password: 'Password',
+      agreeToTerms: 'Agreement to Terms'
+    };
+    return Object.keys(this.signupForm.controls)
+      .filter(k => this.signupForm.get(k)?.invalid)
+      .map(k => map[k] || k);
+  }
+
+  get firstName() {
+    return this.signupForm.get('firstName');
+  }
+
+  get phoneNo() {
+    return this.signupForm.get('phoneNo');
+  }
+
+  get role() {
+    return this.signupForm.get('role');
+  }
+
+  get tier() {
+    return this.signupForm.get('tier');
+  }
+
+  get email() {
+    return this.signupForm.get('email');
+  }
+
+  get password() {
+    return this.signupForm.get('password');
+  }
+
+  get agreeToTerms() {
+    return this.signupForm.get('agreeToTerms');
+  }
+}
+
+
