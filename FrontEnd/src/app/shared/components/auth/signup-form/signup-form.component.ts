@@ -2,10 +2,51 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { LabelComponent } from '../../form/label/label.component';
 import { RouterModule, Router } from '@angular/router';
-import { FormGroup, FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormGroup, FormBuilder, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { InactivityService } from '../../../services/inactivity.service';
 import { SignupFlowService } from '../../../services/signup-flow.service';
+
+// Custom validator for strong password
+function strongPasswordValidator(control: AbstractControl): ValidationErrors | null {
+  if (!control.value) {
+    return null;
+  }
+  const password = control.value;
+  const hasMinLength = password.length >= 8;
+  const hasMaxLength = password.length <= 15;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+  
+  if (!hasMinLength || !hasMaxLength || !hasUpperCase || !hasNumber || !hasSpecialChar) {
+    return {
+      weakPassword: {
+        hasMinLength,
+        hasMaxLength,
+        hasUpperCase,
+        hasNumber,
+        hasSpecialChar
+      }
+    };
+  }
+  return null;
+}
+
+// Custom validator for email format
+function emailFormatValidator(control: AbstractControl): ValidationErrors | null {
+  if (!control.value) {
+    return null; // Allow empty (required validator handles it)
+  }
+  
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  
+  if (!emailRegex.test(control.value)) {
+    return { invalidEmailFormat: true };
+  }
+  
+  return null;
+}
 
 @Component({
   selector: 'app-signup-form',
@@ -22,6 +63,7 @@ export class SignupFormComponent implements OnInit {
   showPassword = false;
   signupForm!: FormGroup;
   errorMessage = '';
+  emailConflictError = ''; // Track email conflict error separately
   isLoading = false;
   // optional: preview/filename for uploaded company document when re-uploading in step2
   companyFileName: string | null = null;
@@ -36,15 +78,41 @@ export class SignupFormComponent implements OnInit {
     public flow: SignupFlowService
   ) {}
 
+  // Helper methods for password validation
+  hasMinLength(pwd: string): boolean {
+    return pwd?.length >= 8;
+  }
+
+  hasMaxLength(pwd: string): boolean {
+    return pwd?.length <= 15;
+  }
+
+  hasUpperCase(pwd: string): boolean {
+    return /[A-Z]/.test(pwd || '');
+  }
+
+  hasNumber(pwd: string): boolean {
+    return /[0-9]/.test(pwd || '');
+  }
+
+  hasSpecialChar(pwd: string): boolean {
+    return /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd || '');
+  }
+
   ngOnInit() {
     this.signupForm = this.formBuilder.group({
       firstName: ['', [Validators.required]],
       phoneNo: ['', [Validators.required]],
       role: ['', [Validators.required]],
       tier: ['', [Validators.required]],
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      email: ['', [Validators.required, emailFormatValidator]],
+      password: ['', [Validators.required, strongPasswordValidator]],
       agreeToTerms: [false, [Validators.requiredTrue]]
+    });
+
+    // Listen to email field changes to clear email conflict error
+    this.signupForm.get('email')?.valueChanges.subscribe(() => {
+      this.emailConflictError = ''; // Clear email conflict error when user types
     });
 
     // Ensure we have company data from Step 1. If not present, redirect user back.
@@ -157,14 +225,27 @@ export class SignupFormComponent implements OnInit {
         // Initialize inactivity timer
         this.inactivityService.initInactivityTimer();
 
-        // Navigate to signin after 3 seconds
+        // Hide success message after 4 seconds
+        setTimeout(() => {
+          this.showSuccessMessage = false;
+        }, 4000);
+
+        // Navigate to signin after 4 seconds
         setTimeout(() => {
           this.router.navigate(['/signin'], { replaceUrl: true });
-        }, 3000);
+        }, 6000);
       },
       error: (error: any) => {
         this.isLoading = false;
-        // Try to surface server validation messages
+        
+        // Check for 409 Conflict status (email already exists)
+        if (error?.status === 409) {
+          this.emailConflictError = 'Email already exists';
+          this.errorMessage = ''; // Clear general error message
+          return;
+        }
+
+        // Try to surface server validation messages for other errors
         if (error?.error) {
           const payload = error.error;
           if (payload?.errors && typeof payload.errors === 'object') {

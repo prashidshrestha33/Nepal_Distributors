@@ -2,9 +2,35 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { LabelComponent } from '../../form/label/label.component';
 import { RouterModule, Router } from '@angular/router';
-import { FormGroup, FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormGroup, FormBuilder, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { InactivityService } from '../../../services/inactivity.service';
+
+// Custom validator for strong password
+function strongPasswordValidator(control: AbstractControl): ValidationErrors | null {
+  if (!control.value) {
+    return null;
+  }
+  const password = control.value;
+  const hasMinLength = password.length >= 8;
+  const hasMaxLength = password.length <= 15;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+  
+  if (!hasMinLength || !hasMaxLength || !hasUpperCase || !hasNumber || !hasSpecialChar) {
+    return {
+      weakPassword: {
+        hasMinLength,
+        hasMaxLength,
+        hasUpperCase,
+        hasNumber,
+        hasSpecialChar
+      }
+    };
+  }
+  return null;
+}
 
 @Component({
   selector: 'app-signin-form',
@@ -30,10 +56,31 @@ export class SigninFormComponent implements OnInit {
     private router: Router
   ) {}
 
+  // Helper methods for password validation
+  hasMinLength(pwd: string): boolean {
+    return pwd?.length >= 8;
+  }
+
+  hasMaxLength(pwd: string): boolean {
+    return pwd?.length <= 15;
+  }
+
+  hasUpperCase(pwd: string): boolean {
+    return /[A-Z]/.test(pwd || '');
+  }
+
+  hasNumber(pwd: string): boolean {
+    return /[0-9]/.test(pwd || '');
+  }
+
+  hasSpecialChar(pwd: string): boolean {
+    return /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd || '');
+  }
+
   ngOnInit() {
     this.loginForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required, strongPasswordValidator]],
       rememberMe: [false]
     });
   }

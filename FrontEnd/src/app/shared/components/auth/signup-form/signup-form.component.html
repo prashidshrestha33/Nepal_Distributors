@@ -168,13 +168,18 @@
           class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 bg-transparent text-gray-800 border-gray-300"
           required
         />
-        @if (email?.invalid && email?.touched) {
+        @if (emailConflictError) {
+        <p class="mt-1 text-sm text-red-600 dark:text-red-400">
+          {{ emailConflictError }}
+        </p>
+        }
+        @if (email?.invalid && email?.touched && !emailConflictError) {
         <p class="mt-1 text-sm text-red-600 dark:text-red-400">
           @if (email?.errors?.['required']) {
             Email is required
           }
-          @if (email?.errors?.['email']) {
-            Please enter a valid email
+          @if (email?.errors?.['invalidEmailFormat']) {
+            Invalid email format
           }
         </p>
         }
@@ -191,6 +196,7 @@
             name="password"
             class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 bg-transparent text-gray-800 border-gray-300"
             required
+            maxlength="15"
           />
           <span
             (click)="togglePasswordVisibility()"
@@ -203,13 +209,38 @@
             }
           </span>
         </div>
+        <p class="mt-2 text-xs text-gray-600 dark:text-gray-400">
+          Password must contain:
+        </p>
+        <ul class="mt-1 text-xs space-y-1">
+          <li class="flex items-center gap-2" [class.text-green-600]="hasMinLength(password?.value)" [class.text-red-600]="password?.value && !hasMinLength(password?.value)">
+            <span [class]="hasMinLength(password?.value) ? 'text-green-600' : 'text-gray-400'">✓</span>
+            Min 8 characters
+          </li>
+          <li class="flex items-center gap-2" [class.text-green-600]="hasMaxLength(password?.value)" [class.text-red-600]="password?.value && !hasMaxLength(password?.value)">
+            <span [class]="hasMaxLength(password?.value) ? 'text-green-600' : 'text-gray-400'">✓</span>
+            Max 15 characters
+          </li>
+          <li class="flex items-center gap-2" [class.text-green-600]="hasUpperCase(password?.value)" [class.text-red-600]="password?.value && !hasUpperCase(password?.value)">
+            <span [class]="hasUpperCase(password?.value) ? 'text-green-600' : 'text-gray-400'">✓</span>
+            One uppercase letter (A-Z)
+          </li>
+          <li class="flex items-center gap-2" [class.text-green-600]="hasNumber(password?.value)" [class.text-red-600]="password?.value && !hasNumber(password?.value)">
+            <span [class]="hasNumber(password?.value) ? 'text-green-600' : 'text-gray-400'">✓</span>
+            One number (0-9)
+          </li>
+          <li class="flex items-center gap-2" [class.text-green-600]="hasSpecialChar(password?.value)" [class.text-red-600]="password?.value && !hasSpecialChar(password?.value)">
+            <span [class]="hasSpecialChar(password?.value) ? 'text-green-600' : 'text-gray-400'">✓</span>
+            One special character (!@#$%^&*, etc.)
+          </li>
+        </ul>
         @if (password?.invalid && password?.touched) {
-        <p class="mt-1 text-sm text-red-600 dark:text-red-400">
+        <p class="mt-2 text-sm text-red-600 dark:text-red-400">
           @if (password?.errors?.['required']) {
             Password is required
           }
-          @if (password?.errors?.['minlength']) {
-            Password must be at least 6 characters
+          @if (password?.errors?.['weakPassword']) {
+            Password does not meet complexity requirements
           }
         </p>
         }

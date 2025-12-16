@@ -164,4 +164,14 @@ export class AuthService {
   getCurrentUser(): Observable<any> {
     return this.http.get<any>(`${this.api}/api/auth/me`);
   }
+
+  /**
+   * Check if email already exists in the system
+   * @param email Email to check
+   */
+  checkEmailExists(email: string): Observable<any> {
+    return this.http.get<any>(`${this.api}/api/auth/check-email`, {
+      params: { email }
+    });
+  }
 }

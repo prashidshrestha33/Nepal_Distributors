@@ -1,9 +1,30 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { SignupFlowService } from '../../../services/signup-flow.service';
+
+// Phone number validator: 7-10 digits only
+function phoneNumberValidator(control: AbstractControl): ValidationErrors | null {
+  if (!control.value) {
+    return null; // Allow empty (required validator handles it)
+  }
+  
+  const phoneNumber = control.value.toString().trim();
+  
+  // Check if it contains only digits
+  if (!/^\d+$/.test(phoneNumber)) {
+    return { invalidPhoneFormat: true };
+  }
+  
+  // Check length between 7 and 10
+  if (phoneNumber.length < 7 || phoneNumber.length > 10) {
+    return { phoneLengthInvalid: true };
+  }
+  
+  return null;
+}
 
 @Component({
   selector: 'app-register-company-form',
@@ -37,8 +58,8 @@ export class RegisterCompanyFormComponent {
     this.form = this.fb.group({
       name: ['', Validators.required],
       companyPerson: ['', Validators.required],
-      mobilePhone: ['', Validators.required],
-      landLinePhone: ['', Validators.required],
+      mobilePhone: ['', [Validators.required, phoneNumberValidator]],
+      landLinePhone: ['', [Validators.required, phoneNumberValidator]],
       registrationDocument: [null, Validators.required], // To hold the file
       companyType: ['', Validators.required],
       address: ['', Validators.required],
@@ -50,15 +71,17 @@ export class RegisterCompanyFormComponent {
   async openMapPicker() {
     this.showMapModal = true;
     // allow modal to render
-    await new Promise(r => setTimeout(r, 50));
+    await new Promise(r => setTimeout(r, 100));
     if (!this.mapInitialized) {
       await this.initLeaflet();
     } else {
       // ensure map sizes correctly
-      try { this.map.invalidateSize(); } catch (e) { /* ignore */ }
-      if (this.marker && this.selectedLatLng) {
-        this.map.setView([this.selectedLatLng.lat, this.selectedLatLng.lng], this.map.getZoom());
-      }
+      try { 
+        this.map.invalidateSize(); 
+        if (this.marker && this.selectedLatLng) {
+          this.map.setView([this.selectedLatLng.lat, this.selectedLatLng.lng], this.map.getZoom());
+        }
+      } catch (e) { /* ignore */ }
     }
   }
 
@@ -106,6 +129,14 @@ export class RegisterCompanyFormComponent {
     const container = this.mapContainer?.nativeElement;
     if (!container) return;
 
+    // Fix default marker icons (required when Leaflet is loaded)
+    delete (L.Icon.Default.prototype as any)._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    });
+
     // default center: Kathmandu
     const DEFAULT = { lat: 27.7172, lng: 85.3240, zoom: 13 };
     this.map = L.map(container, { center: [DEFAULT.lat, DEFAULT.lng], zoom: DEFAULT.zoom });
@@ -145,8 +176,9 @@ export class RegisterCompanyFormComponent {
       this.selectedLatLng = { lat: +p.lat.toFixed(6), lng: +p.lng.toFixed(6) };
     });
 
-    // After everything, invalidate to render correctly (small delay)
+    // After everything, invalidate to render correctly (multiple delays to ensure proper rendering)
     setTimeout(() => { try { this.map.invalidateSize(); } catch (e) {} }, 100);
+    setTimeout(() => { try { this.map.invalidateSize(); } catch (e) {} }, 200);
     this.mapInitialized = true;
   }
 
