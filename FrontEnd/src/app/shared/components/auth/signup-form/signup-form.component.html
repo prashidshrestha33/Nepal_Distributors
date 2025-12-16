@@ -1,4 +1,4 @@
-<div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
+<div class="flex flex-col justify-start flex-1 w-full max-w-2xl mx-auto px-4 pt-2">
   <!-- Success Modal Overlay -->
   @if (showSuccessMessage) {
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -30,39 +30,37 @@
   </div>
   }
 
-  <div>
+  <!-- Main Card -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-5 sm:p-6">
     <div class="mb-5 sm:mb-8">
       <h1 class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
-        Step 2 -Register User
+        Step 2 - Register User
       </h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400">
-        Create your account to get started
-      </p>
     </div>
 
     <!-- Error Message -->
     @if (errorMessage) {
-    <div class="p-3 mb-6 text-sm text-red-600 bg-red-50 rounded-lg dark:bg-red-900/20 dark:text-red-400">
+    <div class="p-3 mb-6 text-sm text-red-600 bg-red-50 rounded-lg dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-800">
       {{ errorMessage }}
     </div>
     }
 
     <!-- Company summary -->
-    <div *ngIf="flow.getCompanyForm()" class="p-3 mb-6 text-sm text-gray-700 bg-gray-50 rounded-lg">
-      <strong>Company:</strong> {{ flow.getCompanyForm().name }} — {{ flow.getCompanyForm().companyType }}
+    <div *ngIf="flow.getCompanyForm()" class="p-2.5 mb-4 text-xs text-gray-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+      <strong class="text-blue-900 dark:text-blue-200">Company:</strong> <span class="text-gray-700 dark:text-gray-300">{{ flow.getCompanyForm().name }} — {{ flow.getCompanyForm().companyType }}</span>
     </div>
 
     <!-- If company document is missing, allow re-upload in this step -->
-    <div *ngIf="flow.getCompanyForm() && !flow.getCompanyForm().file" class="mb-4">
-      <p class="text-sm text-gray-600 mb-2">Registration document not found. You can re-upload it here:</p>
+    <div *ngIf="flow.getCompanyForm() && !flow.getCompanyForm().file" class="mb-4 p-2.5 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+      <p class="text-xs text-yellow-800 dark:text-yellow-200 mb-1.5">Registration document not found. You can re-upload it here:</p>
       <input type="file" (change)="onCompanyFileChange($event)" />
-      <div *ngIf="companyFileName" class="text-sm text-gray-500 mt-2">Selected: {{ companyFileName }}</div>
+      <div *ngIf="companyFileName" class="text-xs text-yellow-700 dark:text-yellow-300 mt-1.5">Selected: {{ companyFileName }}</div>
     </div>
 
     <!-- Form -->
-    <form [formGroup]="signupForm" (ngSubmit)="onSignUp()" class="space-y-6">
+    <form [formGroup]="signupForm" (ngSubmit)="onSignUp()" class="space-y-4">
       <!-- Two Column Grid -->
-      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <!-- Full Name -->
         <div class="sm:col-span-1">
           <app-label>
@@ -102,53 +100,6 @@
           <p class="mt-1 text-sm text-red-600 dark:text-red-400">
             @if (phoneNo?.errors?.['required']) {
               Phone number is required
-            }
-          </p>
-          }
-        </div>
-      </div>
-
-      <!-- Two Column Grid -->
-      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <!-- Role -->
-        <div class="sm:col-span-1">
-          <app-label>
-            Role <span class="text-error-500">*</span>
-          </app-label>
-          <input
-            type="text"
-            placeholder="Enter your role"
-            formControlName="role"
-            name="role"
-            class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 bg-transparent text-gray-800 border-gray-300"
-            required
-          />
-          @if (role?.invalid && role?.touched) {
-          <p class="mt-1 text-sm text-red-600 dark:text-red-400">
-            @if (role?.errors?.['required']) {
-              Role is required
-            }
-          </p>
-          }
-        </div>
-
-        <!-- Tier -->
-        <div class="sm:col-span-1">
-          <app-label>
-            Tier <span class="text-error-500">*</span>
-          </app-label>
-          <input
-            type="text"
-            placeholder="Enter your tier"
-            formControlName="tier"
-            name="tier"
-            class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 bg-transparent text-gray-800 border-gray-300"
-            required
-          />
-          @if (tier?.invalid && tier?.touched) {
-          <p class="mt-1 text-sm text-red-600 dark:text-red-400">
-            @if (tier?.errors?.['required']) {
-              Tier is required
             }
           </p>
           }
@@ -209,31 +160,6 @@
             }
           </span>
         </div>
-        <p class="mt-2 text-xs text-gray-600 dark:text-gray-400">
-          Password must contain:
-        </p>
-        <ul class="mt-1 text-xs space-y-1">
-          <li class="flex items-center gap-2" [class.text-green-600]="hasMinLength(password?.value)" [class.text-red-600]="password?.value && !hasMinLength(password?.value)">
-            <span [class]="hasMinLength(password?.value) ? 'text-green-600' : 'text-gray-400'">✓</span>
-            Min 8 characters
-          </li>
-          <li class="flex items-center gap-2" [class.text-green-600]="hasMaxLength(password?.value)" [class.text-red-600]="password?.value && !hasMaxLength(password?.value)">
-            <span [class]="hasMaxLength(password?.value) ? 'text-green-600' : 'text-gray-400'">✓</span>
-            Max 15 characters
-          </li>
-          <li class="flex items-center gap-2" [class.text-green-600]="hasUpperCase(password?.value)" [class.text-red-600]="password?.value && !hasUpperCase(password?.value)">
-            <span [class]="hasUpperCase(password?.value) ? 'text-green-600' : 'text-gray-400'">✓</span>
-            One uppercase letter (A-Z)
-          </li>
-          <li class="flex items-center gap-2" [class.text-green-600]="hasNumber(password?.value)" [class.text-red-600]="password?.value && !hasNumber(password?.value)">
-            <span [class]="hasNumber(password?.value) ? 'text-green-600' : 'text-gray-400'">✓</span>
-            One number (0-9)
-          </li>
-          <li class="flex items-center gap-2" [class.text-green-600]="hasSpecialChar(password?.value)" [class.text-red-600]="password?.value && !hasSpecialChar(password?.value)">
-            <span [class]="hasSpecialChar(password?.value) ? 'text-green-600' : 'text-gray-400'">✓</span>
-            One special character (!@#$%^&*, etc.)
-          </li>
-        </ul>
         @if (password?.invalid && password?.touched) {
         <p class="mt-2 text-sm text-red-600 dark:text-red-400">
           @if (password?.errors?.['required']) {
@@ -246,19 +172,8 @@
         }
       </div>
 
-      <!-- Agree to terms -->
-      <div class="flex items-center gap-3">
-        <label class="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" formControlName="agreeToTerms" class="w-4 h-4 rounded border-gray-300" />
-          <span class="text-sm text-gray-700 dark:text-gray-400">I agree to the Terms and Conditions <span class="text-error-500">*</span></span>
-        </label>
-        @if (agreeToTerms?.invalid && agreeToTerms?.touched) {
-        <p class="mt-1 text-sm text-red-600 dark:text-red-400">You must agree to the terms</p>
-        }
-      </div>
-
       <!-- Confirm Password -->
-      <!-- <div>
+      <div>
         <app-label>Confirm Password <span class="text-error-500">*</span></app-label>
         <input
           [type]="showPassword ? 'text' : 'password'"
@@ -280,8 +195,29 @@
           Passwords do not match
         </p>
         }
-      </div> -->
+      </div>
 
+      <!-- Password Requirements -->
+      <div class="px-3 py-2 bg-gray-50 rounded-lg">
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="flex items-center gap-2" [class.text-green-600]="hasMinLength(password?.value)" [class.text-red-600]="password?.value && !hasMinLength(password?.value)">
+            <span [class]="hasMinLength(password?.value) ? 'text-green-600' : 'text-gray-400'">✓</span>
+            <span>Min 8 char</span>
+          </div>
+          <div class="flex items-center gap-2" [class.text-green-600]="hasUpperCase(password?.value)" [class.text-red-600]="password?.value && !hasUpperCase(password?.value)">
+            <span [class]="hasUpperCase(password?.value) ? 'text-green-600' : 'text-gray-400'">✓</span>
+            <span>Uppercase</span>
+          </div>
+          <div class="flex items-center gap-2" [class.text-green-600]="hasNumber(password?.value)" [class.text-red-600]="password?.value && !hasNumber(password?.value)">
+            <span [class]="hasNumber(password?.value) ? 'text-green-600' : 'text-gray-400'">✓</span>
+            <span>Number</span>
+          </div>
+          <div class="flex items-center gap-2" [class.text-green-600]="hasSpecialChar(password?.value)" [class.text-red-600]="password?.value && !hasSpecialChar(password?.value)">
+            <span [class]="hasSpecialChar(password?.value) ? 'text-green-600' : 'text-gray-400'">✓</span>
+            <span>Special (!@#$%)</span>
+          </div>
+        </div>
+      </div>
       <!-- Submit Button -->
       <button
         type="submit"

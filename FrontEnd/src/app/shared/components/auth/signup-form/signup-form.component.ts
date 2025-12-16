@@ -48,6 +48,22 @@ function emailFormatValidator(control: AbstractControl): ValidationErrors | null
   return null;
 }
 
+// Custom validator for password mismatch
+function passwordMismatchValidator(form: AbstractControl): ValidationErrors | null {
+  const password = form.get('password')?.value;
+  const confirmPassword = form.get('confirmPassword')?.value;
+  
+  if (!password || !confirmPassword) {
+    return null; // Allow empty (required validator handles individual fields)
+  }
+  
+  if (password !== confirmPassword) {
+    return { passwordMismatch: true };
+  }
+  
+  return null;
+}
+
 @Component({
   selector: 'app-signup-form',
   imports: [
@@ -103,12 +119,10 @@ export class SignupFormComponent implements OnInit {
     this.signupForm = this.formBuilder.group({
       firstName: ['', [Validators.required]],
       phoneNo: ['', [Validators.required]],
-      role: ['', [Validators.required]],
-      tier: ['', [Validators.required]],
       email: ['', [Validators.required, emailFormatValidator]],
       password: ['', [Validators.required, strongPasswordValidator]],
-      agreeToTerms: [false, [Validators.requiredTrue]]
-    });
+      confirmPassword: ['', [Validators.required]]
+    }, { validators: passwordMismatchValidator });
 
     // Listen to email field changes to clear email conflict error
     this.signupForm.get('email')?.valueChanges.subscribe(() => {
@@ -144,7 +158,13 @@ export class SignupFormComponent implements OnInit {
       this.errorMessage = 'Please fill in all required fields correctly';
       return;
     }
-    const { firstName, phoneNo, role, tier, email, password } = this.signupForm.value;
+    const { firstName, phoneNo, email, password, confirmPassword } = this.signupForm.value;
+    
+    // Verify passwords match (extra safety check)
+    if (password !== confirmPassword) {
+      this.errorMessage = 'Passwords do not match';
+      return;
+    }
     this.isLoading = true;
     this.errorMessage = '';
 
@@ -191,8 +211,6 @@ export class SignupFormComponent implements OnInit {
     // Register (user) fields
     formData.append('Register.FullName', firstName || '');
     formData.append('Register.Phone', phoneNo || '');
-    formData.append('Register.Role', role || '');
-    formData.append('Register.Tier', tier || '');
     formData.append('Register.Email', email || '');
     formData.append('Register.Password', password || '');
 
@@ -275,11 +293,9 @@ export class SignupFormComponent implements OnInit {
     const map: Record<string, string> = {
       firstName: 'Full Name',
       phoneNo: 'Phone Number',
-      role: 'Role',
-      tier: 'Tier',
       email: 'Email',
       password: 'Password',
-      agreeToTerms: 'Agreement to Terms'
+      confirmPassword: 'Confirm Password',
     };
     return Object.keys(this.signupForm.controls)
       .filter(k => this.signupForm.get(k)?.invalid)
@@ -294,14 +310,6 @@ export class SignupFormComponent implements OnInit {
     return this.signupForm.get('phoneNo');
   }
 
-  get role() {
-    return this.signupForm.get('role');
-  }
-
-  get tier() {
-    return this.signupForm.get('tier');
-  }
-
   get email() {
     return this.signupForm.get('email');
   }
@@ -310,8 +318,8 @@ export class SignupFormComponent implements OnInit {
     return this.signupForm.get('password');
   }
 
-  get agreeToTerms() {
-    return this.signupForm.get('agreeToTerms');
+  get confirmPassword() {
+    return this.signupForm.get('confirmPassword');
   }
 }
 

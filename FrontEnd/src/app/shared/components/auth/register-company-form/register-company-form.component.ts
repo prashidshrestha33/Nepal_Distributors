@@ -74,15 +74,50 @@ export class RegisterCompanyFormComponent {
     await new Promise(r => setTimeout(r, 100));
     if (!this.mapInitialized) {
       await this.initLeaflet();
+      // Try to get user's current location and update marker
+      this.getCurrentLocationAndUpdateMarker();
     } else {
-      // ensure map sizes correctly
-      try { 
-        this.map.invalidateSize(); 
-        if (this.marker && this.selectedLatLng) {
-          this.map.setView([this.selectedLatLng.lat, this.selectedLatLng.lng], this.map.getZoom());
-        }
-      } catch (e) { /* ignore */ }
+      // Map already initialized - reinitialize to fix display issues
+      this.mapInitialized = false;
+      this.map = null;
+      this.marker = null;
+      await this.initLeaflet();
+      this.getCurrentLocationAndUpdateMarker();
     }
+  }
+
+  // Get user's current location and update marker position
+  private getCurrentLocationAndUpdateMarker() {
+    if (!navigator.geolocation) {
+      console.warn('Geolocation is not supported by this browser');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        this.updateMarkerLocation(lat, lng);
+      },
+      (error) => {
+        console.warn('Error getting user location:', error);
+        // Keep default location (Kathmandu) if geolocation fails
+      }
+    );
+  }
+
+  // Update marker to new location
+  private updateMarkerLocation(lat: number, lng: number) {
+    if (!this.marker || !this.map) return;
+
+    this.selectedLatLng = { lat: +lat.toFixed(6), lng: +lng.toFixed(6) };
+    this.marker.setLatLng([lat, lng]);
+    this.map.setView([lat, lng], 13);
+    
+    // Ensure the map updates properly
+    setTimeout(() => { 
+      try { this.map.invalidateSize(); } catch (e) {} 
+    }, 50);
   }
 
   closeMapPicker() {
