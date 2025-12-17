@@ -15,17 +15,30 @@ export class AuthGuard implements CanActivate {
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot
   ): boolean | UrlTree {
-    // Check if token exists in localStorage or sessionStorage
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    // Get token from storage
+    const token = this.authService.getToken();
 
-    // Check if token is valid and not expired
-    if (token && this.authService.isAuthenticated()) {
+    // If no token exists, deny access
+    if (!token) {
+      console.warn('Access denied: No token found. Redirecting to signin.');
+      return this.router.createUrlTree(['/signin'], {
+        queryParams: { returnUrl: state.url }
+      });
+    }
+
+    // Token exists, validate it
+    if (this.authService.isAuthenticated()) {
+      // Token is valid and not expired
       return true;
     }
 
-    // No valid token or token expired, redirect to signin and return false
-    this.router.navigate(['/signin'], { queryParams: { returnUrl: state.url } });
-    return false;
+    // Token exists but is invalid or expired
+    console.warn('Access denied: Token invalid or expired. Redirecting to signin.');
+    this.authService.logout();
+    
+    return this.router.createUrlTree(['/signin'], {
+      queryParams: { returnUrl: state.url }
+    });
   }
 }
 

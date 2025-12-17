@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { LabelComponent } from '../../form/label/label.component';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormGroup, FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { InactivityService } from '../../../services/inactivity.service';
@@ -22,18 +22,23 @@ export class SigninFormComponent implements OnInit {
   loginForm!: FormGroup;
   errorMessage = '';
   isLoading = false;
+  returnUrl: string = '';
 
   constructor(
     private formBuilder: FormBuilder,
     private authService: AuthService,
     private inactivityService: InactivityService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit() {
+    // Get return URL from route parameters or use default
+    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+
     this.loginForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
       rememberMe: [false]
     });
   }
@@ -52,31 +57,44 @@ export class SigninFormComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.authService.login(email, password).subscribe({
+    // Call login with rememberMe flag
+    this.authService.login(email, password, rememberMe).subscribe({
       next: (response: any) => {
         this.isLoading = false;
 
         // Backend should return { token: 'JWT-TOKEN' }
         const token = response?.token;
         if (token) {
-          // Save token to localStorage as requested
-          localStorage.setItem('token', token);
+          // Token is already saved by the service in the login method
+          console.log('User logged in successfully');
+
+          // Initialize inactivity timer after successful login
+          this.inactivityService.initInactivityTimer();
+
+          // Navigate to the return URL or dashboard
+          const navigationPath = this.returnUrl.startsWith('/') 
+            ? this.returnUrl 
+            : '/' + this.returnUrl;
+          
+          this.router.navigate([navigationPath], { replaceUrl: true });
+        } else {
+          this.errorMessage = 'No token received from server. Please try again.';
         }
-
-        // Initialize inactivity timer after successful login
-        this.inactivityService.initInactivityTimer();
-
-        // Navigate to dashboard on success
-        this.router.navigate(['/dashboard'], { replaceUrl: true });
       },
       error: (error: any) => {
         this.isLoading = false;
-        // Check for 401 status (unauthorized - wrong credentials)
+        
+        // Handle different error status codes
         if (error?.status === 401) {
-          this.errorMessage = 'Invalid username or password';
+          this.errorMessage = 'Invalid email or password';
+        } else if (error?.status === 403) {
+          this.errorMessage = 'Access forbidden. Please contact administrator.';
+        } else if (error?.status === 0) {
+          this.errorMessage = 'Unable to connect to the server. Please check your connection.';
         } else {
-          this.errorMessage = error?.error?.message || 'Invalid username or password';
+          this.errorMessage = error?.error?.message || 'Login failed. Please try again.';
         }
+
         console.error('Login error:', error);
       }
     });

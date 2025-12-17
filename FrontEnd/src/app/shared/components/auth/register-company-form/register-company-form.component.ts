@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { SignupFlowService } from '../../../services/signup-flow.service';
+import { FormDataService } from '../../../services/form-data.service';
+import { RegistrationFlowService } from '../../../services/registration-flow.service';
 
 // Phone number validator: 7-10 digits only
 function phoneNumberValidator(control: AbstractControl): ValidationErrors | null {
@@ -33,7 +35,7 @@ function phoneNumberValidator(control: AbstractControl): ValidationErrors | null
   templateUrl: './register-company-form.component.html',
   styles: [],
 })
-export class RegisterCompanyFormComponent {
+export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
   form: FormGroup;
   loading = false;
   createdCompanyId: number | null = null;
@@ -48,12 +50,17 @@ export class RegisterCompanyFormComponent {
   private marker: any = null;
   private mapInitialized = false;
   private selectedLatLng: { lat: number; lng: number } | null = null;
+  
+  // Registration flow state
+  isComingFromSignup = false;
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private flow: SignupFlowService,
-    private router: Router
+    private router: Router,
+    private formDataService: FormDataService,
+    private registrationFlowService: RegistrationFlowService
   ) {
     this.form = this.fb.group({
       name: ['', Validators.required],
@@ -65,6 +72,46 @@ export class RegisterCompanyFormComponent {
       address: ['', Validators.required],
       googleMapLocation: ['', Validators.required],
     });
+  }
+
+  ngOnInit(): void {
+    // Check if coming from signup form
+    this.isComingFromSignup = this.registrationFlowService.isComingFromSignup();
+    
+    if (this.isComingFromSignup) {
+      // Coming from signup - load and pre-fill saved data
+      const preFillData = this.registrationFlowService.getFormData();
+      if (preFillData) {
+        this.form.patchValue(preFillData);
+      } else {
+        // Try loading from FormDataService as fallback
+        const savedCompanyData = this.formDataService.getCompanyData();
+        if (savedCompanyData) {
+          this.form.patchValue(savedCompanyData);
+        }
+      }
+      // After pre-filling, reset the flag so direct navigation doesn't pre-fill
+      this.registrationFlowService.setComingFromSignup(false);
+    } else {
+      // NOT coming from signup - direct navigation detected
+      // Clear everything: form, localStorage, and any saved data
+      this.form.reset();
+      this.fileName = '';
+      this.filePreview = null;
+      this.createdCompanyId = null;
+      this.error = null;
+      
+      // Clear localStorage
+      localStorage.removeItem('companyFormData');
+      localStorage.removeItem('registrationFlowData');
+      localStorage.removeItem('signupFormData');
+      
+      // Clear FormDataService
+      this.formDataService.clearCompanyData();
+      
+      // Clear RegistrationFlowService
+      this.registrationFlowService.clearFormData();
+    }
   }
 
   // Open the map picker modal (lazy initializes Leaflet)
@@ -339,12 +386,19 @@ export class RegisterCompanyFormComponent {
 
     const file: File | null = this.form.get('registrationDocument')?.value || null;
     if (file) {
-      companyData.file = file; // keep the File object in memory (SignupFlowService)
+      companyData.registrationDocument = file; // keep the File object in memory
       this.fileName = file.name;
     }
 
-    // Persist company data in the flow service (and localStorage for non-file fields)
+    // Persist company data via FormDataService
+    this.formDataService.saveCompanyData(companyData);
+
+    // Also persist in the flow service for backward compatibility
     this.flow.setCompanyForm(companyData);
+
+    // Update registration flow state for next step
+    this.registrationFlowService.setStep(2);
+    this.registrationFlowService.setFormData(companyData);
 
     // Small UX pause so button shows loading state briefly
     setTimeout(() => {

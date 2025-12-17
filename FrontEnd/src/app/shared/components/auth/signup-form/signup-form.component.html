@@ -1,4 +1,4 @@
-<div class="flex flex-col justify-start flex-1 w-full max-w-2xl mx-auto px-4 pt-2">
+<div class="flex flex-col justify-start flex-1 w-full max-w-2xl mx-auto px-2 pt-1">
   <!-- Success Modal Overlay -->
   @if (showSuccessMessage) {
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -31,8 +31,8 @@
   }
 
   <!-- Main Card -->
-  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-5 sm:p-6">
-    <div class="mb-5 sm:mb-8">
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
+    <div class="mb-3 sm:mb-4">
       <h1 class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
         Step 2 - Register User
       </h1>
@@ -58,9 +58,9 @@
     </div>
 
     <!-- Form -->
-    <form [formGroup]="signupForm" (ngSubmit)="onSignUp()" class="space-y-4">
+    <form [formGroup]="signupForm" (ngSubmit)="onSignUp()" class="space-y-2">
       <!-- Two Column Grid -->
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <!-- Full Name -->
         <div class="sm:col-span-1">
           <app-label>
@@ -199,42 +199,50 @@
 
       <!-- Password Requirements -->
       <div class="px-3 py-2 bg-gray-50 rounded-lg">
-        <div class="grid grid-cols-2 gap-2 text-xs">
-          <div class="flex items-center gap-2" [class.text-green-600]="hasMinLength(password?.value)" [class.text-red-600]="password?.value && !hasMinLength(password?.value)">
-            <span [class]="hasMinLength(password?.value) ? 'text-green-600' : 'text-gray-400'">✓</span>
-            <span>Min 8 char</span>
+        <div class="flex flex-wrap gap-4 text-xs">
+          <div class="flex items-center gap-1" [class.text-green-600]="hasMinLength(password?.value)" [class.text-red-600]="password?.value && !hasMinLength(password?.value)">
+            <span [class]="hasMinLength(password?.value) ? 'text-green-600' : 'text-gray-400'">✔</span>
+            <span>8+ chars</span>
           </div>
-          <div class="flex items-center gap-2" [class.text-green-600]="hasUpperCase(password?.value)" [class.text-red-600]="password?.value && !hasUpperCase(password?.value)">
-            <span [class]="hasUpperCase(password?.value) ? 'text-green-600' : 'text-gray-400'">✓</span>
-            <span>Uppercase</span>
+          <div class="flex items-center gap-1" [class.text-green-600]="hasUpperCase(password?.value)" [class.text-red-600]="password?.value && !hasUpperCase(password?.value)">
+            <span [class]="hasUpperCase(password?.value) ? 'text-green-600' : 'text-gray-400'">✔</span>
+            <span>A–Z</span>
           </div>
-          <div class="flex items-center gap-2" [class.text-green-600]="hasNumber(password?.value)" [class.text-red-600]="password?.value && !hasNumber(password?.value)">
-            <span [class]="hasNumber(password?.value) ? 'text-green-600' : 'text-gray-400'">✓</span>
-            <span>Number</span>
+          <div class="flex items-center gap-1" [class.text-green-600]="hasNumber(password?.value)" [class.text-red-600]="password?.value && !hasNumber(password?.value)">
+            <span [class]="hasNumber(password?.value) ? 'text-green-600' : 'text-gray-400'">✔</span>
+            <span>0–9</span>
           </div>
-          <div class="flex items-center gap-2" [class.text-green-600]="hasSpecialChar(password?.value)" [class.text-red-600]="password?.value && !hasSpecialChar(password?.value)">
-            <span [class]="hasSpecialChar(password?.value) ? 'text-green-600' : 'text-gray-400'">✓</span>
-            <span>Special (!@#$%)</span>
+          <div class="flex items-center gap-1" [class.text-green-600]="hasSpecialChar(password?.value)" [class.text-red-600]="password?.value && !hasSpecialChar(password?.value)">
+            <span [class]="hasSpecialChar(password?.value) ? 'text-green-600' : 'text-gray-400'">✔</span>
+            <span>!@#$%</span>
           </div>
         </div>
       </div>
-      <!-- Submit Button -->
-      <button
-        type="submit"
-        [disabled]="isLoading || signupForm.invalid"
-        class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        @if (isLoading) {
-          <span class="inline-block w-4 h-4 mr-2 border-2 border-gray-300 border-t-white rounded-full animate-spin"></span>
-          Signing up...
-        } @else {
-          Sign Up
-        }
-      </button>
 
-      <!-- If the form is invalid, show which fields are missing to help the user -->
-      <div *ngIf="signupForm.invalid && (signupForm.touched || signupForm.dirty)" class="mt-3 text-sm text-red-600">
-        Missing: {{ getInvalidControls().join(', ') }}
+      <!-- Submit and Back Buttons -->
+      <div class="flex gap-3">
+        <!-- Back Button -->
+        <button
+          type="button"
+          (click)="goBack()"
+          class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 transition rounded-lg bg-gray-100 border border-gray-300 shadow-theme-xs hover:bg-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
+        >
+          Back
+        </button>
+
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          [disabled]="isLoading || signupForm.invalid"
+          class="flex-1 flex items-center justify-center px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          @if (isLoading) {
+            <span class="inline-block w-4 h-4 mr-2 border-2 border-gray-300 border-t-white rounded-full animate-spin"></span>
+            Signing up...
+          } @else {
+            Sign Up
+          }
+        </button>
       </div>
     </form>
 

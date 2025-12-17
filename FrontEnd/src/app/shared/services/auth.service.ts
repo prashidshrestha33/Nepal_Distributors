@@ -17,24 +17,63 @@ export class AuthService {
   ) {}
 
   /**
+   * Decode JWT token to extract claims
+   * @param token The JWT token to decode
+   * @returns Decoded token payload
+   */
+  private decodeToken(token: string): any {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        throw new Error('Invalid token format');
+      }
+
+      // Decode the payload (second part)
+      const payload = parts[1];
+      const decodedPayload = atob(payload);
+      return JSON.parse(decodedPayload);
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if JWT token is expired by examining its exp claim
+   * @param token The JWT token to check
+   * @returns True if token is expired, false otherwise
+   */
+  private isJwtExpired(token: string): boolean {
+    try {
+      const decoded = this.decodeToken(token);
+      if (!decoded || !decoded.exp) {
+        return true; // Invalid token, treat as expired
+      }
+
+      // exp is in seconds, convert to milliseconds and compare with current time
+      const expirationTime = decoded.exp * 1000;
+      const currentTime = new Date().getTime();
+
+      return currentTime > expirationTime;
+    } catch (error) {
+      console.error('Error checking JWT expiration:', error);
+      return true; // Treat as expired on error
+    }
+  }
+
+  /**
    * Save token to localStorage or sessionStorage based on rememberMe flag
    * @param token The authentication token
    * @param rememberMe If true, save to localStorage (persistent); if false, save to sessionStorage (session-only)
    */
   saveToken(token?: string, rememberMe: boolean = false): void {
     if (token) {
-      const expiryTime = new Date().getTime() + this.TOKEN_EXPIRY_TIME;
-
       if (rememberMe) {
         localStorage.setItem('token', token);
-        localStorage.setItem('tokenExpiry', expiryTime.toString());
         sessionStorage.removeItem('token');
-        sessionStorage.removeItem('tokenExpiry');
       } else {
         sessionStorage.setItem('token', token);
-        sessionStorage.setItem('tokenExpiry', expiryTime.toString());
         localStorage.removeItem('token');
-        localStorage.removeItem('tokenExpiry');
       }
     }
   }
@@ -48,22 +87,36 @@ export class AuthService {
   }
 
   /**
-   * Check if token is expired
+   * Check if token is expired by checking JWT exp claim
    */
   isTokenExpired(): boolean {
     const token = this.getToken();
     if (!token) return true;
 
-    const expiryTime = localStorage.getItem('tokenExpiry') || sessionStorage.getItem('tokenExpiry');
-    if (!expiryTime) return false;
+    // Use JWT expiration claim
+    return this.isJwtExpired(token);
+  }
 
-    const currentTime = new Date().getTime();
-    return currentTime > parseInt(expiryTime);
+  /**
+   * Validate JWT token format and expiration
+   * @param token The JWT token to validate
+   * @returns True if token is valid, false otherwise
+   */
+  isTokenValid(token: string): boolean {
+    if (!token) return false;
+
+    // Check token format (should have 3 parts separated by dots)
+    if (token.split('.').length !== 3) {
+      return false;
+    }
+
+    // Check if token is expired
+    return !this.isJwtExpired(token);
   }
 
   /**
    * Check if user is authenticated
-   * Verifies token exists, is not empty, and is not expired
+   * Verifies token exists, is not empty, is not expired, and is valid
    */
   isAuthenticated(): boolean {
     const token = this.getToken();
@@ -72,8 +125,16 @@ export class AuthService {
       return false;
     }
 
+    // Check stored expiry time
     if (this.isTokenExpired()) {
       // Auto-logout if token is expired
+      this.logout();
+      return false;
+    }
+
+    // Validate JWT token format and expiration claims
+    if (!this.isTokenValid(token)) {
+      // Auto-logout if token is invalid
       this.logout();
       return false;
     }
@@ -82,14 +143,32 @@ export class AuthService {
   }
 
   /**
+   * Get user claims from JWT token
+   * @returns Decoded token claims or null if invalid
+   */
+  getTokenClaims(): any {
+    const token = this.getToken();
+    if (!token) return null;
+
+    return this.decodeToken(token);
+  }
+
+  /**
    * Login user with email and password
    * @param email User email
    * @param password User password
    * @param rememberMe If true, remember user for future sessions
    */
-  login(email: string, password: string): Observable<any> {
+  login(email: string, password: string, rememberMe: boolean = false): Observable<any> {
     const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
-    return this.http.post<any>(`${this.api}/api/auth/login`, { email, password }, { headers });
+    return this.http.post<any>(`${this.api}/api/auth/login`, { email, password }, { headers })
+      .pipe(
+        tap(res => {
+          if (res?.token) {
+            this.saveToken(res.token, rememberMe);
+          }
+        })
+      );
   }
 
   /**
@@ -149,9 +228,7 @@ export class AuthService {
    */
   logout(): void {
     localStorage.removeItem('token');
-    localStorage.removeItem('tokenExpiry');
     sessionStorage.removeItem('token');
-    sessionStorage.removeItem('tokenExpiry');
     
     // Navigate to signin with replaceUrl: true to clear browser history
     // This prevents users from using browser back button to access dashboard

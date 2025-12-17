@@ -22,112 +22,120 @@ import { CalenderComponent } from './pages/calender/calender.component';
 import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'signin', pathMatch: 'full' },
+  // Default route - redirect to signin
+  { path: '', redirectTo: '/signin', pathMatch: 'full' },
+  
+  // Public auth pages (accessible without login)
   {
-    path:'',
-    component:AppLayoutComponent,
+    path: 'signin',
+    component: SignInComponent,
+    title: 'Nepal Distributors - Sign In'
+  },
+  {
+    path: 'signup',
+    component: SignUpComponent,
+    title: 'Nepal Distributors - Sign Up'
+  },
+  {
+    path: 'register-company',
+    component: RegisterCompanyComponent,
+    title: 'Nepal Distributors - Register Company'
+  },
+
+  // Protected routes (requires authentication)
+  {
+    path: '',
+    component: AppLayoutComponent,
     canActivate: [AuthGuard],
-    children:[
+    children: [
+      {
+        path: 'dashboard',
+        component: EcommerceComponent,
+        title: 'Nepal Distributors - Dashboard'
+      },
       {
         path: '',
         component: EcommerceComponent,
         pathMatch: 'full',
-        title:
-          'Nepal Distributors',
+        title: 'Nepal Distributors - Dashboard'
       },
       {
-        path:'calendar',
-        component:CalenderComponent,
-        title:'Nepal Distributors'
+        path: 'calendar',
+        component: CalenderComponent,
+        title: 'Nepal Distributors - Calendar'
       },
       {
-        path:'profile',
-        component:ProfileComponent,
-        title:'Nepal Distributors'
+        path: 'profile',
+        component: ProfileComponent,
+        title: 'Nepal Distributors - Profile'
       },
       {
-        path:'form-elements',
-        component:FormElementsComponent,
-        title:'Nepal Distributors'
+        path: 'form-elements',
+        component: FormElementsComponent,
+        title: 'Nepal Distributors - Forms'
       },
       {
-        path:'basic-tables',
-        component:BasicTablesComponent,
-        title:'Nepal Distributors'
+        path: 'basic-tables',
+        component: BasicTablesComponent,
+        title: 'Nepal Distributors - Tables'
       },
       {
-        path:'blank',
-        component:BlankComponent,
-        title:'Nepal Distributors'
-      },
-      // support tickets
-      {
-        path:'invoice',
-        component:InvoicesComponent,
-        title:'Nepal Distributors'
+        path: 'blank',
+        component: BlankComponent,
+        title: 'Nepal Distributors - Blank'
       },
       {
-        path:'line-chart',
-        component:LineChartComponent,
-        title:'Nepal Distributors'
+        path: 'invoice',
+        component: InvoicesComponent,
+        title: 'Nepal Distributors - Invoices'
       },
       {
-        path:'bar-chart',
-        component:BarChartComponent,
-        title:'Nepal Distributors'
+        path: 'line-chart',
+        component: LineChartComponent,
+        title: 'Nepal Distributors - Line Chart'
       },
       {
-        path:'alerts',
-        component:AlertsComponent,
-        title:'Nepal Distributors'
+        path: 'bar-chart',
+        component: BarChartComponent,
+        title: 'Nepal Distributors - Bar Chart'
       },
       {
-        path:'avatars',
-        component:AvatarElementComponent,
-        title:'Nepal Distributors'
+        path: 'alerts',
+        component: AlertsComponent,
+        title: 'Nepal Distributors - Alerts'
       },
       {
-        path:'badge',
-        component:BadgesComponent,
-        title:'Nepal Distributors'
+        path: 'avatars',
+        component: AvatarElementComponent,
+        title: 'Nepal Distributors - Avatars'
       },
       {
-        path:'buttons',
-        component:ButtonsComponent,
-        title:'Nepal Distributors'
+        path: 'badge',
+        component: BadgesComponent,
+        title: 'Nepal Distributors - Badges'
       },
       {
-        path:'images',
-        component:ImagesComponent,
-        title:'Nepal Distributors'
+        path: 'buttons',
+        component: ButtonsComponent,
+        title: 'Nepal Distributors - Buttons'
       },
       {
-        path:'videos',
-        component:VideosComponent,
-        title:'Nepal Distributors'
+        path: 'images',
+        component: ImagesComponent,
+        title: 'Nepal Distributors - Images'
       },
+      {
+        path: 'videos',
+        component: VideosComponent,
+        title: 'Nepal Distributors - Videos'
+      }
     ]
   },
-  // auth pages
+
+  // 404 - Not Found (must be last)
   {
-    path:'signin',
-    component:SignInComponent,
-    title:'Nepal Distributors'
-  },
-  {
-    path:'signup',
-    component:SignUpComponent,
-    title:'Nepal Distributors'
-  },
-  {
-    path:'register-company',
-    component:RegisterCompanyComponent,
-    title:'Nepal Distributors'
-  },
-  // error pages
-  {
-    path:'**',
-    component:NotFoundComponent,
-    title:'Nepal Distributors'
-  },
+    path: '**',
+    component: NotFoundComponent,
+    title: 'Nepal Distributors - Not Found'
+  }
 ];

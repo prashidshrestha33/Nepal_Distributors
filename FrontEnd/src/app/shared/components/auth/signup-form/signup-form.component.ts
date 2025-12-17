@@ -6,6 +6,8 @@ import { FormGroup, FormBuilder, Validators, ReactiveFormsModule, AbstractContro
 import { AuthService } from '../../../services/auth.service';
 import { InactivityService } from '../../../services/inactivity.service';
 import { SignupFlowService } from '../../../services/signup-flow.service';
+import { FormDataService } from '../../../services/form-data.service';
+import { RegistrationFlowService } from '../../../services/registration-flow.service';
 
 // Custom validator for strong password
 function strongPasswordValidator(control: AbstractControl): ValidationErrors | null {
@@ -91,7 +93,9 @@ export class SignupFormComponent implements OnInit {
     private authService: AuthService,
     private inactivityService: InactivityService,
     private router: Router,
-    public flow: SignupFlowService
+    public flow: SignupFlowService,
+    private formDataService: FormDataService,
+    private registrationFlowService: RegistrationFlowService
   ) {}
 
   // Helper methods for password validation
@@ -129,6 +133,18 @@ export class SignupFormComponent implements OnInit {
       this.emailConflictError = ''; // Clear email conflict error when user types
     });
 
+    // Load saved user data from FormDataService if available
+    const savedUserData = this.formDataService.getUserData();
+    if (savedUserData) {
+      this.signupForm.patchValue({
+        firstName: savedUserData.firstName,
+        phoneNo: savedUserData.phoneNo,
+        email: savedUserData.email,
+        password: savedUserData.password,
+        confirmPassword: savedUserData.confirmPassword
+      });
+    }
+
     // Ensure we have company data from Step 1. If not present, redirect user back.
     const companyData = this.flow.getCompanyForm();
     if (!companyData) {
@@ -165,6 +181,17 @@ export class SignupFormComponent implements OnInit {
       this.errorMessage = 'Passwords do not match';
       return;
     }
+    
+    // Save user data to FormDataService before submission
+    this.formDataService.saveUserData({
+      firstName,
+      phoneNo,
+      email,
+      password,
+      confirmPassword,
+      agreeToTerms: true
+    });
+    
     this.isLoading = true;
     this.errorMessage = '';
 
@@ -235,6 +262,9 @@ export class SignupFormComponent implements OnInit {
 
         // Clear transient company data
         this.flow.clearCompanyForm();
+        
+        // Clear FormDataService data after successful registration
+        this.formDataService.clearAll();
 
         // Show success message
         this.successMessage = `${companyName} has been Registered Successfully. Please wait for Admin to Approve your Request.`;
@@ -320,6 +350,29 @@ export class SignupFormComponent implements OnInit {
 
   get confirmPassword() {
     return this.signupForm.get('confirmPassword');
+  }
+
+  /**
+   * Navigate back to Step 1 (company registration)
+   * Saves current form data to FormDataService before navigating
+   * Sets flag in RegistrationFlowService to indicate coming from signup
+   */
+  goBack(): void {
+    const formValues = this.signupForm.value;
+    this.formDataService.saveUserData({
+      firstName: formValues.firstName,
+      phoneNo: formValues.phoneNo,
+      email: formValues.email,
+      password: formValues.password,
+      confirmPassword: formValues.confirmPassword,
+      agreeToTerms: true
+    });
+    
+    // Set flag indicating user is coming from signup form
+    this.registrationFlowService.setComingFromSignup(true);
+    this.registrationFlowService.setStep(1);
+    
+    this.router.navigate(['/register-company']);
   }
 }
 
