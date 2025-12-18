@@ -19,6 +19,7 @@ import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
 import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
 import { RegisterCompanyComponent } from './pages/auth-pages/register-company/register-company.component';
 import { CalenderComponent } from './pages/calender/calender.component';
+import { ProductsComponent } from './pages/products/products.component';
 import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -128,6 +129,11 @@ export const routes: Routes = [
         path: 'videos',
         component: VideosComponent,
         title: 'Nepal Distributors - Videos'
+      },
+      {
+        path: 'products',
+        component: ProductsComponent,
+        title: 'Nepal Distributors - Products'
       }
     ]
   },

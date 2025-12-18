@@ -34,6 +34,11 @@ export class AppSidebarComponent {
       ],
     },
     {
+      icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M2 6.5C2 5.11929 3.11929 4 4.5 4H19.5C20.8807 4 22 5.11929 22 6.5V17.5C22 18.8807 20.8807 20 19.5 20H4.5C3.11929 20 2 18.8807 2 17.5V6.5ZM4.5 6C4.27909 6 4.1 6.27909 4.1 6.5V8.4H19.9V6.5C19.9 6.27909 19.7209 6 19.5 6H4.5ZM4.1 10.5V17.5C4.1 17.7209 4.27909 17.9 4.5 17.9H19.5C19.7209 17.9 19.9 17.7209 19.9 17.5V10.5H4.1Z" fill="currentColor"></path></svg>`,
+      name: "Products",
+      path: "/products",
+    },
+    {
       icon: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M8 2C8.41421 2 8.75 2.33579 8.75 2.75V3.75H15.25V2.75C15.25 2.33579 15.5858 2 16 2C16.4142 2 16.75 2.33579 16.75 2.75V3.75H18.5C19.7426 3.75 20.75 4.75736 20.75 6V9V19C20.75 20.2426 19.7426 21.25 18.5 21.25H5.5C4.25736 21.25 3.25 20.2426 3.25 19V9V6C3.25 4.75736 4.25736 3.75 5.5 3.75H7.25V2.75C7.25 2.33579 7.58579 2 8 2ZM8 5.25H5.5C5.08579 5.25 4.75 5.58579 4.75 6V8.25H19.25V6C19.25 5.58579 18.9142 5.25 18.5 5.25H16H8ZM19.25 9.75H4.75V19C4.75 19.4142 5.08579 19.75 5.5 19.75H18.5C18.9142 19.75 19.25 19.4142 19.25 19V9.75Z" fill="currentColor"></path></svg>`,
       name: "Calendar",
       path: "/calendar",
@@ -58,7 +63,7 @@ export class AppSidebarComponent {
       name: "Authentication",
       subItems: [
         { name: "Sign In", path: "/signin", pro: false },
-        { name: "Sign Up", path: "/signup", pro: false },
+        { name: "Sign Up", path: "/register-company", pro: false },
       ],
     },
   ];

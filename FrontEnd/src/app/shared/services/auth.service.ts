@@ -164,8 +164,10 @@ export class AuthService {
     return this.http.post<any>(`${this.api}/api/auth/login`, { email, password }, { headers })
       .pipe(
         tap(res => {
-          if (res?.token) {
-            this.saveToken(res.token, rememberMe);
+          // Backend returns token inside result object: { result: { token: '...' } }
+          const token = res?.result?.token || res?.token;
+          if (token) {
+            this.saveToken(token, rememberMe);
           }
         })
       );

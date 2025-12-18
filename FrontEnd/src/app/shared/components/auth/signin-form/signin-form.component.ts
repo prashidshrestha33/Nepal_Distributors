@@ -33,8 +33,8 @@ export class SigninFormComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    // Get return URL from route parameters or use default
-    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+    // Get return URL from route parameters or default to dashboard
+    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
 
     this.loginForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
@@ -62,8 +62,8 @@ export class SigninFormComponent implements OnInit {
       next: (response: any) => {
         this.isLoading = false;
 
-        // Backend should return { token: 'JWT-TOKEN' }
-        const token = response?.token;
+        // Backend returns token inside result object: { result: { token: '...' } }
+        const token = response?.result?.token || response?.token;
         if (token) {
           // Token is already saved by the service in the login method
           console.log('User logged in successfully');
@@ -85,8 +85,8 @@ export class SigninFormComponent implements OnInit {
         this.isLoading = false;
         
         // Handle different error status codes
-        if (error?.status === 401) {
-          this.errorMessage = 'Invalid email or password';
+        if (error?.status === 401 || error?.status === 400) {
+          this.errorMessage = 'Invalid username or password';
         } else if (error?.status === 403) {
           this.errorMessage = 'Access forbidden. Please contact administrator.';
         } else if (error?.status === 0) {
