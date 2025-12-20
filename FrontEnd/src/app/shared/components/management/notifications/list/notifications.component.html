@@ -1,0 +1,28 @@
+<div class="space-y-6">
+  <div class="flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-gray-800">Notifications</h1>
+  </div>
+  <div class="bg-white rounded-lg shadow p-4">
+    <input type="text" placeholder="Search..." [(ngModel)]="searchTerm" (keyup)="onSearch()" 
+      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+  </div>
+  <div class="space-y-4">
+    <div *ngFor="let notif of filteredItems" class="bg-white rounded-lg shadow p-4 border-l-4" 
+      [ngClass]="{'border-green-500': notif.type==='order', 'border-blue-500': notif.type==='quotation', 'border-gray-500': notif.type==='system'}">
+      <div class="flex justify-between items-start">
+        <div class="flex-1">
+          <h3 class="font-semibold text-gray-800">{{ notif.type | titlecase }}</h3>
+          <p class="text-gray-600 text-sm mt-1">{{ notif.message }}</p>
+          <span class="text-xs text-gray-500 mt-2 inline-block">{{ notif.createdAt | date: 'MMM dd, yyyy HH:mm' }}</span>
+        </div>
+        <div class="flex gap-2">
+          <button *ngIf="!notif.read" (click)="markAsRead(notif.id!)" class="text-blue-500 text-sm">Mark as Read</button>
+          <button (click)="delete(notif.id!)" class="text-red-500 text-sm">Delete</button>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="filteredItems.length === 0" class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+      No notifications found
+    </div>
+  </div>
+</div>

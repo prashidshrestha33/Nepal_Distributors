@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { DropdownComponent } from '../../ui/dropdown/dropdown.component';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -11,13 +11,40 @@ import { InactivityService } from '../../../services/inactivity.service';
   templateUrl: './user-dropdown.component.html',
   imports:[CommonModule,RouterModule,DropdownComponent,DropdownItemTwoComponent]
 })
-export class UserDropdownComponent {
+export class UserDropdownComponent implements OnInit {
   isOpen = false;
+  userName: string = 'Guest';
+  userEmail: string = 'guest@example.com';
+  userInitials: string = 'G';
 
   constructor(
     private authService: AuthService,
     private inactivityService: InactivityService
-  ) {}
+  ) {
+    this.loadUserData();
+  }
+
+  ngOnInit() {
+    this.loadUserData();
+  }
+
+  loadUserData() {
+    try {
+      const claims = this.authService.getTokenClaims();
+      if (claims) {
+        // Extract user data from JWT claims
+        // Adjust these fields based on what your backend returns in the JWT
+        this.userName = claims.name || claims.fullName || claims.email?.split('@')[0] || 'User';
+        this.userEmail = claims.email || 'No email';
+        
+        // Generate initials from name
+        const names = this.userName.split(' ');
+        this.userInitials = names.map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
+  }
 
   toggleDropdown() {
     this.isOpen = !this.isOpen;
