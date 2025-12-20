@@ -1,33 +1,40 @@
 import { Routes } from '@angular/router';
-import { ProfileComponent } from './pages/profile/profile.component';
-import { FormElementsComponent } from './pages/forms/form-elements/form-elements.component';
-import { BasicTablesComponent } from './pages/tables/basic-tables/basic-tables.component';
-import { BlankComponent } from './pages/blank/blank.component';
 import { NotFoundComponent } from './pages/other-page/not-found/not-found.component';
 import { AppLayoutComponent } from './shared/layout/app-layout/app-layout.component';
-import { InvoicesComponent } from './pages/invoices/invoices.component';
-import { LineChartComponent } from './pages/charts/line-chart/line-chart.component';
-import { BarChartComponent } from './pages/charts/bar-chart/bar-chart.component';
-import { AlertsComponent } from './pages/ui-elements/alerts/alerts.component';
-import { AvatarElementComponent } from './pages/ui-elements/avatar-element/avatar-element.component';
-import { BadgesComponent } from './pages/ui-elements/badges/badges.component';
-import { ButtonsComponent } from './pages/ui-elements/buttons/buttons.component';
-import { ImagesComponent } from './pages/ui-elements/images/images.component';
-import { VideosComponent } from './pages/ui-elements/videos/videos.component';
 import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
 import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
 import { RegisterCompanyComponent } from './pages/auth-pages/register-company/register-company.component';
-import { CalenderComponent } from './pages/calender/calender.component';
-import { ProductsComponent } from './pages/products/products.component';
 import { AuthGuard } from './guards/auth.guard';
-import { AdminLayoutComponent } from './admin/shared/layout/admin-layout.component';
-import { adminRoutes } from './admin/admin.routes';
+
+// Management Components - Users
+import { UsersComponent } from './shared/components/management/users/list/users.component';
+import { UserFormComponent } from './shared/components/management/users/form/user-form.component';
+
+// Management Components - Categories
+import { CategoriesComponent } from './shared/components/management/categories/list/categories.component';
+import { CategoryFormComponent } from './shared/components/management/categories/form/category-form.component';
+
+// Management Components - Products
+import { ProductsComponent as ProductsMgmtComponent } from './shared/components/management/products/list/products.component';
+import { ProductFormComponent } from './shared/components/management/products/form/product-form.component';
+
+// Management Components - Orders
+import { OrdersComponent } from './shared/components/management/orders/list/orders.component';
+import { OrderFormComponent } from './shared/components/management/orders/form/order-form.component';
+
+// Management Components - Notifications
+import { NotificationsComponent } from './shared/components/management/notifications/list/notifications.component';
+
+// Management Components - Quotations
+import { QuotationsComponent } from './shared/components/management/quotations/list/quotations.component';
+import { QuotationFormComponent } from './shared/components/management/quotations/form/quotation-form.component';
+
+// Management Components - Static Values
+import { StaticValuesComponent } from './shared/components/management/static-values/list/static-values.component';
+import { StaticValueFormComponent } from './shared/components/management/static-values/form/static-value-form.component';
 
 export const routes: Routes = [
-  // Default route - redirect to admin dashboard
-  { path: '', redirectTo: '/admin/dashboard', pathMatch: 'full' },
-  
-  // Public auth pages (accessible without login)
+  // Public auth pages
   {
     path: 'signin',
     component: SignInComponent,
@@ -44,99 +51,82 @@ export const routes: Routes = [
     title: 'Nepal Distributors - Register Company'
   },
 
-  // Protected routes (requires authentication)
+  // Protected routes
   {
     path: '',
     component: AppLayoutComponent,
     canActivate: [AuthGuard],
     children: [
+      // Management Routes
       {
-        path: 'calendar',
-        component: CalenderComponent,
-        title: 'Nepal Distributors - Calendar'
+        path: 'users',
+        component: UsersComponent,
+        title: 'Nepal Distributors - Users'
       },
       {
-        path: 'profile',
-        component: ProfileComponent,
-        title: 'Nepal Distributors - Profile'
+        path: 'users/add',
+        component: UserFormComponent,
+        title: 'Nepal Distributors - Add User'
       },
       {
-        path: 'form-elements',
-        component: FormElementsComponent,
-        title: 'Nepal Distributors - Forms'
+        path: 'categories',
+        component: CategoriesComponent,
+        title: 'Nepal Distributors - Categories'
       },
       {
-        path: 'basic-tables',
-        component: BasicTablesComponent,
-        title: 'Nepal Distributors - Tables'
-      },
-      {
-        path: 'blank',
-        component: BlankComponent,
-        title: 'Nepal Distributors - Blank'
-      },
-      {
-        path: 'invoice',
-        component: InvoicesComponent,
-        title: 'Nepal Distributors - Invoices'
-      },
-      {
-        path: 'line-chart',
-        component: LineChartComponent,
-        title: 'Nepal Distributors - Line Chart'
-      },
-      {
-        path: 'bar-chart',
-        component: BarChartComponent,
-        title: 'Nepal Distributors - Bar Chart'
-      },
-      {
-        path: 'alerts',
-        component: AlertsComponent,
-        title: 'Nepal Distributors - Alerts'
-      },
-      {
-        path: 'avatars',
-        component: AvatarElementComponent,
-        title: 'Nepal Distributors - Avatars'
-      },
-      {
-        path: 'badge',
-        component: BadgesComponent,
-        title: 'Nepal Distributors - Badges'
-      },
-      {
-        path: 'buttons',
-        component: ButtonsComponent,
-        title: 'Nepal Distributors - Buttons'
-      },
-      {
-        path: 'images',
-        component: ImagesComponent,
-        title: 'Nepal Distributors - Images'
-      },
-      {
-        path: 'videos',
-        component: VideosComponent,
-        title: 'Nepal Distributors - Videos'
+        path: 'categories/add',
+        component: CategoryFormComponent,
+        title: 'Nepal Distributors - Add Category'
       },
       {
         path: 'products',
-        component: ProductsComponent,
-        title: 'Nepal Distributors - Products'
+        component: ProductsMgmtComponent,
+        title: 'Nepal Distributors - Products Management'
+      },
+      {
+        path: 'products/add',
+        component: ProductFormComponent,
+        title: 'Nepal Distributors - Add Product'
+      },
+      {
+        path: 'orders',
+        component: OrdersComponent,
+        title: 'Nepal Distributors - Orders'
+      },
+      {
+        path: 'orders/add',
+        component: OrderFormComponent,
+        title: 'Nepal Distributors - Add Order'
+      },
+      {
+        path: 'notifications',
+        component: NotificationsComponent,
+        title: 'Nepal Distributors - Notifications'
+      },
+      {
+        path: 'quotations',
+        component: QuotationsComponent,
+        title: 'Nepal Distributors - Quotations'
+      },
+      {
+        path: 'quotations/add',
+        component: QuotationFormComponent,
+        title: 'Nepal Distributors - Add Quotation'
+      },
+      {
+        path: 'static-values',
+        component: StaticValuesComponent,
+        title: 'Nepal Distributors - Static Values'
+      },
+      {
+        path: 'static-values/add',
+        component: StaticValueFormComponent,
+        title: 'Nepal Distributors - Add Static Value'
       }
     ]
   },
 
-  // Admin routes (requires authentication)
-  {
-    path: 'admin',
-    component: AdminLayoutComponent,
-    canActivate: [AuthGuard],
-    children: adminRoutes
-  },
-
-  // 404 - Not Found (must be last)
+  // 404 - Not Found
   {
     path: '**',
     component: NotFoundComponent,
