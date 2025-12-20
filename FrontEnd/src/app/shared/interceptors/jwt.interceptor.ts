@@ -13,6 +13,14 @@ import { Router } from '@angular/router';
 
 @Injectable()
 export class JwtInterceptor implements HttpInterceptor {
+  // List of endpoints that don't require JWT authentication
+  private publicEndpoints = [
+    '/api/StaticValue',  // Catalog endpoints - public
+    '/api/auth/login',
+    '/api/auth/register',
+    '/api/auth/refresh',
+  ];
+
   constructor(
     private authService: AuthService,
     private router: Router
@@ -22,16 +30,28 @@ export class JwtInterceptor implements HttpInterceptor {
     request: HttpRequest<unknown>,
     next: HttpHandler
   ): Observable<HttpEvent<unknown>> {
+    // Check if the request URL is a public endpoint
+    const isPublicEndpoint = this.publicEndpoints.some(endpoint => 
+      request.url.includes(endpoint)
+    );
+
     // Get JWT token from storage
     const token = this.authService.getToken();
 
-    // Clone the request and add Authorization header if token exists
-    if (token) {
+    // Clone the request and add Authorization header only if:
+    // 1. Token exists AND
+    // 2. The endpoint is NOT in the public endpoints list
+    if (token && !isPublicEndpoint) {
+      console.log('Adding JWT token to request:', request.url);
       request = request.clone({
         setHeaders: {
           Authorization: `Bearer ${token}`,
         },
       });
+    } else if (!isPublicEndpoint) {
+      console.log('No token found for protected endpoint:', request.url);
+    } else {
+      console.log('Public endpoint - no auth header added:', request.url);
     }
 
     return next.handle(request).pipe(

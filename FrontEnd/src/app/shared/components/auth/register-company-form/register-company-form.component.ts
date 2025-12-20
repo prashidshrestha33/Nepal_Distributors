@@ -6,6 +6,7 @@ import { AuthService } from '../../../services/auth.service';
 import { SignupFlowService } from '../../../services/signup-flow.service';
 import { FormDataService } from '../../../services/form-data.service';
 import { RegistrationFlowService } from '../../../services/registration-flow.service';
+import { CatalogService } from '../../../services/catalog.service';
 
 // Phone number validator: 7-10 digits only
 function phoneNumberValidator(control: AbstractControl): ValidationErrors | null {
@@ -42,6 +43,8 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
   error: string | null = null;
   fileName = '';
   filePreview: string | null = null;
+  companyTypes: any[] = []; // Store fetched company types
+  loadingCompanyTypes = false; // Loading state for company types
   // Map picker state
   @ViewChild('mapContainer') mapContainer!: ElementRef<HTMLDivElement>;
   showMapModal = false;
@@ -60,7 +63,8 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
     private flow: SignupFlowService,
     private router: Router,
     private formDataService: FormDataService,
-    private registrationFlowService: RegistrationFlowService
+    private registrationFlowService: RegistrationFlowService,
+    private catalogService: CatalogService
   ) {
     this.form = this.fb.group({
       name: ['', Validators.required],
@@ -75,6 +79,9 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Fetch company types from API
+    this.loadCompanyTypes();
+
     // Check if coming from signup form
     this.isComingFromSignup = this.registrationFlowService.isComingFromSignup();
     
@@ -112,6 +119,74 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
       // Clear RegistrationFlowService
       this.registrationFlowService.clearFormData();
     }
+  }
+
+  /**
+   * Load company types from API
+   */
+  private loadCompanyTypes(): void {
+    this.loadingCompanyTypes = true;
+    this.catalogService.getAllCatalog().subscribe({
+      next: (response: any) => {
+        console.log('API Response:', response);
+        this.companyTypes = [];
+        
+        // Helper function to extract name from an item
+        const extractName = (item: any): string => {
+          return item?.catalogName || item?.name || item?.displayName || item?.title || '';
+        };
+        
+        // Handle different response structures
+        try {
+          if (Array.isArray(response)) {
+            // Direct array response
+            this.companyTypes = response.map((item: any) => ({
+              id: item.id || item.catalogId,
+              name: extractName(item),
+              catalogName: item.catalogName,
+              displayName: item.displayName
+            })).filter((item: any) => item.name); // Filter out items without names
+          } else if (response && response.data && Array.isArray(response.data)) {
+            // Response with data wrapper
+            this.companyTypes = response.data.map((item: any) => ({
+              id: item.id || item.catalogId,
+              name: extractName(item),
+              catalogName: item.catalogName,
+              displayName: item.displayName
+            })).filter((item: any) => item.name);
+          } else if (response && response.result && Array.isArray(response.result)) {
+            // Response with result wrapper
+            this.companyTypes = response.result.map((item: any) => ({
+              id: item.id || item.catalogId,
+              name: extractName(item),
+              catalogName: item.catalogName,
+              displayName: item.displayName
+            })).filter((item: any) => item.name);
+          } else if (response && typeof response === 'object' && Object.keys(response).length > 0) {
+            // Try to extract from object as last resort
+            const items = Object.values(response).filter(item => typeof item === 'object' && item !== null) as any[];
+            if (items.length > 0) {
+              this.companyTypes = items.map((item: any) => ({
+                id: item.id || item.catalogId,
+                name: extractName(item),
+                catalogName: item.catalogName,
+                displayName: item.displayName
+              })).filter((item: any) => item.name);
+            }
+          }
+        } catch (e) {
+          console.error('Error processing response:', e);
+        }
+        
+        console.log('Processed company types:', this.companyTypes);
+        this.loadingCompanyTypes = false;
+      },
+      error: (err: any) => {
+        console.error('Error loading company types:', err);
+        this.loadingCompanyTypes = false;
+        this.companyTypes = [];
+      }
+    });
   }
 
   // Open the map picker modal (lazy initializes Leaflet)

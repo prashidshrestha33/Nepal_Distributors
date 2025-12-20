@@ -33,8 +33,8 @@ export class SigninFormComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    // Get return URL from route parameters or default to dashboard
-    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+    // Get return URL from route parameters or default to admin dashboard
+    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/admin/dashboard';
 
     this.loginForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],

@@ -50,9 +50,21 @@
       <strong class="text-blue-900 dark:text-blue-200">Company:</strong> <span class="text-gray-700 dark:text-gray-300">{{ flow.getCompanyForm().name }} — {{ flow.getCompanyForm().companyType }}</span>
     </div>
 
+    <!-- If company document is found, show success message -->
+    <div *ngIf="companyFileName" class="mb-4 p-2.5 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <p class="text-xs text-green-800 dark:text-green-200"><strong>Registration document found:</strong> <span class="font-medium">{{ companyFileName }}</span></p>
+      </div>
+      <p class="text-xs text-green-700 dark:text-green-300 mt-1.5 ml-6">You can upload a different document if needed:</p>
+      <input type="file" (change)="onCompanyFileChange($event)" class="mt-2" />
+    </div>
+
     <!-- If company document is missing, allow re-upload in this step -->
-    <div *ngIf="flow.getCompanyForm() && !flow.getCompanyForm().file" class="mb-4 p-2.5 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-      <p class="text-xs text-yellow-800 dark:text-yellow-200 mb-1.5">Registration document not found. You can re-upload it here:</p>
+    <div *ngIf="flow.getCompanyForm() && !flow.getCompanyForm().file && !companyFileName" class="mb-4 p-2.5 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+      <p class="text-xs text-yellow-800 dark:text-yellow-200 mb-1.5">Registration document not found. You can upload it here:</p>
       <input type="file" (change)="onCompanyFileChange($event)" />
       <div *ngIf="companyFileName" class="text-xs text-yellow-700 dark:text-yellow-300 mt-1.5">Selected: {{ companyFileName }}</div>
     </div>
@@ -215,6 +227,41 @@
           <div class="flex items-center gap-1" [class.text-green-600]="hasSpecialChar(password?.value)" [class.text-red-600]="password?.value && !hasSpecialChar(password?.value)">
             <span [class]="hasSpecialChar(password?.value) ? 'text-green-600' : 'text-gray-400'">✔</span>
             <span>!@#$%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Terms and Conditions Checkbox -->
+      <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+        <div class="flex items-start gap-3">
+          <input
+            type="checkbox"
+            formControlName="agreeToTerms"
+            name="agreeToTerms"
+            id="agreeToTerms"
+            class="w-5 h-5 mt-0.5 text-brand-500 rounded cursor-pointer focus:ring-2 focus:ring-brand-500"
+          />
+          <div class="flex-1">
+            <label for="agreeToTerms" class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+              I agree to the
+              <a
+                routerLink="/terms-and-conditions"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 font-medium underline"
+              >
+                Terms and Conditions
+              </a>
+            </label>
+            
+            <!-- Validation Error for Terms and Conditions -->
+            @if (agreeToTerms?.invalid && agreeToTerms?.touched) {
+            <p class="mt-1 text-sm text-red-600 dark:text-red-400">
+              @if (agreeToTerms?.errors?.['required']) {
+                You must accept the Terms and Conditions to proceed
+              }
+            </p>
+            }
           </div>
         </div>
       </div>

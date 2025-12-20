@@ -125,7 +125,8 @@ export class SignupFormComponent implements OnInit {
       phoneNo: ['', [Validators.required]],
       email: ['', [Validators.required, emailFormatValidator]],
       password: ['', [Validators.required, strongPasswordValidator]],
-      confirmPassword: ['', [Validators.required]]
+      confirmPassword: ['', [Validators.required]],
+      agreeToTerms: [false, [Validators.requiredTrue]]
     }, { validators: passwordMismatchValidator });
 
     // Listen to email field changes to clear email conflict error
@@ -150,6 +151,25 @@ export class SignupFormComponent implements OnInit {
     if (!companyData) {
       // No company data found (possibly page refresh). Redirect to company step.
       this.router.navigate(['/register-company']);
+      return;
+    }
+
+    // Load company file from IndexDB if available
+    this.loadCompanyFileFromIndexDB();
+  }
+
+  /**
+   * Load company document from IndexDB
+   */
+  private async loadCompanyFileFromIndexDB(): Promise<void> {
+    try {
+      const fileFromIDB = await this.flow.getCompanyFileFromIDB();
+      if (fileFromIDB) {
+        this.companyFileName = fileFromIDB.name;
+        console.log('Company document loaded from IndexDB:', this.companyFileName);
+      }
+    } catch (e) {
+      console.warn('Error loading company file from IndexDB:', e);
     }
   }
 
@@ -326,6 +346,7 @@ export class SignupFormComponent implements OnInit {
       email: 'Email',
       password: 'Password',
       confirmPassword: 'Confirm Password',
+      agreeToTerms: 'Terms and Conditions'
     };
     return Object.keys(this.signupForm.controls)
       .filter(k => this.signupForm.get(k)?.invalid)
@@ -350,6 +371,10 @@ export class SignupFormComponent implements OnInit {
 
   get confirmPassword() {
     return this.signupForm.get('confirmPassword');
+  }
+
+  get agreeToTerms() {
+    return this.signupForm.get('agreeToTerms');
   }
 
   /**

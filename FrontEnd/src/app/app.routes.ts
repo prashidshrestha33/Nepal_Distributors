@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-import { EcommerceComponent } from './pages/dashboard/ecommerce/ecommerce.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { FormElementsComponent } from './pages/forms/form-elements/form-elements.component';
 import { BasicTablesComponent } from './pages/tables/basic-tables/basic-tables.component';
@@ -21,10 +20,12 @@ import { RegisterCompanyComponent } from './pages/auth-pages/register-company/re
 import { CalenderComponent } from './pages/calender/calender.component';
 import { ProductsComponent } from './pages/products/products.component';
 import { AuthGuard } from './guards/auth.guard';
+import { AdminLayoutComponent } from './admin/shared/layout/admin-layout.component';
+import { adminRoutes } from './admin/admin.routes';
 
 export const routes: Routes = [
-  // Default route - redirect to signin
-  { path: '', redirectTo: '/signin', pathMatch: 'full' },
+  // Default route - redirect to admin dashboard
+  { path: '', redirectTo: '/admin/dashboard', pathMatch: 'full' },
   
   // Public auth pages (accessible without login)
   {
@@ -49,17 +50,6 @@ export const routes: Routes = [
     component: AppLayoutComponent,
     canActivate: [AuthGuard],
     children: [
-      {
-        path: 'dashboard',
-        component: EcommerceComponent,
-        title: 'Nepal Distributors - Dashboard'
-      },
-      {
-        path: '',
-        component: EcommerceComponent,
-        pathMatch: 'full',
-        title: 'Nepal Distributors - Dashboard'
-      },
       {
         path: 'calendar',
         component: CalenderComponent,
@@ -136,6 +126,14 @@ export const routes: Routes = [
         title: 'Nepal Distributors - Products'
       }
     ]
+  },
+
+  // Admin routes (requires authentication)
+  {
+    path: 'admin',
+    component: AdminLayoutComponent,
+    canActivate: [AuthGuard],
+    children: adminRoutes
   },
 
   // 404 - Not Found (must be last)
