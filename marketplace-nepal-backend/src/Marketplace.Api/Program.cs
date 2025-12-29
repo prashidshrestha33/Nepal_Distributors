@@ -2,6 +2,7 @@ using Marketpalce.Repository.Repositories.ComponyRepo;
 using Marketpalce.Repository.Repositories.ProductRepo;
 using Marketpalce.Repository.Repositories.StaticValueReop;
 using Marketpalce.Repository.Repositories.UserReop;
+using Marketplace.Api.Services.Company;
 using Marketplace.Api.Services.FacebookToken;
 using Marketplace.Api.Services.GoogleTokenVerifier;
 using Marketplace.Api.Services.Hassing;
@@ -34,12 +35,14 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IStaticValueRepository, StaticValueRepository>();
 builder.Services.AddScoped<ICompanyRepository, CompanyRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<ICompanyTypeRepository, CompanyTypeRepository>();
 
 // --- Services ---
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IGoogleTokenVerifier, GoogleTokenVerifier>();
 // Register Facebook verifier
 builder.Services.AddScoped<IFacebookTokenVerifier, FacebookTokenVerifier>();
+builder.Services.AddScoped<ICompanyTypeService, CompanyTypeService>();
 
 // --- HttpClient for Facebook Graph API ---
 builder.Services.AddHttpClient("facebook", client =>

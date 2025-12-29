@@ -560,6 +560,7 @@ CREATE TABLE [dbo].[static_value_cataglog](
 	[Catalog_Name] [nvarchar](100) NOT NULL,
 	[Catalog_Type] [nvarchar](max) NULL,
 	[Catalog_Description] [nvarchar](max) NULL,
+	[Display_Order] [INT] NULL,
  CONSTRAINT [PK_static_value_cataglog_Catalog_id] PRIMARY KEY CLUSTERED 
 (
 	[Catalog_id] ASC
