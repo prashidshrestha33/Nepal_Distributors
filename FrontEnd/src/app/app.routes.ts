@@ -17,6 +17,7 @@ import { VideosComponent } from './pages/ui-elements/videos/videos.component';
 import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
 import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
 import { RegisterCompanyComponent } from './pages/auth-pages/register-company/register-company.component';
+import { TermsAndConditionsComponent } from './pages/auth-pages/terms-and-conditions/terms-and-conditions.component';
 import { CalenderComponent } from './pages/calender/calender.component';
 import { ProductsComponent } from './pages/products/products.component';
 import { AuthGuard } from './guards/auth.guard';
@@ -42,6 +43,11 @@ export const routes: Routes = [
     path: 'register-company',
     component: RegisterCompanyComponent,
     title: 'Nepal Distributors - Register Company'
+  },
+  {
+    path: 'terms-and-conditions',
+    component: TermsAndConditionsComponent,
+    title: 'Nepal Distributors - Terms and Conditions'
   },
 
   // Protected routes (requires authentication)

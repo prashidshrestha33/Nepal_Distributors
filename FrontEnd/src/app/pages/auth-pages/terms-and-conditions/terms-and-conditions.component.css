@@ -1,0 +1,9 @@
+/* Terms and Conditions Component Styles */
+
+:host {
+  display: block;
+}
+
+section {
+  scroll-margin-top: 80px;
+}

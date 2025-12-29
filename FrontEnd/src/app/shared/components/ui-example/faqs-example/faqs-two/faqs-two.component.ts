@@ -1,12 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
-import { FaqItemTwoComponent } from "../../../faqs/faq-item-two/faq-item-two.component";
 
 @Component({
   selector: 'app-faqs-two',
   imports: [
-    CommonModule,
-    FaqItemTwoComponent
+    CommonModule
 ],
   templateUrl: './faqs-two.component.html',
   styles: ``
@@ -27,7 +25,7 @@ export class FaqsTwoComponent {
       content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec quis magna ac nibh malesuada consectetur at vitae ipsum orem ipsum dolor sit amet, consectetur adipiscing elit nam fermentum, leo et lacinia accumsan.'
     },
     {
-      title: 'Can I Customize TailAdmin to suit my needs?',
+      title: 'Can I Customize Nepal Distributors to suit my needs?',
       content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec quis magna ac nibh malesuada consectetur at vitae ipsum orem ipsum dolor sit amet, consectetur adipiscing elit nam fermentum, leo et lacinia accumsan.'
     },
     {
