@@ -228,6 +228,12 @@ WHERE
                 return false;
             }
         }
-    }
 
+        public async Task<IEnumerable<MarketplaceUser>> GetAllUserAsync()
+        {
+            var sql = "SELECT TOP (1000) * FROM [NepalDistributers].[dbo].[users]";
+            return await _db.QueryAsync<MarketplaceUser>(sql);
+        }
+
+    }
 }

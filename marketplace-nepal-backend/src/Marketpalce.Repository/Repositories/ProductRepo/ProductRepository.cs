@@ -23,6 +23,12 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
             return await _db.QueryAsync<ProductModel>(sql);
         }
 
+        public async Task<IEnumerable<CategoryDto>> GetAllCategoryAsync()
+        {
+            var sql = "SELECT TOP (1000) * FROM [NepalDistributers].[dbo].[Product_Categories]";
+            return await _db.QueryAsync<CategoryDto>(sql);
+        }
+
         public async Task<ProductModel> GetByIdAsync(int id)
         {
             var sql = "SELECT * FROM [NepalDistributers].[dbo].[products] WHERE id = @Id";

@@ -1,3 +1,4 @@
+using Marketplace.Model.Models;
 using Marketplace.Models;
 using System;
 using System.Data;
@@ -20,6 +21,7 @@ namespace Marketpalce.Repository.Repositories.UserReop
         Task<MarketplaceUser?> GetuserByid(string userid);
 
         Task<MarketplaceUser?> GetAllid(string companyid);
+        Task<IEnumerable<MarketplaceUser>> GetAllUserAsync();
 
         Task<MarketplaceUser?> GetByIdAsync(long id);
         Task<bool> UpdateUserAsync(MarketplaceUser user, IDbTransaction? transaction = null);

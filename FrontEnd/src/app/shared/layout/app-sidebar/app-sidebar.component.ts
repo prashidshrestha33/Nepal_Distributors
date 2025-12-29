@@ -35,13 +35,13 @@ export class AppSidebarComponent {
       icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M3.25 4.5C3.25 3.25736 4.25736 2.25 5.5 2.25H18.5C19.7426 2.25 20.75 3.25736 20.75 4.5V19.5C20.75 20.7426 19.7426 21.75 18.5 21.75H5.5C4.25736 21.75 3.25 20.7426 3.25 19.5V4.5ZM5.5 3.75C5.08579 3.75 4.75 4.08579 4.75 4.5V7.5H19.25V4.5C19.25 4.08579 18.9142 3.75 18.5 3.75H5.5ZM4.75 9V19.5C4.75 19.9142 5.08579 20.25 5.5 20.25H18.5C18.9142 20.25 19.25 19.9142 19.25 19.5V9H4.75ZM6.5 11.25C6.5 10.8358 6.83579 10.5 7.25 10.5H16.75C17.1642 10.5 17.5 10.8358 17.5 11.25C17.5 11.6642 17.1642 12 16.75 12H7.25C6.83579 12 6.5 11.6642 6.5 11.25ZM7.25 13.5C6.83579 13.5 6.5 13.8358 6.5 14.25C6.5 14.6642 6.83579 15 7.25 15H16.75C17.1642 15 17.5 14.6642 17.5 14.25C17.5 13.8358 17.1642 13.5 16.75 13.5H7.25Z" fill="currentColor"></path></svg>`,
       name: "Management",
       subItems: [
-        { name: "Users", path: "/users" },
-        { name: "Categories", path: "/categories" },
-        { name: "Products", path: "/products" },
-        { name: "Orders", path: "/orders" },
-        { name: "Notifications", path: "/notifications" },
-        { name: "Quotations", path: "/quotations" },
-        { name: "Static Values", path: "/static-values" },
+        { name: "Users", path: "/management/users" },
+        { name: "Categories", path: "/management/categories" },
+        { name: "Products", path: "/management/products" },
+        { name: "Orders", path: "/management/orders" },
+        { name: "Notifications", path: "/management/notifications" },
+        { name: "Quotations", path: "/management/quotations" },
+        { name: "Static Values", path: "/management/static-values" },
       ],
     },
   ];
@@ -174,7 +174,6 @@ export class AppSidebarComponent {
   }
 
   onSubmenuClick() {
-    console.log('click submenu');
     this.isMobileOpen$.subscribe(isMobile => {
       if (isMobile) {
         this.sidebarService.setMobileOpen(false);

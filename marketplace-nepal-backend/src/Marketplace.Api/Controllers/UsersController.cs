@@ -4,6 +4,7 @@ using Marketplace.Api.Services.FacebookToken;
 using Marketplace.Api.Services.GoogleTokenVerifier;
 using Marketplace.Api.Services.Hassing;
 using Marketplace.Api.Services.Helper;
+using Marketplace.Model.Models;
 using Marketplace.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -44,6 +45,9 @@ namespace Marketplace.Api.Controllers
             _hasher = hasher ?? throw new ArgumentNullException(nameof(hasher));
             _db = db ?? throw new ArgumentNullException(nameof(db));
         }
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<MarketplaceUser>>> GetAllUser() => Ok(await _users.GetAllUserAsync());
+
         [HttpPost("CreateUser")]
         public async Task<IActionResult> Register([FromBody] MarketplaceUser req)
         {

@@ -25,6 +25,9 @@ namespace Marketplace.Api.Controllers
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ProductModel>>> Get() => Ok(await repositorysitory.GetAllAsync());
+
+        [HttpGet("Category")]
+        public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAllCategory() => Ok(await repositorysitory.GetAllCategoryAsync());
         [HttpPost("AddCatagory")]
         public async Task<IActionResult> CreateCatagory([FromBody] CreateCategoryDto dto)
         {

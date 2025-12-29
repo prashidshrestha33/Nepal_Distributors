@@ -6,43 +6,101 @@ import { environment } from '../../../../environments/environment';
 export interface Category {
   id?: number;
   name: string;
-  description?: string;
-  status: 'active' | 'inactive' | 'pending';
-  createdAt?: Date;
+  slug: string;
+  parentId?: number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class CategoryService {
-  private apiUrl = `${environment.apiBaseUrl}/api/categories`;
+  private apiUrl = `${environment.apiBaseUrl}/api/product/AddCategory`;
+  private getCategoriesUrl = `${environment.apiBaseUrl}/api/categories`;
   constructor(private http: HttpClient) {}
   getCategories(): Observable<Category[]> { return this.http.get<Category[]>(this.apiUrl); }
-  getCategoryById(id: number): Observable<Category> { return this.http.get<Category>(`${this.apiUrl}/${id}`); }
+  getParentCategories(): Observable<Category[]> { return this.http.get<Category[]>(`${this.apiUrl}?parentId=0`); }
+  getCategoryById(id: number): Observable<Category> { return this.http.get<Category>(`${this.getCategoriesUrl}/${id}`); }
   createCategory(category: Category): Observable<Category> { return this.http.post<Category>(this.apiUrl, category); }
-  updateCategory(id: number, category: Category): Observable<Category> { return this.http.put<Category>(`${this.apiUrl}/${id}`, category); }
-  deleteCategory(id: number): Observable<void> { return this.http.delete<void>(`${this.apiUrl}/${id}`); }
-  approveCategory(id: number): Observable<Category> { return this.http.post<Category>(`${this.apiUrl}/${id}/approve`, {}); }
+  updateCategory(id: number, category: Category): Observable<Category> { return this.http.put<Category>(`${this.getCategoriesUrl}/${id}`, category); }
+  deleteCategory(id: number): Observable<void> { return this.http.delete<void>(`${this.getCategoriesUrl}/${id}`); }
+  approveCategory(id: number): Observable<Category> { return this.http.post<Category>(`${this.getCategoriesUrl}/${id}/approve`, {}); }
 }
 
 export interface Product {
   id?: number;
+  sku: string;
   name: string;
-  description?: string;
-  price: number;
-  categoryId?: number;
-  status: 'active' | 'inactive' | 'pending';
+  shortDescription: string;
+  rate: number;
+  status: string;
+  isFeatured: boolean;
+  imageUrl?: string;
+  imageFile?: File;
   createdAt?: Date;
+}
+
+export interface ProductResponse {
+  data: Product[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class ProductService {
-  private apiUrl = `${environment.apiBaseUrl}/api/products`;
+  private apiUrl = `${environment.apiBaseUrl}/api/product`;
   constructor(private http: HttpClient) {}
-  getProducts(): Observable<Product[]> { return this.http.get<Product[]>(this.apiUrl); }
-  getProductById(id: number): Observable<Product> { return this.http.get<Product>(`${this.apiUrl}/${id}`); }
-  createProduct(product: Product): Observable<Product> { return this.http.post<Product>(this.apiUrl, product); }
-  updateProduct(id: number, product: Product): Observable<Product> { return this.http.put<Product>(`${this.apiUrl}/${id}`, product); }
-  deleteProduct(id: number): Observable<void> { return this.http.delete<void>(`${this.apiUrl}/${id}`); }
-  approveProduct(id: number): Observable<Product> { return this.http.post<Product>(`${this.apiUrl}/${id}/approve`, {}); }
+  
+  /**
+   * Get products with pagination
+   * @param page Page number (1-indexed)
+   * @param pageSize Number of items per page
+   */
+  getProducts(page: number = 1, pageSize: number = 20): Observable<ProductResponse> {
+    return this.http.get<ProductResponse>(`${this.apiUrl}?page=${page}&pageSize=${pageSize}`);
+  }
+  
+  getProductById(id: number): Observable<Product> {
+    return this.http.get<Product>(`${this.apiUrl}/${id}`);
+  }
+  
+  /**
+   * Create product with multipart/form-data
+   * @param product Product data with optional image file
+   */
+  createProduct(product: Product): Observable<Product> {
+    const formData = new FormData();
+    formData.append('sku', product.sku);
+    formData.append('name', product.name);
+    formData.append('shortDescription', product.shortDescription);
+    formData.append('rate', product.rate.toString());
+    formData.append('status', product.status);
+    formData.append('isFeatured', product.isFeatured.toString());
+    
+    if (product.imageFile) {
+      formData.append('ImageFile', product.imageFile, product.imageFile.name);
+    }
+    
+    return this.http.post<Product>(`${this.apiUrl}/AddProduct`, formData);
+  }
+  
+  updateProduct(id: number, product: Product): Observable<Product> {
+    const formData = new FormData();
+    formData.append('sku', product.sku);
+    formData.append('name', product.name);
+    formData.append('shortDescription', product.shortDescription);
+    formData.append('rate', product.rate.toString());
+    formData.append('status', product.status);
+    formData.append('isFeatured', product.isFeatured.toString());
+    
+    if (product.imageFile) {
+      formData.append('ImageFile', product.imageFile, product.imageFile.name);
+    }
+    
+    return this.http.put<Product>(`${this.apiUrl}/${id}`, formData);
+  }
+  
+  deleteProduct(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
 }
 
 export interface Order {

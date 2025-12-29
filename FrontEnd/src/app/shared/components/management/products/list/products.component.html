@@ -1,33 +1,162 @@
 <div class="space-y-6">
+  <!-- Header Section -->
   <div class="flex justify-between items-center">
-    <h1 class="text-2xl font-bold text-gray-800">Products</h1>
-    <a href="/product/add" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg">Add Product</a>
+    <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Products</h1>
+    <a routerLink="/products/add" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg dark:bg-blue-600 dark:hover:bg-blue-700">
+      + Add Product
+    </a>
   </div>
-  <div class="bg-white rounded-lg shadow p-4">
-    <input type="text" placeholder="Search..." [(ngModel)]="searchTerm" (keyup)="onSearch()" 
-      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+  <!-- Search Bar -->
+  <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4">
+    <input
+      type="text"
+      placeholder="Search by product name or SKU..."
+      [(ngModel)]="searchTerm"
+      (input)="onSearch()"
+      class="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+    />
   </div>
-  <div class="bg-white rounded-lg shadow overflow-hidden">
-    <table class="w-full">
-      <thead class="bg-gray-100 border-b">
-        <tr>
-          <th class="px-6 py-3 text-left text-sm font-semibold">Name</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold">Price</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold">Status</th>
-          <th class="px-6 py-3 text-center text-sm font-semibold">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of filteredItems" class="border-b hover:bg-gray-50">
-          <td class="px-6 py-4 text-sm">{{ item.name }}</td>
-          <td class="px-6 py-4 text-sm">Rs {{ item.price }}</td>
-          <td class="px-6 py-4"><span [ngClass]="{'bg-green-200': item.status==='active', 'bg-yellow-200': item.status==='pending'}" class="px-3 py-1 rounded-full text-xs">{{ item.status }}</span></td>
-          <td class="px-6 py-4 text-center">
-            <button *ngIf="item.status==='pending'" (click)="approve(item.id!)" class="text-green-500 text-sm">Approve</button>
-            <button (click)="delete(item.id!)" class="text-red-500 text-sm ml-2">Delete</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg text-blue-700 dark:text-blue-200">
+    Loading products...
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && filteredProducts.length === 0" class="bg-yellow-50 dark:bg-yellow-900 p-4 rounded-lg text-yellow-700 dark:text-yellow-200 text-center">
+    {{ searchTerm ? 'No products found matching your search' : 'No products available' }}
+  </div>
+
+  <!-- Products Grid -->
+  <div *ngIf="!loading && filteredProducts.length > 0" class="mb-8">
+    <div class="bg-white dark:bg-gray-900 rounded-lg shadow overflow-hidden">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-0">
+        <div *ngFor="let product of filteredProducts" class="border-r border-b border-gray-200 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+          <!-- Product Image -->
+          <div class="relative w-full aspect-square bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden flex items-center justify-center mb-3">
+            <img
+              [src]="getImageUrl(product)"
+              [alt]="product.name"
+              class="w-full h-full object-cover"
+              (error)="$event.target.src = '/images/placeholder-product.png'"
+            />
+            
+            <!-- Featured Badge -->
+            <div *ngIf="isFeatured(product)" class="absolute top-2 right-2 bg-yellow-400 text-gray-900 px-2 py-1 rounded text-xs font-semibold">
+              Featured
+            </div>
+
+            <!-- Status Badge -->
+            <div class="absolute top-2 left-2">
+              <span [ngClass]="{
+                'bg-green-500 text-white': product.status === 'Active',
+                'bg-red-500 text-white': product.status === 'Inactive',
+                'bg-gray-500 text-white': !product.status
+              }" class="px-2 py-1 rounded text-xs font-medium">
+                {{ product.status || 'N/A' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Product Info -->
+          <div class="flex-1">
+            <!-- SKU -->
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">SKU: {{ product.sku }}</p>
+
+            <!-- Product Name -->
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
+              {{ product.name }}
+            </h3>
+
+            <!-- Short Description -->
+            <p class="text-xs text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
+              {{ product.shortDescription }}
+            </p>
+
+            <!-- Rate -->
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-lg font-bold text-blue-600 dark:text-blue-400">
+                $ {{ product.rate | number: '1.2-2' }}
+              </span>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-2">
+              <button
+                routerLink="/products/edit"
+                [queryParams]="{ id: product.id }"
+                class="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors duration-200 dark:bg-blue-600 dark:hover:bg-blue-700"
+              >
+                Edit
+              </button>
+              <button
+                (click)="delete(product.id)"
+                class="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded transition-colors duration-200 dark:bg-red-600 dark:hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination Section -->
+  <div *ngIf="!loading && totalCount > 0" class="bg-white dark:bg-gray-900 rounded-lg shadow p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+    <!-- Pagination Info -->
+    <div class="text-sm text-gray-600 dark:text-gray-400">
+      Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, totalCount) }} of {{ totalCount }} products
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="flex items-center gap-2">
+      <!-- Previous Button -->
+      <button
+        (click)="previousPage()"
+        [disabled]="!hasPreviousPage()"
+        [ngClass]="{
+          'opacity-50 cursor-not-allowed': !hasPreviousPage(),
+          'hover:bg-gray-200 dark:hover:bg-gray-700': hasPreviousPage()
+        }"
+        class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 transition-colors"
+      >
+        Previous
+      </button>
+
+      <!-- Page Numbers -->
+      <div class="flex gap-1">
+        <button
+          *ngFor="let page of getPageNumbers()"
+          (click)="goToPage(page)"
+          [ngClass]="{
+            'bg-blue-500 text-white': page === currentPage,
+            'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 bg-white dark:bg-gray-800': page !== currentPage
+          }"
+          class="px-3 py-2 border rounded text-sm font-medium transition-colors"
+        >
+          {{ page }}
+        </button>
+      </div>
+
+      <!-- Next Button -->
+      <button
+        (click)="nextPage()"
+        [disabled]="!hasNextPage()"
+        [ngClass]="{
+          'opacity-50 cursor-not-allowed': !hasNextPage(),
+          'hover:bg-gray-200 dark:hover:bg-gray-700': hasNextPage()
+        }"
+        class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 transition-colors"
+      >
+        Next
+      </button>
+    </div>
+
+    <!-- Page Size Info -->
+    <div class="text-sm text-gray-600 dark:text-gray-400">
+      Page {{ currentPage }} of {{ totalPages }}
+    </div>
   </div>
 </div>
