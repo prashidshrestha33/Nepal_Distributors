@@ -16,6 +16,8 @@ export class CategoryFormComponent implements OnInit {
   form!: FormGroup;
   loading = false;
   error: string | null = null;
+  parentCategories: Category[] = [];
+  loadingCategories = false;
 
   constructor(
     private fb: FormBuilder,
@@ -24,12 +26,48 @@ export class CategoryFormComponent implements OnInit {
   ) {
     this.form = this.fb.group({
       name: ['', Validators.required],
-      description: [''],
-      status: ['active', Validators.required]
+      slug: ['', Validators.required],
+      parentId: [0]
     });
   }
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.loadParentCategories();
+    
+    // Auto-generate slug from name
+    this.form.get('name')?.valueChanges.subscribe(name => {
+      const slug = this.generateSlug(name);
+      this.form.get('slug')?.setValue(slug, { emitEvent: false });
+    });
+  }
+
+  /**
+   * Generate slug from name (convert to lowercase, replace spaces with hyphens)
+   */
+  generateSlug(name: string): string {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]/g, '');
+  }
+
+  /**
+   * Load parent categories from API
+   */
+  loadParentCategories() {
+    this.loadingCategories = true;
+    this.categoryService.getParentCategories().subscribe({
+      next: (categories) => {
+        this.parentCategories = categories;
+        this.loadingCategories = false;
+      },
+      error: (err) => {
+        console.error('Error loading parent categories:', err);
+        this.loadingCategories = false;
+      }
+    });
+  }
 
   isFieldInvalid(fieldName: string): boolean {
     const field = this.form.get(fieldName);
@@ -41,6 +79,11 @@ export class CategoryFormComponent implements OnInit {
       this.loading = true;
       const category: Category = this.form.value;
       
+      // If no parent selected, set parentId to 0 (make it a parent category)
+      if (!category.parentId) {
+        category.parentId = 0;
+      }
+
       this.categoryService.createCategory(category).subscribe({
         next: () => {
           this.router.navigate(['/categories']);
@@ -58,3 +101,4 @@ export class CategoryFormComponent implements OnInit {
     this.router.navigate(['/categories']);
   }
 }
+

@@ -68,13 +68,19 @@ export class AuthService {
    */
   saveToken(token?: string, rememberMe: boolean = false): void {
     if (token) {
+      console.log('Saving token to', rememberMe ? 'localStorage' : 'sessionStorage');
       if (rememberMe) {
         localStorage.setItem('token', token);
         sessionStorage.removeItem('token');
+        console.log('✓ Token saved to localStorage');
       } else {
         sessionStorage.setItem('token', token);
         localStorage.removeItem('token');
+        console.log('✓ Token saved to sessionStorage');
       }
+      // Verify token was saved
+      const savedToken = this.getToken();
+      console.log('Token verification - retrieved:', !!savedToken);
     }
   }
 
@@ -83,7 +89,9 @@ export class AuthService {
    * Checks both storages with fallback mechanism
    */
   getToken(): string | null {
-    return localStorage.getItem('token') || sessionStorage.getItem('token');
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    console.log('AuthService.getToken():', token ? 'Token found (' + token.substring(0, 20) + '...)' : 'No token found');
+    return token;
   }
 
   /**
@@ -166,8 +174,11 @@ export class AuthService {
         tap(res => {
           // Backend returns token inside result object: { result: { token: '...' } }
           const token = res?.result?.token || res?.token;
+          console.log('Login response received. Token found:', !!token);
           if (token) {
+            console.log('Saving token to storage. RememberMe:', rememberMe);
             this.saveToken(token, rememberMe);
+            console.log('Token saved successfully');
           }
         })
       );

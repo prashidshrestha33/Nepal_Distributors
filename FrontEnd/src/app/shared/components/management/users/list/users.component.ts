@@ -26,8 +26,10 @@ export class UsersComponent implements OnInit {
 
   loadUsers() {
     this.loading = true;
+    console.log('Loading users...');
     this.userService.getUsers().subscribe({
       next: (data: User[]) => {
+        console.log('Users loaded:', data);
         this.users = data;
         this.filteredUsers = data;
         this.loading = false;
@@ -50,21 +52,33 @@ export class UsersComponent implements OnInit {
   }
 
   approveUser(id: number) {
-    this.userService.approveUser(id).subscribe({
-      next: () => {
-        this.loadUsers();
-      },
-      error: (err) => console.error('Failed to approve user:', err)
-    });
+    if (confirm('Are you sure you want to approve this user?')) {
+      this.userService.approveUser(id).subscribe({
+        next: () => {
+          console.log('User approved successfully');
+          this.error = null;
+          this.loadUsers();
+        },
+        error: (err) => {
+          console.error('Failed to approve user:', err);
+          this.error = 'Failed to approve user. Please try again.';
+        }
+      });
+    }
   }
 
   deleteUser(id: number) {
     if (confirm('Are you sure you want to delete this user?')) {
       this.userService.deleteUser(id).subscribe({
         next: () => {
+          console.log('User deleted successfully');
+          this.error = null;
           this.loadUsers();
         },
-        error: (err) => console.error('Failed to delete user:', err)
+        error: (err) => {
+          console.error('Failed to delete user:', err);
+          this.error = 'Failed to delete user. Please try again.';
+        }
       });
     }
   }

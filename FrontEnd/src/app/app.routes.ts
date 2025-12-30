@@ -57,7 +57,78 @@ export const routes: Routes = [
     component: AppLayoutComponent,
     canActivate: [AuthGuard],
     children: [
-      // Management Routes
+      // Management Routes - nested under /management
+      {
+        path: 'management',
+        children: [
+          {
+            path: 'users',
+            component: UsersComponent,
+            title: 'Nepal Distributors - Users'
+          },
+          {
+            path: 'users/add',
+            component: UserFormComponent,
+            title: 'Nepal Distributors - Add User'
+          },
+          {
+            path: 'categories',
+            component: CategoriesComponent,
+            title: 'Nepal Distributors - Categories'
+          },
+          {
+            path: 'categories/add',
+            component: CategoryFormComponent,
+            title: 'Nepal Distributors - Add Category'
+          },
+          {
+            path: 'products',
+            component: ProductsMgmtComponent,
+            title: 'Nepal Distributors - Products Management'
+          },
+          {
+            path: 'products/add',
+            component: ProductFormComponent,
+            title: 'Nepal Distributors - Add Product'
+          },
+          {
+            path: 'orders',
+            component: OrdersComponent,
+            title: 'Nepal Distributors - Orders'
+          },
+          {
+            path: 'orders/add',
+            component: OrderFormComponent,
+            title: 'Nepal Distributors - Add Order'
+          },
+          {
+            path: 'notifications',
+            component: NotificationsComponent,
+            title: 'Nepal Distributors - Notifications'
+          },
+          {
+            path: 'quotations',
+            component: QuotationsComponent,
+            title: 'Nepal Distributors - Quotations'
+          },
+          {
+            path: 'quotations/add',
+            component: QuotationFormComponent,
+            title: 'Nepal Distributors - Add Quotation'
+          },
+          {
+            path: 'static-values',
+            component: StaticValuesComponent,
+            title: 'Nepal Distributors - Static Values'
+          },
+          {
+            path: 'static-values/add',
+            component: StaticValueFormComponent,
+            title: 'Nepal Distributors - Add Static Value'
+          }
+        ]
+      },
+      // Fallback for old routes without /management prefix (for backward compatibility)
       {
         path: 'users',
         component: UsersComponent,
