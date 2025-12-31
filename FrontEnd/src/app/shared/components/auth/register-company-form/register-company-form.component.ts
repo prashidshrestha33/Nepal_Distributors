@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../../services/auth.service';
 import { SignupFlowService } from '../../../services/signup-flow.service';
 import { FormDataService } from '../../../services/form-data.service';
@@ -64,7 +65,8 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
     private router: Router,
     private formDataService: FormDataService,
     private registrationFlowService: RegistrationFlowService,
-    private catalogService: CatalogService
+    private catalogService: CatalogService,
+    private http: HttpClient
   ) {
     this.form = this.fb.group({
       name: ['', Validators.required],
@@ -126,14 +128,16 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
    */
   private loadCompanyTypes(): void {
     this.loadingCompanyTypes = true;
-    this.catalogService.getAllCatalog().subscribe({
+    const apiUrl = 'https://localhost:49856/api/public/companyType';
+    
+    this.http.get<any>(apiUrl).subscribe({
       next: (response: any) => {
-        console.log('API Response:', response);
+        console.log('Company Types API Response:', response);
         this.companyTypes = [];
         
-        // Helper function to extract name from an item
+        // Helper function to extract CatalogType/name from an item
         const extractName = (item: any): string => {
-          return item?.catalogName || item?.name || item?.displayName || item?.title || '';
+          return item?.catalogType || item?.catalogName || item?.name || item?.displayName || item?.title || '';
         };
         
         // Handle different response structures
@@ -143,6 +147,7 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
             this.companyTypes = response.map((item: any) => ({
               id: item.id || item.catalogId,
               name: extractName(item),
+              catalogType: item.catalogType,
               catalogName: item.catalogName,
               displayName: item.displayName
             })).filter((item: any) => item.name); // Filter out items without names
@@ -151,6 +156,7 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
             this.companyTypes = response.data.map((item: any) => ({
               id: item.id || item.catalogId,
               name: extractName(item),
+              catalogType: item.catalogType,
               catalogName: item.catalogName,
               displayName: item.displayName
             })).filter((item: any) => item.name);
@@ -159,6 +165,7 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
             this.companyTypes = response.result.map((item: any) => ({
               id: item.id || item.catalogId,
               name: extractName(item),
+              catalogType: item.catalogType,
               catalogName: item.catalogName,
               displayName: item.displayName
             })).filter((item: any) => item.name);
@@ -169,6 +176,7 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
               this.companyTypes = items.map((item: any) => ({
                 id: item.id || item.catalogId,
                 name: extractName(item),
+                catalogType: item.catalogType,
                 catalogName: item.catalogName,
                 displayName: item.displayName
               })).filter((item: any) => item.name);

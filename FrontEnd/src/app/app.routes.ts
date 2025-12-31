@@ -4,6 +4,7 @@ import { AppLayoutComponent } from './shared/layout/app-layout/app-layout.compon
 import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
 import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
 import { RegisterCompanyComponent } from './pages/auth-pages/register-company/register-company.component';
+import { TermsAndConditionsComponent } from './pages/auth-pages/terms-and-conditions/terms-and-conditions.component';
 import { AuthGuard } from './guards/auth.guard';
 
 // Management Components - Users
@@ -50,7 +51,11 @@ export const routes: Routes = [
     component: RegisterCompanyComponent,
     title: 'Nepal Distributors - Register Company'
   },
-
+  {
+    path: 'terms-and-conditions',
+    component: TermsAndConditionsComponent,
+    title: 'Nepal Distributors - Terms and Conditions'
+  },
   // Protected routes
   {
     path: '',
