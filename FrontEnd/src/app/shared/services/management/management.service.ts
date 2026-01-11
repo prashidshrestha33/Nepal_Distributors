@@ -1,27 +1,122 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { map } from 'rxjs/operators';
+import { AuthService } from '../auth.service';
 
 export interface Category {
-  id?: number;
+  id: number;
   name: string;
   slug: string;
-  parentId?: number;
+  parent_id?: number | null;
+  depth?: number;
+  children?: Category[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class CategoryService {
-  private apiUrl = `${environment.apiBaseUrl}/api/product/AddCategory`;
-  private getCategoriesUrl = `${environment.apiBaseUrl}/api/categories`;
-  constructor(private http: HttpClient) {}
-  getCategories(): Observable<Category[]> { return this.http.get<Category[]>(this.apiUrl); }
-  getParentCategories(): Observable<Category[]> { return this.http.get<Category[]>(`${this.apiUrl}?parentId=0`); }
-  getCategoryById(id: number): Observable<Category> { return this.http.get<Category>(`${this.getCategoriesUrl}/${id}`); }
-  createCategory(category: Category): Observable<Category> { return this.http.post<Category>(this.apiUrl, category); }
-  updateCategory(id: number, category: Category): Observable<Category> { return this.http.put<Category>(`${this.getCategoriesUrl}/${id}`, category); }
-  deleteCategory(id: number): Observable<void> { return this.http.delete<void>(`${this.getCategoriesUrl}/${id}`); }
-  approveCategory(id: number): Observable<Category> { return this.http.post<Category>(`${this.getCategoriesUrl}/${id}/approve`, {}); }
+  private apiBaseUrl = `https://localhost:49856/api/Product`;
+  private treeUrl = `${this.apiBaseUrl}/tree`;
+  private addCategoryUrl = `${this.apiBaseUrl}/AddCatagory`;
+  private moveTreeUrl = `${this.apiBaseUrl}/move`;
+  private deleteUrl = `${this.apiBaseUrl}`;
+  
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) {}
+
+  /**
+   * Get authorization headers with JWT token
+   */
+  private getAuthHeaders(): HttpHeaders {
+    const token = this.authService.getToken();
+    let headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+    
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+      console.log('✓ JWT Token added to headers');
+    } else {
+      console.log('✗ No JWT Token available');
+    }
+    
+    return headers;
+  }
+  
+  /**
+   * Get tree structure of all categories
+   * Returns hierarchical structure with parent_id and children array
+   * API response: { result: { categories: Category[] }, ... }
+   */
+  getTreeCategories(): Observable<Category[]> { 
+    console.log('Fetching category tree from:', this.treeUrl);
+    return this.http.get<any>(this.treeUrl, { 
+      headers: this.getAuthHeaders() 
+    }).pipe(
+      map(response => {
+        console.log('✓ Raw API response:', response);
+        const categories = response?.result?.categories || [];
+        console.log('✓ Extracted categories:', categories);
+        return categories;
+      })
+    );
+  }
+  
+  /**
+   * Get all categories for listing (flat structure)
+   * API response: { result: { categories: Category[] }, ... }
+   */
+  getCategories(): Observable<Category[]> { 
+    console.log('Fetching all categories from:', this.treeUrl);
+    return this.http.get<any>(this.treeUrl, { 
+      headers: this.getAuthHeaders() 
+    }).pipe(
+      map(response => {
+        console.log('✓ Raw API response:', response);
+        const categories = response?.result?.categories || [];
+        console.log('✓ Extracted categories:', categories);
+        return categories;
+      })
+    );
+  }
+  
+  /**
+   * Create a new category
+   */
+  createCategory(category: Category): Observable<Category> { 
+    console.log('Creating category:', category);
+    console.log('API URL:', this.addCategoryUrl);
+    return this.http.post<Category>(this.addCategoryUrl, category, { 
+      headers: this.getAuthHeaders() 
+    }); 
+  }
+  
+  /**
+   * Move category in tree (update parent)
+   */
+  moveCategory(categoryId: number, newParentId: number): Observable<Category> {
+    const payload = {
+      categoryId: categoryId,
+      newParentId: newParentId
+    };
+    console.log('Moving category:', payload);
+    return this.http.post<Category>(this.moveTreeUrl, payload, { 
+      headers: this.getAuthHeaders() 
+    }); 
+  }
+  
+  /**
+   * Delete a category
+   */
+  deleteCategory(id: number): Observable<void> { 
+    return this.http.delete<void>(`${this.deleteUrl}/${id}`, { 
+      headers: this.getAuthHeaders() 
+    }); 
+  }
 }
 
 export interface Product {
@@ -46,7 +141,7 @@ export interface ProductResponse {
 
 @Injectable({ providedIn: 'root' })
 export class ProductService {
-  private apiUrl = `${environment.apiBaseUrl}/api/product`;
+  private apiUrl = `https://localhost:49856/api/product`;
   constructor(private http: HttpClient) {}
   
   /**
@@ -114,7 +209,7 @@ export interface Order {
 
 @Injectable({ providedIn: 'root' })
 export class OrderService {
-  private apiUrl = `${environment.apiBaseUrl}/api/orders`;
+  private apiUrl = `https://localhost:49856/api/orders`;
   constructor(private http: HttpClient) {}
   getOrders(): Observable<Order[]> { return this.http.get<Order[]>(this.apiUrl); }
   getOrderById(id: number): Observable<Order> { return this.http.get<Order>(`${this.apiUrl}/${id}`); }
@@ -135,7 +230,7 @@ export interface Notification {
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
-  private apiUrl = `${environment.apiBaseUrl}/api/notifications`;
+  private apiUrl = `https://localhost:49856/api/notifications`;
   constructor(private http: HttpClient) {}
   getNotifications(): Observable<Notification[]> { return this.http.get<Notification[]>(this.apiUrl); }
   markAsRead(id: number): Observable<Notification> { return this.http.post<Notification>(`${this.apiUrl}/${id}/read`, {}); }
@@ -154,7 +249,7 @@ export interface Quotation {
 
 @Injectable({ providedIn: 'root' })
 export class QuotationService {
-  private apiUrl = `${environment.apiBaseUrl}/api/quotations`;
+  private apiUrl = `https://localhost:49856/api/quotations`;
   constructor(private http: HttpClient) {}
   getQuotations(): Observable<Quotation[]> { return this.http.get<Quotation[]>(this.apiUrl); }
   getQuotationById(id: number): Observable<Quotation> { return this.http.get<Quotation>(`${this.apiUrl}/${id}`); }
@@ -175,7 +270,7 @@ export interface StaticValue {
 
 @Injectable({ providedIn: 'root' })
 export class StaticValueService {
-  private apiUrl = `${environment.apiBaseUrl}/api/static-values`;
+  private apiUrl = `https://localhost:49856/api/static-values`;
   constructor(private http: HttpClient) {}
   getStaticValues(): Observable<StaticValue[]> { return this.http.get<StaticValue[]>(this.apiUrl); }
   getStaticValueById(id: number): Observable<StaticValue> { return this.http.get<StaticValue>(`${this.apiUrl}/${id}`); }

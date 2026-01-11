@@ -16,6 +16,7 @@ import { AppHeaderComponent } from '../app-header/app-header.component';
     BackdropComponent
   ],
   templateUrl: './app-layout.component.html',
+  styleUrl: './app-layout.component.css'
 })
 
 export class AppLayoutComponent {
