@@ -1,3 +1,4 @@
+// signin-form.component.ts
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { LabelComponent } from '../../form/label/label.component';
@@ -5,38 +6,44 @@ import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormGroup, FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { InactivityService } from '../../../services/inactivity.service';
+import { SocialAuthSimpleService } from '../../../services/social-auth-simple.service';
+import { SocialUser } from '../../../models/auth.models';  // Import SocialUser, not SocialLoginRequest
 
 @Component({
   selector: 'app-signin-form',
+  standalone: true,
   imports: [
     CommonModule,
     LabelComponent,
     RouterModule,
     ReactiveFormsModule,
   ],
-  templateUrl: './signin-form.component.html',
+  templateUrl:  './signin-form.component.html',
   styles: ``
 })
 export class SigninFormComponent implements OnInit {
   showPassword = false;
-  loginForm!: FormGroup;
+  loginForm! : FormGroup;
   errorMessage = '';
   isLoading = false;
+  isSocialLoading = false;
   returnUrl: string = '';
 
   constructor(
     private formBuilder: FormBuilder,
     private authService: AuthService,
+    private socialAuthService: SocialAuthSimpleService,
     private inactivityService: InactivityService,
     private router: Router,
-    private route: ActivatedRoute
-  ) {}
+    private route:  ActivatedRoute
+  ) {
+    console.log('SigninFormComponent initialized');
+  }
 
   ngOnInit() {
-    // Get return URL from route parameters or default to admin dashboard
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
 
-    this.loginForm = this.formBuilder.group({
+    this.loginForm = this. formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       rememberMe: [false]
@@ -53,53 +60,137 @@ export class SigninFormComponent implements OnInit {
       return;
     }
 
-    const { email, password, rememberMe } = this.loginForm.value;
+    const { email, password, rememberMe } = this.loginForm. value;
     this.isLoading = true;
-    this.errorMessage = '';
+    this. errorMessage = '';
 
-    // Call login with rememberMe flag
-    this.authService.login(email, password, rememberMe).subscribe({
-      next: (response: any) => {
+    this. authService.login(email, password, rememberMe).subscribe({
+      next: (response:  any) => {
         this.isLoading = false;
-
-        // Backend returns token inside result object: { result: { token: '...' } }
         const token = response?.result?.token || response?.token;
+        
         if (token) {
-          // Token is already saved by the service in the login method
           console.log('User logged in successfully');
-
-          // Initialize inactivity timer after successful login
           this.inactivityService.initInactivityTimer();
-
-          // Navigate to the return URL or dashboard
-          const navigationPath = this.returnUrl.startsWith('/') 
-            ? this.returnUrl 
-            : '/' + this.returnUrl;
-          
-          this.router.navigate([navigationPath], { replaceUrl: true });
+          this.navigateAfterLogin();
         } else {
-          this.errorMessage = 'No token received from server. Please try again.';
+          this.errorMessage = 'No token received from server. ';
         }
       },
       error: (error: any) => {
         this.isLoading = false;
-        
-        // Handle different error status codes
-        if (error?.status === 401 || error?.status === 400) {
-          this.errorMessage = 'Invalid username or password';
-        } else if (error?.status === 403) {
-          this.errorMessage = 'Access forbidden. Please contact administrator.';
-        } else if (error?.status === 0) {
-          this.errorMessage = 'Unable to connect to the server. Please check your connection.';
-        } else {
-          this.errorMessage = error?.error?.message || 'Login failed. Please try again.';
-        }
-
-        console.error('Login error:', error);
+        this. handleError(error);
       }
     });
   }
 
+  signInWithGoogle() {
+    // Prevent double-click
+    if (this.isSocialLoading) {
+      console.warn('⚠️ Social login already in progress');
+      return;
+    }
+
+    this.isSocialLoading = true;
+    this. errorMessage = '';
+    console. log('🔵 Initiating Google sign-in...');
+
+    this.socialAuthService.signInWithGoogle()
+      .then(user => {
+        console. log('Google sign-in successful:', user);
+        this.handleSocialLogin(user);  // Pass entire user object
+      })
+      .catch(error => {
+        this.isSocialLoading = false;
+        console.error(' Google sign-in failed:', error);
+        this.errorMessage = error?. message || 'Google sign-in failed. Please try again.';
+      });
+  }
+
+  signInWithFacebook() {
+    // Prevent double-click
+    if (this. isSocialLoading) {
+      console.warn('⚠️ Social login already in progress');
+      return;
+    }
+
+    this.isSocialLoading = true;
+    this.errorMessage = '';
+    console.log('🔵 Initiating Facebook sign-in...');
+
+    this.socialAuthService.signInWithFacebook()
+      .then(user => {
+        console.log('Facebook sign-in successful:', user);
+        this.handleSocialLogin(user);  // Pass entire user object
+      })
+      .catch(error => {
+        this.isSocialLoading = false;
+        console. error(' Facebook sign-in failed:', error);
+        this.errorMessage = error?.message || 'Facebook sign-in failed.  Please try again.';
+      });
+  }
+
+  private handleSocialLogin(socialUser: SocialUser) {
+    console.log('📤 Sending social user data to backend... ', socialUser);
+    const rememberMe = this.loginForm.get('rememberMe')?.value || false;
+
+
+    this.authService.socialLogin(socialUser,rememberMe).subscribe({
+      next: (response: any) => {
+        this.isSocialLoading = false;
+        console.log('Backend response:', response);
+        if(response?.result?.code ==206){
+          localStorage.setItem('socialUser', JSON.stringify(socialUser));
+           this.router.navigate(['/register-company'], {
+            queryParamsHandling: 'preserve'  
+      });
+        }
+         const token = response?.result?.token || response?.token;
+        debugger;
+        if (token) {
+          console.log('User logged in successfully');
+          this.inactivityService.initInactivityTimer();
+          this.navigateAfterLogin();
+        } else {
+          this.errorMessage = 'No token received from server. ';
+        }
+      },
+      error: (error: any) => {
+        this.isSocialLoading = false;
+        console.error(' Backend authentication failed:', error);
+        
+        const errorMsg = error?.error?.message || 
+                        error?.error?.title || 
+                        error?.message ||
+                        'Social login failed. Please try regular login. ';
+        this.errorMessage = errorMsg;
+      }
+    });
+  }
+
+  private navigateAfterLogin() {
+    const navigationPath = this.returnUrl.startsWith('/') 
+      ? this.returnUrl 
+      : '/' + this.returnUrl;
+    
+    console.log('🚀 Navigating to:', navigationPath);
+    this.router.navigate([navigationPath], { replaceUrl: true });
+  }
+
+  private handleError(error:  any) {
+    if (error?.status === 401 || error?.status === 400) {
+      this.errorMessage = 'Invalid username or password';
+    } else if (error?.status === 403) {
+      this.errorMessage = 'Access forbidden';
+    } else if (error?.status === 0) {
+      this.errorMessage = 'Unable to connect to server';
+    } else {
+      this.errorMessage = error?.error?.message || 'Login failed';
+    }
+    console.error('Login error:', error);
+  }
+
+  // Form control getters
   get email() {
     return this.loginForm.get('email');
   }
@@ -108,9 +199,7 @@ export class SigninFormComponent implements OnInit {
     return this.loginForm.get('password');
   }
 
-  get rememberMe() {
+  get rememberMeControl() {
     return this.loginForm.get('rememberMe');
   }
 }
-
-

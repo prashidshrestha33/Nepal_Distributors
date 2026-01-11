@@ -19,6 +19,25 @@ export interface LoginResponse {
   user?: UserInfo;
   expiresIn?: number;
 }
+export interface SocialUser {
+  id: string;              // User ID from provider (Google sub or Facebook id)
+  name: string;            // Full name
+  email: string;           // Email address
+  photoUrl: string;        // Profile picture URL
+  provider: 'GOOGLE' | 'FACEBOOK';  // Provider name (uppercase)
+  token: string;       
+}
+
+export interface SocialLoginRequest {
+  email?: string;
+  password?:  string;
+  provider: string;        // 'GOOGLE' or 'FACEBOOK'
+  token:  string;           // ID token or access token from provider
+  name?: string;           // User's full name
+  photo?: string;          // Profile picture URL
+  rememberMe:  boolean;     // Whether to persist login
+}
+
 
 /**
  * User information from JWT token claims

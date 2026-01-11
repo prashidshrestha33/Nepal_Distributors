@@ -32,9 +32,6 @@ namespace Marketplace.Models
         [Required]
         [EmailAddress]
         public string Email { get; set; } = string.Empty;
-
-        [Required]
-        [MinLength(6)]
         public string Password { get; set; } = string.Empty;
 
         public string? FullName { get; set; }
@@ -44,16 +41,21 @@ namespace Marketplace.Models
         public string? Status { get; set; }
         public long? Credits { get; set; }
         public string? Tier { get; set; }
+        public string? Provider { get; set; }
+        public string? ID { get; set; }
+        public string? Token { get; set; }
     }
 
     public class LoginRequest
     {
+        public string id { get; set; } = string.Empty;
         [Required]
         [EmailAddress]
         public string Email { get; set; } = string.Empty;
-
-        [Required]
         public string Password { get; set; } = string.Empty;
+        public string Provider { get; set; } = string.Empty;
+        public string Token { get; set; } = string.Empty;
+        public string Photo { get; set; } = string.Empty;
     }
 
     public class GoogleLoginRequest

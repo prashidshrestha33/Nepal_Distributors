@@ -8,6 +8,7 @@ import { InactivityService } from '../../../services/inactivity.service';
 import { SignupFlowService } from '../../../services/signup-flow.service';
 import { FormDataService } from '../../../services/form-data.service';
 import { RegistrationFlowService } from '../../../services/registration-flow.service';
+import { SocialUser } from '../../../models/auth.models';  
 
 // Custom validator for strong password
 function strongPasswordValidator(control: AbstractControl): ValidationErrors | null {
@@ -79,6 +80,7 @@ function passwordMismatchValidator(form: AbstractControl): ValidationErrors | nu
 })
 export class SignupFormComponent implements OnInit {
   showPassword = false;
+  isglfb = false;
   signupForm!: FormGroup;
   errorMessage = '';
   emailConflictError = ''; // Track email conflict error separately
@@ -120,22 +122,55 @@ export class SignupFormComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.signupForm = this.formBuilder.group({
-      firstName: ['', [Validators.required]],
-      phoneNo: ['', [Validators.required]],
-      email: ['', [Validators.required, emailFormatValidator]],
-      password: ['', [Validators.required, strongPasswordValidator]],
-      confirmPassword: ['', [Validators.required]],
-      agreeToTerms: [false, [Validators.requiredTrue]]
-    }, { validators: passwordMismatchValidator });
+   const sSocialUser = localStorage.getItem('socialUser');
+let socialUser: SocialUser | null = null;
+let isSocialSignup = false;
 
-    // Listen to email field changes to clear email conflict error
-    this.signupForm.get('email')?.valueChanges.subscribe(() => {
-      this.emailConflictError = ''; // Clear email conflict error when user types
-    });
-
-    // Load saved user data from FormDataService if available
-    const savedUserData = this.formDataService.getUserData();
+if (sSocialUser) {
+  try {
+    socialUser = JSON.parse(sSocialUser) as SocialUser;
+    isSocialSignup = true;
+    
+    if (socialUser.provider === "GOOGLE" || socialUser.provider === "FACEBOOK") {
+      this.isglfb = true;
+      
+      // ✅ Create form for social signup
+      this.signupForm = this.formBuilder.group({
+        firstName: ['', [Validators.required]],
+        phoneNo: ['', [Validators.required]],
+        email: ['', [Validators.required, emailFormatValidator]],
+        password:  [''],
+        confirmPassword: [''],
+        agreeToTerms: [false, [Validators.requiredTrue]],
+        provider: ['', [Validators.required]],  // ✅ Changed from requiredTrue
+        id: ['', [Validators.required]],        // ✅ Changed from requiredTrue
+        token: ['', [Validators.required]]      // ✅ Changed from requiredTrue
+      });
+      // ✅ FIXED: Use this.signupForm instead of this.formBuilder
+      this.signupForm.patchValue({
+        firstName: socialUser.name,
+        email: socialUser.email,
+        provider: socialUser.provider,
+        id: socialUser.id,
+        token: socialUser.token
+      });
+      
+      console.log('✅ Social user values set:', this.signupForm. value);
+      
+    } else {
+      // Non-Google/Facebook provider
+      this.signupForm = this.formBuilder.group({
+        firstName: ['', [Validators.required]],
+        phoneNo: ['', [Validators.required]],
+        email: ['', [Validators.required, emailFormatValidator]],
+        password:  ['', [Validators.required, strongPasswordValidator]],
+        confirmPassword: ['', [Validators. required]],
+        agreeToTerms: [false, [Validators.requiredTrue]],
+        provider: [''],
+        id: [''],
+        token: ['']
+      }, { validators: passwordMismatchValidator });
+          const savedUserData = this.formDataService.getUserData();
     if (savedUserData) {
       this.signupForm.patchValue({
         firstName: savedUserData.firstName,
@@ -145,6 +180,43 @@ export class SignupFormComponent implements OnInit {
         confirmPassword: savedUserData.confirmPassword
       });
     }
+    }
+    
+    console.log('✅ Social user detected:', socialUser);
+    
+  } catch (error) {
+    console.error('❌ Error parsing socialUser:', error);
+    localStorage.removeItem('socialUser');
+    
+  }
+} else {
+  // Regular signup (no social user)
+  this.signupForm = this.formBuilder.group({
+    firstName: ['', [Validators.required]],
+    phoneNo: ['', [Validators.required]],
+    email: ['', [Validators. required, emailFormatValidator]],
+    password: ['', [Validators.required, strongPasswordValidator]],
+    confirmPassword: ['', [Validators.required]],
+    agreeToTerms: [false, [Validators.requiredTrue]],
+    provider: [''],
+    id: [''],
+    token: ['']
+  }, { validators: passwordMismatchValidator });
+      const savedUserData = this.formDataService.getUserData();
+    if (savedUserData) {
+      this.signupForm.patchValue({
+        firstName: savedUserData.firstName,
+        phoneNo: savedUserData.phoneNo,
+        email: savedUserData.email,
+        password: savedUserData.password,
+        confirmPassword: savedUserData.confirmPassword
+      });
+    }
+}
+    // Listen to email field changes to clear email conflict error
+    this.signupForm.get('email')?.valueChanges.subscribe(() => {
+      this.emailConflictError = ''; // Clear email conflict error when user types
+    });
 
     // Ensure we have company data from Step 1. If not present, redirect user back.
     const companyData = this.flow.getCompanyForm();
@@ -190,11 +262,12 @@ export class SignupFormComponent implements OnInit {
   }
 
   async onSignUp(): Promise<void> {
+    debugger;
     if (this.signupForm.invalid) {
       this.errorMessage = 'Please fill in all required fields correctly';
       return;
     }
-    const { firstName, phoneNo, email, password, confirmPassword } = this.signupForm.value;
+    const { firstName, phoneNo, email, password, confirmPassword,provider,id,token } = this.signupForm.value;
     
     // Verify passwords match (extra safety check)
     if (password !== confirmPassword) {
@@ -209,7 +282,10 @@ export class SignupFormComponent implements OnInit {
       email,
       password,
       confirmPassword,
-      agreeToTerms: true
+      agreeToTerms: true,
+      provider,
+      id,
+      token
     });
     
     this.isLoading = true;
@@ -260,6 +336,9 @@ export class SignupFormComponent implements OnInit {
     formData.append('Register.Phone', phoneNo || '');
     formData.append('Register.Email', email || '');
     formData.append('Register.Password', password || '');
+    formData.append('Register.Provider', provider || '');
+    formData.append('Register.ID', id || '');
+    formData.append('Register.Token',token || '');
 
     // Debug log (dev only)
     try {
@@ -390,7 +469,10 @@ export class SignupFormComponent implements OnInit {
       email: formValues.email,
       password: formValues.password,
       confirmPassword: formValues.confirmPassword,
-      agreeToTerms: true
+      agreeToTerms: true,
+      provider: formValues.provider,
+      id: formValues.id,
+      token: formValues.token
     });
     
     // Set flag indicating user is coming from signup form

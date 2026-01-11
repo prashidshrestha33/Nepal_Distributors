@@ -138,8 +138,8 @@
                 <option value="" class="text-gray-400">
                   {{ loadingCompanyTypes ? 'Loading company types...' : companyTypes.length === 0 ? 'No company types available' : 'Select company type' }}
                 </option>
-                <option *ngFor="let type of companyTypes" [value]="type.name">
-                  {{ type.catalogType || type.catalogName || type.name }}
+                <option *ngFor="let type of companyTypes" [value]="type.StaticData">
+                  {{type.staticValueKey}}
                 </option>
               </select>
               <p *ngIf="companyType?.invalid && companyType?.touched" class="mt-1 text-sm text-red-600">Company type is required</p>
@@ -167,7 +167,7 @@
               />
               <p *ngIf="address?.invalid && address?.touched" class="mt-1 text-sm text-red-600">Address is required</p>
             </div>
-
+        
             <div>
               <label class="block text-xs font-medium mb-1 text-gray-700">
                 Geographical Location <span class="text-error-500">*</span>
@@ -196,7 +196,7 @@
                   </span>
                 </button>
               </div>
-
+                
               <p *ngIf="googleMapLocation?.invalid && googleMapLocation?.touched" class="mt-1 text-sm text-red-600">Geographical location is required</p>
             </div>
           </div>

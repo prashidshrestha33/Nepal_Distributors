@@ -9,6 +9,6 @@ namespace Marketpalce.Repository.Repositories.StaticValueReop
 {
     public interface ICompanyTypeRepository
     {
-        Task<List<CatalogTypeDto>> GetCompanyTypesAsync();
+        Task<List<StaticValue>> GetCompanyTypesAsync();
     }
 }

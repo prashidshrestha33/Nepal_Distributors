@@ -3,7 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
-
+import { SocialUser } from '../models/auth.models';
 @Injectable({
   providedIn: 'root'
 })
@@ -264,4 +264,36 @@ export class AuthService {
       params: { email }
     });
   }
+  socialLogin(socialUser: SocialUser, rememberMe: boolean = false): Observable<any> {
+  const endpoint = `${this.api}/api/auth/login`;
+
+
+  console.log('📤 Sending social login request:', {socialUser});
+
+  return this.http.post(endpoint, socialUser).pipe(
+    tap((response: any) => {
+      const jwtToken = response?.result?.token || response?.token;
+      
+      if (jwtToken) {
+        debugger;
+        this.saveToken(jwtToken, rememberMe);
+        // Store token
+        if (rememberMe) {
+          localStorage.setItem('authToken', jwtToken);
+        } else {
+          sessionStorage. setItem('authToken', jwtToken);
+        }
+        
+        // Store user info if available
+        const user = response?.result?.user || response?.user;
+        if (user) {
+          const storage = rememberMe ? localStorage : sessionStorage;
+          storage.setItem('currentUser', JSON.stringify(user));
+        }
+        
+        console.log('✅ Social login token stored');
+      }
+    })
+  );
+}
 }

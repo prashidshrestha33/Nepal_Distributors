@@ -11,6 +11,7 @@ using Marketplace.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Data;
@@ -68,9 +69,14 @@ namespace Marketplace.Api.Controllers
             req.user = moduleToCommon.Map<RegisterRequest>(common.Register);
             req.Company = moduleToCommon.Map<CompanyCreateRequest>(common.Company);
             if (req == null) return BadRequest(new { error = "Request body required." });
-            if (string.IsNullOrWhiteSpace(req.user.Email) || string.IsNullOrWhiteSpace(req.user.Password))
+            
+            
+            if (string.IsNullOrWhiteSpace(req.user.Email) || (string.IsNullOrWhiteSpace(req.user.Password) && string.IsNullOrWhiteSpace(req.user.Provider)))
                 return BadRequest(new { error = "Email and password required." });
-
+            if (!string.IsNullOrWhiteSpace(req.user.Provider) && string.IsNullOrWhiteSpace(req.user.ID) && string.IsNullOrWhiteSpace(req.user.Token))
+            {
+                return BadRequest(new { error = "Invalid ID Or token" });
+            }
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
             try { _ = new MailAddress(req.user.Email); }
@@ -179,6 +185,8 @@ namespace Marketplace.Api.Controllers
                     CompanyId = companyId,
                     Role = role,
                     Status = req.user.Status ?? "pending",
+                    GoogleId = !req.user.Provider.IsNullOrEmpty() && req.user.Provider == "GOOGLE" ? req.user.ID : "",
+                    FacebookId = !req.user.Provider.IsNullOrEmpty() && req.user.Provider == "FACEBOOK" ? req.user.ID : "",
                     Credits = req.user.Credits ?? 0
                 };
 
@@ -206,12 +214,31 @@ namespace Marketplace.Api.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest req)
         {
-            if (req == null) return BadRequest(new { error = "Request body required." });
+           if (req == null) return BadRequest(new { error = "Request body required." });
+            if (req.Provider.IsNullOrEmpty() && req.Password.IsNullOrEmpty()) return Unauthorized();
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
             var email = req.Email.Trim().ToLowerInvariant();
             var user = await _users.GetByEmailAsync(email);
-            if (user == null) return Unauthorized();
+            if (req.Provider== "GOOGLE")
+            {
+                 user = await _users.GetByEmailAsync(null, req.id);
+            }
+            else if(req.Provider == "FACEBOOK")
+            {
+
+                 user = await _users.GetByEmailAsync(null, null,req.id);
+            }
+            
+            if (user == null && !req.id.IsNullOrEmpty())
+            {
+                return Ok(new
+                {
+                    code=206,
+                    req
+                });
+            }
+            else if (user == null) return Unauthorized();
 
             var verify = _hasher.VerifyHashedPassword(user, user.PasswordHash ?? string.Empty, req.Password);
             if (verify == PasswordVerificationResult.Failed) return Unauthorized();
@@ -283,7 +310,11 @@ namespace Marketplace.Api.Controllers
                 await _users.UpdateLastLoginAsync(id, DateTimeOffset.UtcNow);
 
                 var token = _jwt.GenerateToken(newUser);
-                return Ok(new { token });
+                return Ok(new
+                {
+                    code = 200,
+                    token
+                });
             }
 
             // Existing user: if google_id not set, link it only when safe (email matches and is verified)

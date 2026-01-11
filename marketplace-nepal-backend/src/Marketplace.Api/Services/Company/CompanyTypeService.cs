@@ -12,7 +12,7 @@ namespace Marketplace.Api.Services.Company
             _companyTypeRepository = companyTypeRepository;
         }
 
-        public Task<List<CatalogTypeDto>> GetCompanyTypesAsync()
+        public Task<List<StaticValue>> GetCompanyTypesAsync()
         {
             return _companyTypeRepository.GetCompanyTypesAsync();
         }

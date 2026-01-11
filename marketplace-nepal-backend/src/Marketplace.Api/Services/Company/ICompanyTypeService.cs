@@ -4,6 +4,6 @@ namespace Marketplace.Api.Services.Company
 {
     public interface ICompanyTypeService
     {
-        Task<List<CatalogTypeDto>> GetCompanyTypesAsync();
+        Task<List<StaticValue>> GetCompanyTypesAsync();
     }
 }

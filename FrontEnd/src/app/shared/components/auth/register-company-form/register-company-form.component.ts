@@ -142,46 +142,8 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
         
         // Handle different response structures
         try {
-          if (Array.isArray(response)) {
-            // Direct array response
-            this.companyTypes = response.map((item: any) => ({
-              id: item.id || item.catalogId,
-              name: extractName(item),
-              catalogType: item.catalogType,
-              catalogName: item.catalogName,
-              displayName: item.displayName
-            })).filter((item: any) => item.name); // Filter out items without names
-          } else if (response && response.data && Array.isArray(response.data)) {
-            // Response with data wrapper
-            this.companyTypes = response.data.map((item: any) => ({
-              id: item.id || item.catalogId,
-              name: extractName(item),
-              catalogType: item.catalogType,
-              catalogName: item.catalogName,
-              displayName: item.displayName
-            })).filter((item: any) => item.name);
-          } else if (response && response.result && Array.isArray(response.result)) {
-            // Response with result wrapper
-            this.companyTypes = response.result.map((item: any) => ({
-              id: item.id || item.catalogId,
-              name: extractName(item),
-              catalogType: item.catalogType,
-              catalogName: item.catalogName,
-              displayName: item.displayName
-            })).filter((item: any) => item.name);
-          } else if (response && typeof response === 'object' && Object.keys(response).length > 0) {
-            // Try to extract from object as last resort
-            const items = Object.values(response).filter(item => typeof item === 'object' && item !== null) as any[];
-            if (items.length > 0) {
-              this.companyTypes = items.map((item: any) => ({
-                id: item.id || item.catalogId,
-                name: extractName(item),
-                catalogType: item.catalogType,
-                catalogName: item.catalogName,
-                displayName: item.displayName
-              })).filter((item: any) => item.name);
-            }
-          }
+         
+           this.companyTypes = response.result || [];
         } catch (e) {
           console.error('Error processing response:', e);
         }
