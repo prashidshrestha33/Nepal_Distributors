@@ -137,9 +137,20 @@
         </p>
         }
       </div>
-
+    <input
+              formControlName="provider"
+                type="hidden"
+              /> 
+              <input
+                type="hidden"
+                 formControlName="id"
+              /> 
+              <input
+                type="hidden"
+                 formControlName="token"
+              />
       <!-- Password -->
-      <div>
+      <div *ngIf="!isglfb">
         <app-label>Password <span class="text-error-500">*</span></app-label>
         <div class="relative">
           <input
@@ -175,7 +186,7 @@
       </div>
 
       <!-- Confirm Password -->
-      <div>
+      <div *ngIf="!isglfb">
         <app-label>Confirm Password <span class="text-error-500">*</span></app-label>
         <input
           [type]="showPassword ? 'text' : 'password'"

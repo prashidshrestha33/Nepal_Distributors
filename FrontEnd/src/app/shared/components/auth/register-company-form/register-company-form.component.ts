@@ -8,6 +8,7 @@ import { SignupFlowService } from '../../../services/signup-flow.service';
 import { FormDataService } from '../../../services/form-data.service';
 import { RegistrationFlowService } from '../../../services/registration-flow.service';
 import { CatalogService } from '../../../services/catalog.service';
+import { environment } from '../../../../../environments/environment';
 
 // Phone number validator: 7-10 digits only
 function phoneNumberValidator(control: AbstractControl): ValidationErrors | null {
@@ -38,10 +39,12 @@ function phoneNumberValidator(control: AbstractControl): ValidationErrors | null
   styles: [],
 })
 export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
+  private api = environment.apiBaseUrl;
   form: FormGroup;
   loading = false;
   createdCompanyId: number | null = null;
   error: string | null = null;
+  lgmessage: string | null = null;
   fileName = '';
   filePreview: string | null = null;
   companyTypes: any[] = []; // Store fetched company types
@@ -81,6 +84,12 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    debugger;
+      const Messagelg = localStorage.getItem('Messagelg');
+    
+    if (Messagelg && Messagelg!="") {
+        this.lgmessage=Messagelg;
+    }
     // Fetch company types from API
     this.loadCompanyTypes();
 
@@ -110,6 +119,7 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
       this.createdCompanyId = null;
       this.error = null;
       
+      
       // Clear localStorage
       localStorage.removeItem('companyFormData');
       localStorage.removeItem('registrationFlowData');
@@ -128,8 +138,7 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
    */
   private loadCompanyTypes(): void {
     this.loadingCompanyTypes = true;
-    const apiUrl = 'https://localhost:49856/api/public/companyType';
-    
+    const apiUrl = `${this.api}/api/public/companyType`
     this.http.get<any>(apiUrl).subscribe({
       next: (response: any) => {
         console.log('Company Types API Response:', response);
@@ -142,46 +151,8 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
         
         // Handle different response structures
         try {
-          if (Array.isArray(response)) {
-            // Direct array response
-            this.companyTypes = response.map((item: any) => ({
-              id: item.id || item.catalogId,
-              name: extractName(item),
-              catalogType: item.catalogType,
-              catalogName: item.catalogName,
-              displayName: item.displayName
-            })).filter((item: any) => item.name); // Filter out items without names
-          } else if (response && response.data && Array.isArray(response.data)) {
-            // Response with data wrapper
-            this.companyTypes = response.data.map((item: any) => ({
-              id: item.id || item.catalogId,
-              name: extractName(item),
-              catalogType: item.catalogType,
-              catalogName: item.catalogName,
-              displayName: item.displayName
-            })).filter((item: any) => item.name);
-          } else if (response && response.result && Array.isArray(response.result)) {
-            // Response with result wrapper
-            this.companyTypes = response.result.map((item: any) => ({
-              id: item.id || item.catalogId,
-              name: extractName(item),
-              catalogType: item.catalogType,
-              catalogName: item.catalogName,
-              displayName: item.displayName
-            })).filter((item: any) => item.name);
-          } else if (response && typeof response === 'object' && Object.keys(response).length > 0) {
-            // Try to extract from object as last resort
-            const items = Object.values(response).filter(item => typeof item === 'object' && item !== null) as any[];
-            if (items.length > 0) {
-              this.companyTypes = items.map((item: any) => ({
-                id: item.id || item.catalogId,
-                name: extractName(item),
-                catalogType: item.catalogType,
-                catalogName: item.catalogName,
-                displayName: item.displayName
-              })).filter((item: any) => item.name);
-            }
-          }
+         
+           this.companyTypes = response.result || [];
         } catch (e) {
           console.error('Error processing response:', e);
         }

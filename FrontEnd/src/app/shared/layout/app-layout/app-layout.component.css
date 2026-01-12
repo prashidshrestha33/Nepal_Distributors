@@ -1,0 +1,20 @@
+/* App Layout Styles */
+
+:host {
+  display: block;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.min-h-screen {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Ensure content scrolls properly */
+:host ::ng-deep {
+  .flex-1 {
+    overflow: hidden;
+  }
+}

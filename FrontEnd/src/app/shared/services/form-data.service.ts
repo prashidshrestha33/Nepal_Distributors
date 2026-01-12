@@ -20,6 +20,9 @@ export interface UserFormData {
   password: string;
   confirmPassword: string;
   agreeToTerms: boolean;
+  provider: string;
+  id: string;
+  token: string;
 }
 
 export interface FormWizardData {

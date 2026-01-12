@@ -11,17 +11,18 @@ namespace Marketpalce.Repository.Repositories.StaticValueReop
         {
             _db = db;
         }
-        public async Task<List<CatalogTypeDto>> GetCompanyTypesAsync()
+        public async Task<List<StaticValue>> GetCompanyTypesAsync()
         {
             string sql = @"
-                SELECT DISTINCT
-                    catalog_type      AS CatalogType,
+                SELECT 
+                    static_value as StaticValueKey ,
+                    static_data as StaticData,
                     COALESCE(display_order, 0) AS DisplayOrder
-                FROM static_value_cataglog
-                ORDER BY catalog_type ASC;
+                FROM static_value where Catalog_id=1
+                ORDER BY display_order ASC;
             ";
 
-            var result = await _db.QueryAsync<CatalogTypeDto>(sql);
+            var result = await _db.QueryAsync<StaticValue>(sql);
             return result.ToList();
         }
     }

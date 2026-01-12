@@ -28,15 +28,17 @@ namespace Marketpalce.Repository.Repositories.UserReop
     facebook_id AS FacebookId,
     created_at AS CreatedAt,
     updated_at AS UpdatedAt,
-    last_login_at AS LastLoginAt
-FROM dbo.users WHERE isnull(approve_fg,'n')='y'";
+    last_login_at AS LastLoginAt,
+    case when isnull(approve_fg,'n')='y' then 'y' else 'n'
+    end AS ApproveFG
+    FROM dbo.users WHERE 1=1";
             if (email != null)
                 sql += "AND LOWER(email) = LOWER(@Email);  ";
             else if (googleId != null)
-                sql += " google_id = @GoogleId; ";
+                sql += "AND google_id = @GoogleId; ";
             else if (facebookId != null)
-                sql += "facebook_id = @FacebookId;";
-            return await _db.QueryFirstOrDefaultAsync<MarketplaceUser>(sql, new { Email = email });
+                sql += "AND facebook_id = @FacebookId;";
+            return await _db.QueryFirstOrDefaultAsync<MarketplaceUser>(sql, new { Email = email , GoogleId = googleId, FacebookId = facebookId });
         }
         public async Task<long> CreateAsync(MarketplaceUser user, IDbTransaction? transaction = null)
         {
