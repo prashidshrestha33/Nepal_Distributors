@@ -1,4 +1,4 @@
-using Azure.Core;
+﻿using Azure.Core;
 using Google.Apis.Auth;
 using Marketpalce.Repository.Repositories.ComponyRepo;
 using Marketpalce.Repository.Repositories.UserReop;
@@ -185,12 +185,11 @@ namespace Marketplace.Api.Controllers
                     CompanyId = companyId,
                     Role = role,
                     Status = req.user.Status ?? "pending",
-                    GoogleId = !req.user.Provider.IsNullOrEmpty() && req.user.Provider == "GOOGLE" ? req.user.ID : "",
-                    FacebookId = !req.user.Provider.IsNullOrEmpty() && req.user.Provider == "FACEBOOK" ? req.user.ID : "",
                     Credits = req.user.Credits ?? 0
                 };
-
                 user.PasswordHash = _hasher.HashPassword(user, req.user.Password);
+                user.GoogleId = !req.user.Provider.IsNullOrEmpty() && req.user.Provider == "GOOGLE" ? _hasher.HashPassword(user, req.user.ID) : "";
+                user.FacebookId = !req.user.Provider.IsNullOrEmpty() && req.user.Provider == "FACEBOOK" ? _hasher.HashPassword(user, req.user.ID) : "";
                 var userId = await _users.CreateAsync(user, tx);
 
                 tx.Commit();
@@ -214,205 +213,134 @@ namespace Marketplace.Api.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest req)
         {
-           if (req == null) return BadRequest(new { error = "Request body required." });
-            if (req.Provider.IsNullOrEmpty() && req.Password.IsNullOrEmpty()) return Unauthorized();
-            if (!ModelState.IsValid) return ValidationProblem(ModelState);
+            if (req == null)
+            {
+                return BadRequest(ApiResponse<LoginResponse>.BadRequest(
+                    message: "Request body is required"
+                ));
+            }
 
-            var email = req.Email.Trim().ToLowerInvariant();
+            var email = req.Email?.Trim().ToLowerInvariant();
+            if (string.IsNullOrEmpty(email))
+            {
+                return Unauthorized(ApiResponse<LoginResponse>.Create(
+                    401,
+                    message: "Email is required"
+                ));
+            }
+
             var user = await _users.GetByEmailAsync(email);
-            if (req.Provider== "GOOGLE")
-            {
-                 user = await _users.GetByEmailAsync(null, req.id);
-            }
-            else if(req.Provider == "FACEBOOK")
-            {
 
-                 user = await _users.GetByEmailAsync(null, null,req.id);
-            }
-            
-            if (user == null && !req.id.IsNullOrEmpty())
+            // 🔹 Social login but user not registered
+            if (user == null && !string.IsNullOrEmpty(req.id))
             {
-                return Ok(new
-                {
-                    code=206,
-                    req
-                });
+                return Unauthorized(ApiResponse<LoginResponse>.Create(
+                    401,
+                    new LoginResponse
+                    {
+                        Success = false,
+                        Status = LoginStatus.SocialUserNotRegistered,
+                        Message = "Componey not registered. Please complete signup.",
+                        SocialUser = new SocialUserDto
+                        {
+                            Email = email,
+                            Provider = req.Provider ?? string.Empty,
+                            ProviderId = req.id
+                        }
+                    }
+                ));
             }
-            else if (user == null) return Unauthorized();
 
-            var verify = _hasher.VerifyHashedPassword(user, user.PasswordHash ?? string.Empty, req.Password);
-            if (verify == PasswordVerificationResult.Failed) return Unauthorized();
+            // 🔹 User not found
+            if (user == null)
+            {
+                return Unauthorized(ApiResponse<LoginResponse>.Create(
+                    401,
+                    new LoginResponse
+                    {
+                        Success = false,
+                        Status = LoginStatus.UserNotFound,
+                        Message = "User not found"
+                    }
+                ));
+            }
 
-            if (verify == PasswordVerificationResult.SuccessRehashNeeded)
+            // 🔹 Verify credentials
+            PasswordVerificationResult verify;
+
+            if (req.Provider == "GOOGLE")
+            {
+                verify = _hasher.VerifyHashedPassword(
+                    user,
+                    user.GoogleId ?? string.Empty,
+                    req.id ?? string.Empty
+                );
+            }
+            else if (req.Provider == "FACEBOOK")
+            {
+                verify = _hasher.VerifyHashedPassword(
+                    user,
+                    user.FacebookId ?? string.Empty,
+                    req.id ?? string.Empty
+                );
+            }
+            else
+            {
+                verify = _hasher.VerifyHashedPassword(
+                    user,
+                    user.PasswordHash ?? string.Empty,
+                    req.Password ?? string.Empty
+                );
+            }
+
+            if (verify == PasswordVerificationResult.Failed)
+            {
+                return Unauthorized(ApiResponse<LoginResponse>.Create(
+                    401,
+                    new LoginResponse
+                    {
+                        Success = false,
+                        Status = LoginStatus.InvalidCredentials,
+                        Message = "Invalid credentials"
+                    }
+                ));
+            }
+
+            // 🔹 Approval pending
+            if (user.ApproveFG == "n")
+            {
+                return StatusCode(403, ApiResponse<LoginResponse>.Create(
+                    403,
+                    new LoginResponse
+                    {
+                        Success = false,
+                        Status = LoginStatus.ApprovalPending,
+                        Message = "Your registration is under review. Please Contact Admin."
+                    }
+                ));
+            }
+
+            // 🔹 Rehash password if needed
+            if (verify == PasswordVerificationResult.SuccessRehashNeeded && req.Password != null)
             {
                 var newHash = _hasher.HashPassword(user, req.Password);
-                try { await _users.UpdatePasswordHashAsync(user.Id, newHash); user.PasswordHash = newHash; }
-                catch { /* log in production */ }
+                await _users.UpdatePasswordHashAsync(user.Id, newHash);
             }
 
             await _users.UpdateLastLoginAsync(user.Id, DateTimeOffset.UtcNow);
+
+            // 🔹 SUCCESS (ONLY place token exists)
             var token = _jwt.GenerateToken(user);
-            return Ok(new { token });
-        }
 
-        [HttpPost("google")]
-        public async Task<IActionResult> Google([FromBody] GoogleLoginRequest req)
-        {
-            if (req == null) return BadRequest(new { error = "Request body required." });
-            if (string.IsNullOrWhiteSpace(req.IdToken)) return BadRequest(new { error = "IdToken required." });
-
-            GoogleJsonWebSignature.Payload payload;
-            try
-            {
-                payload = await _googleVerifier.VerifyAsync(req.IdToken);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { error = "Invalid Google token", details = ex.Message });
-            }
-
-            var googleId = payload.Subject; // 'sub' claim
-            var email = payload.Email?.Trim().ToLowerInvariant();
-            var emailVerified = payload.EmailVerified;
-            var name = payload.Name;
-
-            // Try find user by google_id
-            var user = await _users.GetByEmailAsync(googleId:googleId);
-
-            // If not found, try by email (and possibly link)
-            if (user == null && !string.IsNullOrEmpty(email))
-                user = await _users.GetByEmailAsync(email);
-
-            if (user == null)
-            {
-                // First time: create a new user from Google data
-                if (string.IsNullOrEmpty(email))
+            return Ok(ApiResponse<LoginResponse>.Ok(
+                new LoginResponse
                 {
-                    // policy: require email from Google. If not provided, ask client to collect email.
-                    return BadRequest(new { error = "Google account did not provide email. Cannot create user." });
-                }
-
-                var newUser = new MarketplaceUser
-                {
-                    Email = email,
-                    FullName = name,
-                    Phone = null,
-                    Role = "retailer",
-                    Status = "active",
-                    Credits = 0,
-                    PasswordHash = null,
-                    GoogleId = googleId
-                };
-
-                // Create user (no password). CreateAsync may accept optional transaction; use simple create here.
-                var id = await _users.CreateAsync(newUser);
-                newUser.Id = id;
-                await _users.UpdateLastLoginAsync(id, DateTimeOffset.UtcNow);
-
-                var token = _jwt.GenerateToken(newUser);
-                return Ok(new
-                {
-                    code = 200,
-                    token
-                });
-            }
-
-            // Existing user: if google_id not set, link it only when safe (email matches and is verified)
-            if (string.IsNullOrEmpty(user.GoogleId))
-            {
-                if (!string.IsNullOrEmpty(email) && user.Email == email && emailVerified)
-                {
-                    await _users.LinkGoogleIdAsync(user.Id, googleId);
-                }
-                else
-                {
-                    // Do not auto-link in ambiguous/unverified cases
-                    return BadRequest(new { error = "Account exists with same email but cannot be auto-linked. Please sign in and link the Google account from settings." });
-                }
-            }
-
-            await _users.UpdateLastLoginAsync(user.Id, DateTimeOffset.UtcNow);
-            var jwt = _jwt.GenerateToken(user);
-            return Ok(new { token = jwt });
-        }
-
-        // FACEBOOK endpoint: client sends access_token. Server verifies and auto-creates user if first-time.
-        [HttpPost("facebook")]
-        public async Task<IActionResult> Facebook([FromBody] FacebookLoginRequest req)
-        {
-            if (req == null) return BadRequest(new { error = "Request body required." });
-            if (string.IsNullOrWhiteSpace(req.AccessToken)) return BadRequest(new { error = "AccessToken required." });
-
-            FacebookUserProfile profile;
-            try
-            {
-                profile = await _facebookVerifier.VerifyAsync(req.AccessToken);
-                if (profile == null) return BadRequest(new { error = "Invalid Facebook token." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { error = "Facebook token verification failed", details = ex.Message });
-            }
-
-            var fbId = profile.Id;
-            if (string.IsNullOrEmpty(fbId))
-                return BadRequest(new { error = "Facebook profile did not provide an ID." });
-
-            var email = profile.Email?.Trim().ToLowerInvariant();
-            var name = profile.Name;
-
-            // Try find user by facebook_id
-            var user = await _users.GetByEmailAsync(facebookId:fbId);
-
-            // If not found, try by email (and possibly link)
-            if (user == null && !string.IsNullOrEmpty(email))
-                user = await _users.GetByEmailAsync(email);
-
-            if (user == null)
-            {
-                // First time create user using Facebook data
-                if (string.IsNullOrEmpty(email))
-                {
-                    // policy: require email; otherwise ask client for additional info or request email permission on client
-                    return BadRequest(new { error = "Facebook account did not provide email. Ensure client requested 'email' permission or sign up with email." });
-                }
-
-                var newUser = new MarketplaceUser
-                {
-                    Email = email,
-                    FullName = name,
-                    Phone = null,
-                    Role = "retailer",
-                    Status = "active",
-                    Credits = 0,
-                    PasswordHash = null,
-                    FacebookId = fbId
-                };
-
-                var id = await _users.CreateAsync(newUser);
-                newUser.Id = id;
-                await _users.UpdateLastLoginAsync(id, DateTimeOffset.UtcNow);
-
-                var token = _jwt.GenerateToken(newUser);
-                return Ok(new { token });
-            }
-
-            // Existing user: if facebook_id not set, link it only when safe (email matches)
-            if (string.IsNullOrEmpty(user.FacebookId))
-            {
-                if (!string.IsNullOrEmpty(email) && user.Email == email)
-                {
-                    await _users.LinkFacebookIdAsync(user.Id, fbId);
-                }
-                else
-                {
-                    return BadRequest(new { error = "Account exists with same email but cannot be auto-linked. Please sign in and link the Facebook account from settings." });
-                }
-            }
-
-            await _users.UpdateLastLoginAsync(user.Id, DateTimeOffset.UtcNow);
-            var jwt = _jwt.GenerateToken(user);
-            return Ok(new { token = jwt });
+                    Success = true,
+                    Status = LoginStatus.Success,
+                    Token = token
+                },
+                "Login successful"
+            ));
         }
     }
 }

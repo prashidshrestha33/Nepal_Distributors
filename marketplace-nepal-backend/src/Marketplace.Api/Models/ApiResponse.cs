@@ -5,7 +5,29 @@
         public int code { get; set; }
         public string Message { get; set; }
         public string details { get; set; }
-    };
+    }; 
+    public class LoginResponse
+    {
+        public bool Success { get; set; }
+        public string? Token { get; set; }
+        public LoginStatus Status { get; set; }
+        public string? Message { get; set; }
+        public SocialUserDto? SocialUser { get; set; }
+    }
+    public class SocialUserDto
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Provider { get; set; } = string.Empty;
+        public string ProviderId { get; set; } = string.Empty;
+    }
+    public enum LoginStatus
+    {
+        Success = 0,
+        InvalidCredentials = 1,
+        UserNotFound = 2,
+        ApprovalPending = 3,
+        SocialUserNotRegistered = 4
+    }
     public class ApiResponse
     {
         public int StatusCode { get; set; }

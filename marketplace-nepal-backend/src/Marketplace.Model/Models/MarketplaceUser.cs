@@ -21,5 +21,6 @@ namespace Marketplace.Models
         // Social provider ids (new)
         public string? GoogleId { get; set; }
         public string? FacebookId { get; set; }
+        public string? ApproveFG { get; set; }
     }
 }

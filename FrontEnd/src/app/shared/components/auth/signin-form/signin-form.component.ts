@@ -137,14 +137,10 @@ export class SigninFormComponent implements OnInit {
 
     this.authService.socialLogin(socialUser,rememberMe).subscribe({
       next: (response: any) => {
+         debugger;
         this.isSocialLoading = false;
         console.log('Backend response:', response);
-        if(response?.result?.code ==206){
-          localStorage.setItem('socialUser', JSON.stringify(socialUser));
-           this.router.navigate(['/register-company'], {
-            queryParamsHandling: 'preserve'  
-      });
-        }
+    
          const token = response?.result?.token || response?.token;
         debugger;
         if (token) {
@@ -156,13 +152,22 @@ export class SigninFormComponent implements OnInit {
         }
       },
       error: (error: any) => {
+        debugger;
+      
         this.isSocialLoading = false;
-        console.error(' Backend authentication failed:', error);
-        
-        const errorMsg = error?.error?.message || 
+            if(error?.status==401){
+          localStorage.setItem('socialUser', JSON.stringify(socialUser));
+          localStorage.setItem('Messagelg', error.error.result.message);
+           this.router.navigate(['/register-company'], {
+            queryParamsHandling: 'preserve'  
+      });
+        }
+      const errorMsg = error?.error?.message || 
                         error?.error?.title || 
+                        error.error.result.message ||
                         error?.message ||
                         'Social login failed. Please try regular login. ';
+        
         this.errorMessage = errorMsg;
       }
     });

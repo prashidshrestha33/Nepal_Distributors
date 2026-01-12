@@ -28,8 +28,10 @@ namespace Marketpalce.Repository.Repositories.UserReop
     facebook_id AS FacebookId,
     created_at AS CreatedAt,
     updated_at AS UpdatedAt,
-    last_login_at AS LastLoginAt
-FROM dbo.users WHERE isnull(approve_fg,'n')='y'";
+    last_login_at AS LastLoginAt,
+    case when isnull(approve_fg,'n')='y' then 'y' else 'n'
+    end AS ApproveFG
+    FROM dbo.users WHERE 1=1";
             if (email != null)
                 sql += "AND LOWER(email) = LOWER(@Email);  ";
             else if (googleId != null)

@@ -8,6 +8,7 @@ import { SignupFlowService } from '../../../services/signup-flow.service';
 import { FormDataService } from '../../../services/form-data.service';
 import { RegistrationFlowService } from '../../../services/registration-flow.service';
 import { CatalogService } from '../../../services/catalog.service';
+import { environment } from '../../../../../environments/environment';
 
 // Phone number validator: 7-10 digits only
 function phoneNumberValidator(control: AbstractControl): ValidationErrors | null {
@@ -38,10 +39,12 @@ function phoneNumberValidator(control: AbstractControl): ValidationErrors | null
   styles: [],
 })
 export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
+  private api = environment.apiBaseUrl;
   form: FormGroup;
   loading = false;
   createdCompanyId: number | null = null;
   error: string | null = null;
+  lgmessage: string | null = null;
   fileName = '';
   filePreview: string | null = null;
   companyTypes: any[] = []; // Store fetched company types
@@ -81,6 +84,12 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    debugger;
+      const Messagelg = localStorage.getItem('Messagelg');
+    
+    if (Messagelg && Messagelg!="") {
+        this.lgmessage=Messagelg;
+    }
     // Fetch company types from API
     this.loadCompanyTypes();
 
@@ -110,6 +119,7 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
       this.createdCompanyId = null;
       this.error = null;
       
+      
       // Clear localStorage
       localStorage.removeItem('companyFormData');
       localStorage.removeItem('registrationFlowData');
@@ -128,8 +138,7 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
    */
   private loadCompanyTypes(): void {
     this.loadingCompanyTypes = true;
-    const apiUrl = 'https://localhost:49856/api/public/companyType';
-    
+    const apiUrl = `${this.api}/api/public/companyType`
     this.http.get<any>(apiUrl).subscribe({
       next: (response: any) => {
         console.log('Company Types API Response:', response);
