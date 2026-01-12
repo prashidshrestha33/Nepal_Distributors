@@ -3,10 +3,8 @@
 # --------------------------
 node_modules/
 dist/
-.angular/cache
 .angular/cache/
 angular/cache/
-angular/cache
 
 # --------------------------
 # .NET / Visual Studio
@@ -20,16 +18,12 @@ obj/
 [Bb]in/
 [Oo]bj/
 bld/
-*** /bin/
-*** /obj/
 
 # Debug & Release folders (all casing, any depth)
 Debug/
 Release/
 **/Debug/
 **/Release/
-***/Debug/
-***/Release/
 [Dd]ebug/
 [Rr]elease/
 x64/
@@ -41,10 +35,10 @@ TestResults/
 # Visual Studio user/project config
 .vs/
 **/.vs/
-*.user
+*. user
 *.suo
 *.userosscache
-*.sln.docstates
+*.sln. docstates
 
 # NuGet
 packages/
@@ -64,7 +58,7 @@ packages/
 # --------------------------
 **/CopilotIndices/
 **/FileContentIndex/
-**/SemanticSymbols.db*
+**/SemanticSymbols. db*
 **/CodeChunks.db*
 
 # --------------------------
@@ -73,9 +67,13 @@ packages/
 .env
 .env.*
 
-# End of file
-/guru-able-auth/.angular/cache/20.3.13/guru-able-auth/.tsbuildinfo
+# --------------------------
+# Project Specific
+# --------------------------
+/guru-able-auth/.angular/cache/
 FrontEnd/.postcssrc.json
 FrontEnd/angular-tailwind.png
 /FrontEnd/public/images
 /FrontEnd/public
+
+# End of file
