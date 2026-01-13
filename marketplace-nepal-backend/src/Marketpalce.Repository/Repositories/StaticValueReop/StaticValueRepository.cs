@@ -20,31 +20,53 @@ namespace Marketpalce.Repository.Repositories.StaticValueReop
         }
 
         // Create
-        public async Task<bool> CreateAsync(string key, string data)
+        public async Task<bool> CreateAsync(StaticValue model)
         {
             const string sql = @"
-INSERT INTO dbo.static_value (static_value, static_data)
-VALUES (@StaticValue, @StaticData);";
-            var rows = await _db.ExecuteAsync(sql, new { StaticValue = key, StaticData = data });
+                INSERT INTO dbo.static_value 
+                (Catalog_id,static_value, static_data, display_order)
+                VALUES (@catalogid,@StaticValueKey, @StaticData,@DisplayOrder);";
+            var rows = await _db.ExecuteAsync(sql, model);
             return rows > 0;
         }
 
         // Read single
-        public async Task<StaticValue?> GetAsync(string key)
+        public async Task<StaticValue?> GetAsync(StaticValueFilter model)
         {
-            const string sql = "SELECT static_value AS StaticValueKey, static_data AS StaticData FROM dbo.static_value WHERE static_value = @StaticValue";
-            return await _db.QuerySingleOrDefaultAsync<StaticValue>(sql, new { StaticValue = key });
+             string sql = "SELECT static_id as StaticId,Catalog_id as CatalogId, static_value AS StaticValueKey, static_data AS StaticData,display_order as DisplayOrder FROM dbo.static_value" +
+                " where 1=1 ";
+            if (model.key != null)
+            {
+                sql += "AND static_value = @staticValue ";
+            }
+            else if(model.catalogId !=null && model.staticId != null)
+            {
+                sql += "AND Catalog_id = @catalogId AND static_id =@staticId ";
+
+            }
+            sql += ";";
+            return await _db.QuerySingleOrDefaultAsync<StaticValue>(sql, model);
         }
 
         // Update
-        public async Task<bool> UpdateAsync(string key, string data)
+        public async Task<bool> UpdateAsync(StaticValue model)
         {
-            const string sql = @"
-UPDATE dbo.static_value
-SET static_data = @StaticData
-WHERE static_value = @StaticValue;";
-            var rows = await _db.ExecuteAsync(sql, new { StaticValue = key, StaticData = data });
-            return rows > 0;
+            try
+            {
+                const string sql = @"
+            UPDATE dbo.static_value
+            SET 
+            static_data = @StaticData
+            ,static_value=@StaticValueKey
+            ,display_order=@DisplayOrder
+            WHERE static_id = @StaticId
+            AND Catalog_id=@CatalogId;";
+                var rows = await _db.ExecuteAsync(sql, model);
+                return rows > 0;
+            }
+            catch (Exception ex) {
+                return false;
+}
         }
 
         // Delete
@@ -56,10 +78,11 @@ WHERE static_value = @StaticValue;";
         }
 
         // List all
-        public async Task<IEnumerable<StaticValue>> ListAllAsync()
+        public async Task<IEnumerable<StaticValue>> ListAllAsync(string cid)
         {
-            const string sql = "SELECT static_value AS StaticValueKey, static_data AS StaticData FROM dbo.static_value";
-            return await _db.QueryAsync<StaticValue>(sql);
+            const string sql = "SELECT static_id as StaticId, static_value AS StaticValueKey, static_data AS StaticData,display_order as DisplayOrder FROM dbo.static_value where Catalog_id=@cid";
+
+            return await _db.QueryAsync<StaticValue>(sql, new { cid = cid });
         }
         // Create
         public async Task<long> CreateCatalogAsync(StaticValueCatalog model)

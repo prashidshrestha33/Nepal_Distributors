@@ -4,6 +4,7 @@ using Marketplace.Api.Services.Helper;
 using Marketplace.Model.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using static Azure.Core.HttpHeader;
 
 namespace Marketplace.Api.Controllers
 {
@@ -13,7 +14,8 @@ namespace Marketplace.Api.Controllers
     public class StaticValueController : ControllerBase
     {
         private readonly IStaticValueRepository _repo;
-        private readonly ModuleToCommon _moduleToCommon = new ModuleToCommon();
+        private readonly ModuleToCommon _moduleToCommon = new ModuleToCommon(); 
+        private ModuleToCommon moduleToCommon = new ModuleToCommon();
 
         // Prefer depending on the interface (IStaticValueRepository) so DI can resolve it.
         public StaticValueController(IStaticValueRepository repo)
@@ -76,13 +78,13 @@ namespace Marketplace.Api.Controllers
         }
 
         // CREATE STATIC VALUE
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] StaticValue item)
+        [HttpPost("AddStaticValue")]
+        public async Task<IActionResult> Create([FromBody] StaticValueModel item)
         {
-            if (item == null || string.IsNullOrWhiteSpace(item.StaticValueKey))
+             if (item == null || string.IsNullOrWhiteSpace(item.StaticValueKey))
                 return BadRequest("Invalid data.");
-
-            var success = await _repo.CreateAsync(item.StaticValueKey, item.StaticData);
+            StaticValue req = _moduleToCommon.Map<StaticValue>(item);
+            var success = await _repo.CreateAsync(req);
             if (success)
                 return CreatedAtAction(nameof(GetStaticValue), new { key = item.StaticValueKey }, item);
 
@@ -90,30 +92,36 @@ namespace Marketplace.Api.Controllers
         }
 
         // READ SINGLE STATIC VALUE
-        [HttpGet("{key}")]
-        public async Task<ActionResult<StaticValue>> GetStaticValue(string key)
+        [HttpGet("GetStaticValue")]
+        public async Task<ActionResult<StaticValue>> GetStaticValue(string staticId=null,string catalogId=null,string key = null)
         {
-            var item = await _repo.GetAsync(key);
+            StaticValueFilter filter = new StaticValueFilter
+            {
+                staticId = staticId,
+                catalogId = catalogId,
+                key = key
+            };
+            var item = await _repo.GetAsync(filter);
             if (item == null) return NotFound();
             return Ok(item);
         }
 
         // READ ALL STATIC VALUES
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<StaticValue>>> GetStaticValueAll()
+        [HttpGet("GetStaticValueAll/{catagoryid}")]
+        public async Task<ActionResult<IEnumerable<StaticValue>>> GetStaticValueAll(string catagoryid)
         {
-            var items = await _repo.ListAllAsync();
+            var items = await _repo.ListAllAsync(catagoryid);
             return Ok(items);
         }
 
         // UPDATE STATIC VALUE
-        [HttpPut("{key}")]
-        public async Task<IActionResult> UpdateStaticValue(string key, [FromBody] StaticValue item)
+        [HttpPut("UpdateStaticValue")]
+        public async Task<IActionResult> UpdateStaticValue([FromBody] StaticValueModel item)
         {
-            if (item == null || key != item.StaticValueKey)
+            if (item == null || item.StaticValueKey != item.StaticValueKey)
                 return BadRequest("Key mismatch or invalid data.");
-
-            var success = await _repo.UpdateAsync(key, item.StaticData);
+            StaticValue req = _moduleToCommon.Map<StaticValue>(item);
+            var success = await _repo.UpdateAsync(req);
             if (success) return NoContent();
             return NotFound();
         }

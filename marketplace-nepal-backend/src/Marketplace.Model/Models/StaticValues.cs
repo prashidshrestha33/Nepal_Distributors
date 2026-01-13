@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Marketplace.Model.Models
@@ -16,8 +17,16 @@ namespace Marketplace.Model.Models
 
     public class StaticValue
     {
-        public string CatalogId { get; set; }    // Maps to static_value
-        public string StaticValueKey { get; set; }    // Maps to static_value
-        public string StaticData { get; set; }        // Maps to static_data
+        public int? StaticId { get; set; }
+        public int CatalogId { get; set; }
+        public string StaticValueKey { get; set; }
+        public string StaticData { get; set; }
+        public int? DisplayOrder { get; set; }
+    }
+    public class StaticValueFilter
+    {
+        public string? staticId { get; set; }
+        public string? catalogId { get; set; }
+        public string? key { get; set; }
     }
 }

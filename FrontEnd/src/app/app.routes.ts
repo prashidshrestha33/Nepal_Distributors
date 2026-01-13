@@ -32,6 +32,7 @@ import { QuotationFormComponent } from './shared/components/management/quotation
 
 // Management Components - Static Values
 import { StaticValuesComponent } from './shared/components/management/static-values/list/static-values.component';
+import { StaticValuesCatalogComponent } from './shared/components/management/static-values/Static-value-catalog/static-values-catalog.component';
 import { StaticValueFormComponent } from './shared/components/management/static-values/form/static-value-form.component';
 
 export const routes: Routes = [
@@ -127,6 +128,11 @@ export const routes: Routes = [
             title: 'Nepal Distributors - Static Values'
           },
           {
+            path: 'static-values-catalog',
+            component: StaticValuesCatalogComponent,
+            title: 'Nepal Distributors - Static Values Catalog'
+          },
+          {
             path: 'static-values/add',
             component: StaticValueFormComponent,
             title: 'Nepal Distributors - Add Static Value'
@@ -193,6 +199,11 @@ export const routes: Routes = [
         path: 'static-values',
         component: StaticValuesComponent,
         title: 'Nepal Distributors - Static Values'
+      },
+      {
+        path: 'static-values-Catalog',
+        component: StaticValuesCatalogComponent,
+        title: 'Nepal Distributors - Static Values Catalog'
       },
       {
         path: 'static-values/add',

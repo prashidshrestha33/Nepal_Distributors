@@ -296,7 +296,7 @@ namespace Marketplace.Api.Controllers
             if (verify == PasswordVerificationResult.Failed)
             {
                 return Unauthorized(ApiResponse<LoginResponse>.Create(
-                    401,
+                    402,
                     new LoginResponse
                     {
                         Success = false,

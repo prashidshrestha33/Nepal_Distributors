@@ -9,11 +9,11 @@ namespace Marketpalce.Repository.Repositories.StaticValueReop
 {
     public interface IStaticValueRepository
     {
-        Task<bool> CreateAsync(string key, string data);
-        Task<StaticValue?> GetAsync(string key);
-        Task<bool> UpdateAsync(string key, string data);
+        Task<bool> CreateAsync(StaticValue model);
+        Task<StaticValue?> GetAsync(StaticValueFilter model);
+        Task<bool> UpdateAsync(StaticValue model);
         Task<bool> DeleteAsync(string key);
-        Task<IEnumerable<StaticValue>> ListAllAsync();
+        Task<IEnumerable<StaticValue>> ListAllAsync(string cid);
         Task<long> CreateCatalogAsync(StaticValueCatalog model);
         Task<StaticValueCatalog?> GetCatalogAsync(long id);
         Task<bool> UpdateCatalogAsync(StaticValueCatalog model);

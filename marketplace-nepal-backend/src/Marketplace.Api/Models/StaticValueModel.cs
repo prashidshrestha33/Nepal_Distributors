@@ -1,4 +1,6 @@
-﻿namespace Marketplace.Api.Models
+﻿using System.Text.Json.Serialization;
+
+namespace Marketplace.Api.Models
 {
     public class StaticValueCatalogModel
     {
@@ -9,8 +11,19 @@
 
     public class StaticValueModel
     {
-        public string CatalogId { get; set; }    // Maps to static_value
-        public string StaticValueKey { get; set; }    // Maps to static_value
-        public string StaticData { get; set; }        // Maps to static_data
+        [JsonPropertyName("staticId")]
+        public int? StaticId { get; set; }
+
+        [JsonPropertyName("catalogId")]
+        public int CatalogId { get; set; }
+
+        [JsonPropertyName("staticValueKey")]
+        public string StaticValueKey { get; set; }
+
+        [JsonPropertyName("staticData")]
+        public string StaticData { get; set; }
+
+        [JsonPropertyName("displayOrder")]
+        public int? DisplayOrder { get; set; }
     }
 }

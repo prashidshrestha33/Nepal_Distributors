@@ -37,7 +37,6 @@ export class SigninFormComponent implements OnInit {
     private router: Router,
     private route:  ActivatedRoute
   ) {
-    console.log('SigninFormComponent initialized');
   }
 
   ngOnInit() {
