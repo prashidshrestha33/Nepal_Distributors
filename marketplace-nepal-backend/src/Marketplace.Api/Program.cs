@@ -3,6 +3,7 @@ using Marketpalce.Repository.Repositories.ProductRepo;
 using Marketpalce.Repository.Repositories.StaticValueReop;
 using Marketpalce.Repository.Repositories.UserReop;
 using Marketplace.Api.Services.Company;
+using Marketplace.Api.Services.EmailService;
 using Marketplace.Api.Services.FacebookToken;
 using Marketplace.Api.Services.GoogleTokenVerifier;
 using Marketplace.Api.Services.Hassing;
@@ -43,6 +44,7 @@ builder.Services.AddScoped<IGoogleTokenVerifier, GoogleTokenVerifier>();
 // Register Facebook verifier
 builder.Services.AddScoped<IFacebookTokenVerifier, FacebookTokenVerifier>();
 builder.Services.AddScoped<ICompanyTypeService, CompanyTypeService>();
+builder.Services.AddTransient<IEmailService, EmailService>();
 
 // --- HttpClient for Facebook Graph API ---
 builder.Services.AddHttpClient("facebook", client =>

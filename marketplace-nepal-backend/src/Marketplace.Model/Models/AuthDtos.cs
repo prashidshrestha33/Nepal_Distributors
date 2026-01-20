@@ -57,7 +57,13 @@ namespace Marketplace.Models
         public string Token { get; set; } = string.Empty;
         public string Photo { get; set; } = string.Empty;
     }
-
+    public class ForgetPwdRequest
+    {
+        [Required]
+        public string Password { get; set; } = string.Empty;
+        [Required]
+        public string Token { get; set; } = string.Empty;
+    }
     public class GoogleLoginRequest
     {
         [Required]

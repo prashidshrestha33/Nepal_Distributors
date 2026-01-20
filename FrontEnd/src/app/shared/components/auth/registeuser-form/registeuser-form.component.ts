@@ -1,4 +1,4 @@
-// signin-form.component.ts
+// registeuser-form.component.ts
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { LabelComponent } from '../../form/label/label.component';
@@ -10,7 +10,7 @@ import { SocialAuthSimpleService } from '../../../services/social-auth-simple.se
 import { SocialUser } from '../../../models/auth.models';  // Import SocialUser, not SocialLoginRequest
 
 @Component({
-  selector: 'app-signin-form',
+  selector: 'app-reg-user-form',
   standalone: true,
   imports: [
     CommonModule,
@@ -18,69 +18,33 @@ import { SocialUser } from '../../../models/auth.models';  // Import SocialUser,
     RouterModule,
     ReactiveFormsModule,
   ],
-  templateUrl:  './signin-form.component.html',
+  templateUrl:  './registeuser-form.component.html',
   styles: ``
 })
-export class SigninFormComponent implements OnInit {
+export class RegisteUserFormComponent implements OnInit {
   showPassword = false;
   loginForm! : FormGroup;
   errorMessage = '';
   isLoading = false;
   isSocialLoading = false;
   returnUrl: string = '';
-
   constructor(
-    private formBuilder: FormBuilder,
     private authService: AuthService,
     private socialAuthService: SocialAuthSimpleService,
-    private inactivityService: InactivityService,
     private router: Router,
     private route:  ActivatedRoute
   ) {
   }
 
   ngOnInit() {
-    localStorage.removeItem('socialUser');
-    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
-
-    this.loginForm = this. formBuilder.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      rememberMe: [false]
-    });
-  }
-
-  togglePasswordVisibility() {
-    this.showPassword = !this.showPassword;
-  }
-
-  onSignIn() {
-    if (this.loginForm.invalid) {
-      this.errorMessage = 'Please fill in all required fields correctly';
-      return;
-    }
-
-    const { email, password, rememberMe } = this.loginForm. value;
-    this.isLoading = true;
-    this. errorMessage = '';
-
-    this. authService.login(email, password, rememberMe).subscribe({
-      next: (response:  any) => {
-        this.isLoading = false;
-        const token = response?.result?.token || response?.token;
-        
-        if (token) {
-          console.log('User logged in successfully');
-          this.inactivityService.initInactivityTimer();
-          this.navigateAfterLogin();
-        } else {
-          this.errorMessage = 'No token received from server. ';
-        }
-      },
-      error: (error: any) => {
-        this.isLoading = false;
-        this. handleError(error);
+    debugger;
+   this.route.queryParams.subscribe(params => {
+    debugger;
+      const token = params['token'];
+      if((token||token !=undefined)){
+        this.returnUrl = token;
       }
+      else  this.router.navigate(['/signin']); 
     });
   }
 
@@ -90,7 +54,7 @@ export class SigninFormComponent implements OnInit {
       console.warn('⚠️ Social login already in progress');
       return;
     }
-
+debugger;
     this.isSocialLoading = true;
     this. errorMessage = '';
     console. log('🔵 Initiating Google sign-in...');
@@ -98,7 +62,7 @@ export class SigninFormComponent implements OnInit {
     this.socialAuthService.signInWithGoogle()
       .then(user => {
         console. log('Google sign-in successful:', user);
-        this.handleSocialLogin(user);  // Pass entire user object
+        this.handleSocialLogin(user,'GOOGLE');  // Pass entire user object
       })
       .catch(error => {
         this.isSocialLoading = false;
@@ -121,7 +85,7 @@ export class SigninFormComponent implements OnInit {
     this.socialAuthService.signInWithFacebook()
       .then(user => {
         console.log('Facebook sign-in successful:', user);
-        this.handleSocialLogin(user);  // Pass entire user object
+        this.handleSocialLogin(user,'FACEBOOK');  // Pass entire user object
       })
       .catch(error => {
         this.isSocialLoading = false;
@@ -130,57 +94,30 @@ export class SigninFormComponent implements OnInit {
       });
   }
 
-  private handleSocialLogin(socialUser: SocialUser) {
+  private handleSocialLogin(socialUser: SocialUser,SignIn : string ) {
     console.log('📤 Sending social user data to backend... ', socialUser);
-    const rememberMe = this.loginForm.get('rememberMe')?.value || false;
+debugger;
 
-
-    this.authService.socialLogin(socialUser,rememberMe).subscribe({
+    this.authService.socialLogin(socialUser,false).subscribe({
       next: (response: any) => {
-         debugger;
-        this.isSocialLoading = false;
-        console.log('Backend response:', response);
-    
-         const token = response?.result?.token || response?.token;
-        debugger;
-        if (token) {
-          console.log('User logged in successfully');
-          this.inactivityService.initInactivityTimer();
-          this.navigateAfterLogin();
-        } else {
-          this.errorMessage = 'No token received from server. ';
-        }
+        this.errorMessage = 'User with this Email already exist';
       },
       error: (error: any) => {
-        debugger;
-      
         this.isSocialLoading = false;
             if(error?.status==401){
+       
+
           localStorage.setItem('socialUser', JSON.stringify(socialUser));
-          localStorage.setItem('Messagelg', error.error.result.message);
-           this.router.navigate(['/register-company'], {
+          localStorage.setItem('redirecturl', JSON.stringify(this.returnUrl));
+           this.router.navigate(['/signup'], {
             queryParamsHandling: 'preserve'  
       });
         }
-      const errorMsg = error?.error?.message || 
-                        error?.error?.title || 
-                        error.error.result.message ||
-                        error?.message ||
-                        'Social login failed. Please try regular login. ';
-        
-        this.errorMessage = errorMsg;
       }
     });
   }
 
-  private navigateAfterLogin() {
-    const navigationPath = this.returnUrl.startsWith('/') 
-      ? this.returnUrl 
-      : '/' + this.returnUrl;
-    
-    console.log('🚀 Navigating to:', navigationPath);
-    this.router.navigate([navigationPath], { replaceUrl: true });
-  }
+ 
 
   private handleError(error:  any) {
     if (error?.status === 401 || error?.status === 400) {
@@ -193,18 +130,5 @@ export class SigninFormComponent implements OnInit {
       this.errorMessage = error?.error?.message || 'Login failed';
     }
     console.error('Login error:', error);
-  }
-
-  // Form control getters
-  get email() {
-    return this.loginForm.get('email');
-  }
-
-  get password() {
-    return this.loginForm.get('password');
-  }
-
-  get rememberMeControl() {
-    return this.loginForm.get('rememberMe');
   }
 }

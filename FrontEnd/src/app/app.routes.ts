@@ -2,6 +2,8 @@ import { Routes } from '@angular/router';
 import { NotFoundComponent } from './pages/other-page/not-found/not-found.component';
 import { AppLayoutComponent } from './shared/layout/app-layout/app-layout.component';
 import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
+import { RegisterUser } from './pages/auth-pages/register-user/register-user.component';
+import { ForgetPasswordComponent } from './pages/auth-pages/forget-password/forget-password.component';
 import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
 import { RegisterCompanyComponent } from './pages/auth-pages/register-company/register-company.component';
 import { TermsAndConditionsComponent } from './pages/auth-pages/terms-and-conditions/terms-and-conditions.component';
@@ -34,6 +36,7 @@ import { QuotationFormComponent } from './shared/components/management/quotation
 import { StaticValuesComponent } from './shared/components/management/static-values/list/static-values.component';
 import { StaticValuesCatalogComponent } from './shared/components/management/static-values/Static-value-catalog/static-values-catalog.component';
 import { StaticValueFormComponent } from './shared/components/management/static-values/form/static-value-form.component';
+import { register } from 'swiper/element';
 
 export const routes: Routes = [
   // Public auth pages
@@ -41,6 +44,15 @@ export const routes: Routes = [
     path: 'signin',
     component: SignInComponent,
     title: 'Nepal Distributors - Sign In'
+  },  {
+    path: 'RegisterUser',
+     loadComponent: () => import('./pages/auth-pages/register-user/register-user.component')
+                     .then(m => m.RegisterUser),
+    title: 'Nepal Distributors - Register User by componey'
+  },{
+    path: 'ForgetPassword',
+     component: ForgetPasswordComponent,
+    title: 'Nepal Distributors - Forget Pasword'
   },
   {
     path: 'signup',
