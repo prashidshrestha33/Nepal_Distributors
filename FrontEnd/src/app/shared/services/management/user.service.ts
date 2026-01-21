@@ -85,7 +85,6 @@ export class UserService {
   }
 
   getUserById(id: number): Observable<User> {
-    debugger;
     return this.http.get<User>(`${this.apiUrl}/${id}`);
   }
 

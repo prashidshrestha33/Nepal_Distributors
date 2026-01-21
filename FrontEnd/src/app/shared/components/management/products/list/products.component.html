@@ -11,7 +11,7 @@
   <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4">
     <input
       type="text"
-      placeholder="Search by product name or SKU..."
+      placeholder="Search by product name"
       [(ngModel)]="searchTerm"
       (input)="onSearch()"
       class="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
@@ -24,95 +24,45 @@
   </div>
 
   <!-- Empty State -->
-  <div *ngIf="!loading && filteredProducts.length === 0" class="bg-yellow-50 dark:bg-yellow-900 p-4 rounded-lg text-yellow-700 dark:text-yellow-200 text-center">
+  <div *ngIf="!loading && filteredProducts && filteredProducts.length === 0" class="bg-yellow-50 dark:bg-yellow-900 p-4 rounded-lg text-yellow-700 dark:text-yellow-200 text-center">
     {{ searchTerm ? 'No products found matching your search' : 'No products available' }}
   </div>
 
-  <!-- Products Grid -->
-  <div *ngIf="!loading && filteredProducts.length > 0" class="mb-8">
-    <div class="bg-white dark:bg-gray-900 rounded-lg shadow overflow-hidden">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-0">
-        <div *ngFor="let product of filteredProducts" class="border-r border-b border-gray-200 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-          <!-- Product Image -->
-          <div class="relative w-full aspect-square bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden flex items-center justify-center mb-3">
-            <img
-              [src]="getImageUrl(product)"
-              [alt]="product.name"
-              class="w-full h-full object-cover"
-              (error)="$event.target.src = '/images/placeholder-product.png'"
-            />
-            
-            <!-- Featured Badge -->
-            <div *ngIf="isFeatured(product)" class="absolute top-2 right-2 bg-yellow-400 text-gray-900 px-2 py-1 rounded text-xs font-semibold">
-              Featured
-            </div>
-
-            <!-- Status Badge -->
-            <div class="absolute top-2 left-2">
-              <span [ngClass]="{
-                'bg-green-500 text-white': product.status === 'Active',
-                'bg-red-500 text-white': product.status === 'Inactive',
-                'bg-gray-500 text-white': !product.status
-              }" class="px-2 py-1 rounded text-xs font-medium">
-                {{ product.status || 'N/A' }}
-              </span>
-            </div>
-          </div>
-
-          <!-- Product Info -->
-          <div class="flex-1">
-            <!-- SKU -->
-            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">SKU: {{ product.sku }}</p>
-
-            <!-- Product Name -->
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
-              {{ product.name }}
-            </h3>
-
-            <!-- Short Description -->
-            <p class="text-xs text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
-              {{ product.shortDescription }}
-            </p>
-
-            <!-- Rate -->
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-lg font-bold text-blue-600 dark:text-blue-400">
-                $ {{ product.rate | number: '1.2-2' }}
-              </span>
-            </div>
-
-            <!-- Actions -->
-            <div class="flex gap-2">
-              <button
-                routerLink="/products/edit"
-                [queryParams]="{ id: product.id }"
-                class="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors duration-200 dark:bg-blue-600 dark:hover:bg-blue-700"
-              >
-                Edit
-              </button>
-              <button
-                (click)="delete(product.id)"
-                class="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded transition-colors duration-200 dark:bg-red-600 dark:hover:bg-red-700"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+  <!-- Products Table List -->
+  <div *ngIf="!loading && filteredProducts && filteredProducts.length > 0" class="overflow-x-auto bg-white dark:bg-gray-900 rounded-lg shadow">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+      <thead class="bg-gray-100 dark:bg-gray-800">
+        <tr>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">S.N</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Name</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Category</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Brand</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Rate</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">HsCode</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Created By</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+        <tr *ngFor="let product of filteredProducts; let i = index" class="hover:bg-gray-50 dark:hover:bg-gray-800">
+          <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+          <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ product.name }}</td>
+          <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ getCategoryName(product.categoryId) }}</td>
+          <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ getBrandName(product.brandId) }}</td>
+          <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">${{ product.rate | number: '1.2-2' }}</td>
+          <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ product.hsCode }}</td>
+          <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ product.isFeatured ? 'Yes' : 'No' }}</td>
+          <!-- <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ getUserById(users.email) }}</td> -->
+        </tr>
+      </tbody>
+    </table>
   </div>
 
   <!-- Pagination Section -->
   <div *ngIf="!loading && totalCount > 0" class="bg-white dark:bg-gray-900 rounded-lg shadow p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-    <!-- Pagination Info -->
     <div class="text-sm text-gray-600 dark:text-gray-400">
       Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, totalCount) }} of {{ totalCount }} products
     </div>
-
-    <!-- Pagination Controls -->
     <div class="flex items-center gap-2">
-      <!-- Previous Button -->
       <button
         (click)="previousPage()"
         [disabled]="!hasPreviousPage()"
@@ -124,8 +74,6 @@
       >
         Previous
       </button>
-
-      <!-- Page Numbers -->
       <div class="flex gap-1">
         <button
           *ngFor="let page of getPageNumbers()"
@@ -139,8 +87,6 @@
           {{ page }}
         </button>
       </div>
-
-      <!-- Next Button -->
       <button
         (click)="nextPage()"
         [disabled]="!hasNextPage()"
@@ -153,8 +99,6 @@
         Next
       </button>
     </div>
-
-    <!-- Page Size Info -->
     <div class="text-sm text-gray-600 dark:text-gray-400">
       Page {{ currentPage }} of {{ totalPages }}
     </div>

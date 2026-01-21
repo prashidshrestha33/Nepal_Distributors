@@ -50,7 +50,6 @@ export class StaticValuesComponent implements OnInit {
     this.error = null;
     this.service.getStaticValues(this.catalogId).subscribe({
       next: (data:  StaticValue[]) => {
-        debugger;
         this.items = data;
         this.filteredItems = data;
         this.loading = false;

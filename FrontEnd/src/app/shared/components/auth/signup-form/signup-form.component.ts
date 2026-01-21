@@ -277,7 +277,6 @@ if (sSocialUser) {
   }
 
   async onSignUp(): Promise<void> {
-    debugger;
     if (this.signupForm.invalid) {
       this.errorMessage = 'Please fill in all required fields correctly';
       return;

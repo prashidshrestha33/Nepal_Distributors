@@ -39,8 +39,8 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
         {
             var sql = @"
             INSERT INTO [NepalDistributers].[dbo].[products]
-            (sku, name, description, short_description, category_id, subcategory_id, subsubcategory_id, brand_id, manufacturer_id, rate, hs_code, status, is_featured, seo_title, seo_description, attributes,ImageName, created_by, created_at)
-            VALUES (@Sku, @Name, @Description, @ShortDescription, @CategoryId, @SubCategoryId, @SubSubCategoryId, @BrandId, @ManufacturerId, @Rate, @HsCode, @Status, @IsFeatured, @SeoTitle, @SeoDescription, @Attributes,@ImageName, @CreatedBy, @CreatedAt);
+            (sku, name, description, short_description, category_id, brand_id, manufacturer_id, rate, hs_code, status, is_featured, seo_title, seo_description, attributes,ImageName, created_by, created_at,updated_at)
+            VALUES (@Sku, @Name, @Description, @ShortDescription, @CategoryId, @BrandId, @ManufacturerId, @Rate, @HsCode, @Status, @IsFeatured, @SeoTitle, @SeoDescription, @Attributes,@ImageName, @CreatedBy, SYSDATETIME(), SYSDATETIME());
             SELECT CAST(SCOPE_IDENTITY() as int);
             ";
             return await _db.ExecuteScalarAsync<int>(sql, product);
