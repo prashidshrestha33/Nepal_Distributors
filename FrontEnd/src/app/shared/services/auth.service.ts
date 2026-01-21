@@ -233,6 +233,10 @@ export class AuthService {
     const headers = new HttpHeaders({ Accept: 'application/json' });
     return this.http.post<any>(`${this.api}/api/auth/registernewuser`, formData, { headers });
   }
+ forgetPassword(body: any): Observable<any> {
+      const headers = new HttpHeaders({ 'Content-Type': 'application/json', Accept: 'application/json' });
+    return this.http.post<any>(`${this.api}/api/auth/ForgetPassword`, body, { headers });
+  }
 
   /**
    * Logout user

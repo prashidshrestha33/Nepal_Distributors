@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { LabelComponent } from '../../form/label/label.component';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router,ActivatedRoute } from '@angular/router';
 import { FormGroup, FormBuilder, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { InactivityService } from '../../../services/inactivity.service';
@@ -9,6 +9,7 @@ import { SignupFlowService } from '../../../services/signup-flow.service';
 import { FormDataService } from '../../../services/form-data.service';
 import { RegistrationFlowService } from '../../../services/registration-flow.service';
 import { SocialUser } from '../../../models/auth.models';  
+import { EncryptionHelper } from '../../../services/encryption.service';  
 
 // Custom validator for strong password
 function strongPasswordValidator(control: AbstractControl): ValidationErrors | null {
@@ -89,6 +90,9 @@ export class SignupFormComponent implements OnInit {
   companyFileName: string | null = null;
   showSuccessMessage = false;
   successMessage = '';
+  returnUrl: string | null = null;
+  Componeyname: string | null = null;
+  Componeyid: number | null = null;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -97,7 +101,9 @@ export class SignupFormComponent implements OnInit {
     private router: Router,
     public flow: SignupFlowService,
     private formDataService: FormDataService,
-    private registrationFlowService: RegistrationFlowService
+    private registrationFlowService: RegistrationFlowService,
+    private encryptiondec: EncryptionHelper ,
+    private route:  ActivatedRoute
   ) {}
 
   // Helper methods for password validation
@@ -122,10 +128,16 @@ export class SignupFormComponent implements OnInit {
   }
 
   ngOnInit() {
+    const token = this.route.snapshot.queryParamMap.get('token') || '';
+     this.returnUrl = token || null;
+   const Redirecturl = localStorage.getItem('redirecturl');
+   if(this.returnUrl||Redirecturl!=undefined||Redirecturl!=''){
+   
+   }
    const sSocialUser = localStorage.getItem('socialUser');
 let socialUser: SocialUser | null = null;
 let isSocialSignup = false;
-
+debugger;
 if (sSocialUser) {
   try {
     socialUser = JSON.parse(sSocialUser) as SocialUser;
@@ -189,6 +201,9 @@ if (sSocialUser) {
     localStorage.removeItem('socialUser');
     
   }
+  finally{
+    
+  }
 } else {
   // Regular signup (no social user)
   this.signupForm = this.formBuilder.group({
@@ -220,7 +235,7 @@ if (sSocialUser) {
 
     // Ensure we have company data from Step 1. If not present, redirect user back.
     const companyData = this.flow.getCompanyForm();
-    if (!companyData) {
+    if (!companyData &&!this.returnUrl) {
       // No company data found (possibly page refresh). Redirect to company step.
       this.router.navigate(['/register-company']);
       return;
@@ -340,6 +355,9 @@ if (sSocialUser) {
     formData.append('Register.Token',token || '');
 
     // Debug log (dev only)
+
+    
+    formData.append('Token',this.returnUrl || '');
     try {
       for (const pair of (formData as any).entries()) {
         console.debug('[registernewuser] formData', pair[0], pair[1]);
@@ -364,6 +382,7 @@ if (sSocialUser) {
         // Clear FormDataService data after successful registration
         this.formDataService.clearAll();
 
+          localStorage.removeItem('socialUser');
         // Show success message
         this.successMessage = `${companyName} has been Registered Successfully. Please wait for Admin to Approve your Request.`;
         this.showSuccessMessage = true;
@@ -374,7 +393,7 @@ if (sSocialUser) {
         // Hide success message after 4 seconds
         setTimeout(() => {
           this.showSuccessMessage = false;
-        }, 4000);
+        }, 1000);
 
         // Navigate to signin after 4 seconds
         setTimeout(() => {
@@ -388,6 +407,8 @@ if (sSocialUser) {
         if (error?.status === 409) {
           this.emailConflictError = 'Email already exists';
           this.errorMessage = ''; // Clear general error message
+          
+    localStorage.removeItem('socialUser');
           return;
         }
 

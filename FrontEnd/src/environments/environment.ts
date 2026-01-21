@@ -12,5 +12,7 @@ export const environment = {
   messagingSenderId: "698076186328",
   appId: "1:698076186328:web:b9fedc20c67d8c14b8b9ad",
   measurementId: "G-9B1KVRCSR4"
-  }
+  },
+    encryptionKey: '9FvA8kZ1Wm4R2T0YpE6HnLJxqB5CSDU7',
+  encryptionIV: 'A9xT3QW2L7KZ8M0P'
 };

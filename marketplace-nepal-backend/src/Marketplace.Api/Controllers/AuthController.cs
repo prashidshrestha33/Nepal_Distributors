@@ -1,8 +1,10 @@
 ﻿using Azure.Core;
 using Google.Apis.Auth;
 using Marketpalce.Repository.Repositories.ComponyRepo;
+using Marketpalce.Repository.Repositories.StaticValueReop;
 using Marketpalce.Repository.Repositories.UserReop;
 using Marketplace.Api.Models;
+using Marketplace.Api.Services.EmailService;
 using Marketplace.Api.Services.FacebookToken;
 using Marketplace.Api.Services.GoogleTokenVerifier;
 using Marketplace.Api.Services.Hassing;
@@ -16,7 +18,10 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Data;
 using System.Net.Mail;
+using System.Security.Cryptography;
+using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using static Azure.Core.HttpHeader;
 
 namespace Marketplace.Api.Controllers
 {
@@ -33,6 +38,8 @@ namespace Marketplace.Api.Controllers
         private readonly IGoogleTokenVerifier _googleVerifier;
         private readonly IFacebookTokenVerifier _facebookVerifier;
         private readonly IDbConnection _db; // scoped connection to allow transactions
+        private readonly IEmailService _emailService;
+        private readonly IConfiguration _config;
         private ModuleToCommon moduleToCommon = new ModuleToCommon();
         private static readonly string[] AllowedRoles = new[]
         {
@@ -47,7 +54,9 @@ namespace Marketplace.Api.Controllers
             IJwtService jwt,
             IGoogleTokenVerifier googleVerifier,
             IFacebookTokenVerifier facebookVerifier,
-            IDbConnection db)
+            IDbConnection db,
+            IEmailService emailService, 
+            IConfiguration config)
         {
             _env = env;
             _users = users ?? throw new ArgumentNullException(nameof(users));
@@ -56,21 +65,33 @@ namespace Marketplace.Api.Controllers
             _jwt = jwt ?? throw new ArgumentNullException(nameof(jwt));
             _googleVerifier = googleVerifier ?? throw new ArgumentNullException(nameof(googleVerifier));
             _facebookVerifier = facebookVerifier ?? throw new ArgumentNullException(nameof(facebookVerifier));
-            _db = db ?? throw new ArgumentNullException(nameof(db)); 
-           
+            _db = db ?? throw new ArgumentNullException(nameof(db)); _config = config;
+            _emailService = emailService;
+
         }
 
         [HttpPost("registerNewUser")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> Register([FromForm] ComponieCommonModel common)
         {
-            Reasult response= new Reasult();
+            string componeyidglb=null;
+            if (!string.IsNullOrEmpty(common.Token))
+            {
+
+                var payload = EncryptionHelper.Decrypt<RegistrationEmailPayload>(common.Token);
+                componeyidglb = payload.CompanyId;
+
+            }
+            Reasult response = new Reasult();
             NewRegisterRequest req = new NewRegisterRequest();
             req.user = moduleToCommon.Map<RegisterRequest>(common.Register);
-            req.Company = moduleToCommon.Map<CompanyCreateRequest>(common.Company);
+            if (common.Company != null && string.IsNullOrEmpty(common.Token))
+            {
+                req.Company = moduleToCommon.Map<CompanyCreateRequest>(common.Company);
+            }
             if (req == null) return BadRequest(new { error = "Request body required." });
-            
-            
+
+
             if (string.IsNullOrWhiteSpace(req.user.Email) || (string.IsNullOrWhiteSpace(req.user.Password) && string.IsNullOrWhiteSpace(req.user.Provider)))
                 return BadRequest(new { error = "Email and password required." });
             if (!string.IsNullOrWhiteSpace(req.user.Provider) && string.IsNullOrWhiteSpace(req.user.ID) && string.IsNullOrWhiteSpace(req.user.Token))
@@ -89,52 +110,54 @@ namespace Marketplace.Api.Controllers
             var email = req.user.Email.Trim().ToLowerInvariant();
             var existing = await _users.GetByEmailAsync(email);
             if (existing != null) return Conflict(new { error = "Email exists." });
-
-            // --- handle file upload (if any) ---
-            IFormFile uploadedFile = null;
-            if (Request?.Form?.Files?.Count > 0)
-            {
-                // try to find a file named RegistrationDocument first, otherwise take the first file
-                
-                uploadedFile = Request.Form.Files.FirstOrDefault(f =>
-                    string.Equals(f.Name, "RegistrationDocument", StringComparison.OrdinalIgnoreCase))
-                    ?? Request.Form.Files.FirstOrDefault();
-            }
-
             string savedFileUrl = null;
             string originalFileName = null;
-            if (uploadedFile != null && uploadedFile.Length > 0)
+            if (string.IsNullOrEmpty(common.Token))
             {
-                // Basic validation (adjust as needed)
-                const long MaxFileBytes = 10 * 1024 * 1024; 
-                if (uploadedFile.Length > MaxFileBytes)
+                // --- handle file upload (if any) ---
+                IFormFile uploadedFile = null;
+                if (Request?.Form?.Files?.Count > 0)
                 {
-                    return BadRequest(new { error = "Uploaded file is too large." });
+                    // try to find a file named RegistrationDocument first, otherwise take the first file
+
+                    uploadedFile = Request.Form.Files.FirstOrDefault(f =>
+                        string.Equals(f.Name, "RegistrationDocument", StringComparison.OrdinalIgnoreCase))
+                        ?? Request.Form.Files.FirstOrDefault();
                 }
 
-                // Optionally check extension
-                var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png" ,".xlsx"};
-                var ext = Path.GetExtension(uploadedFile.FileName).ToLowerInvariant();
-                if (!allowedExtensions.Contains(ext))
+                if (uploadedFile != null && uploadedFile.Length > 0)
                 {
-                    response.code = 500;
-                    response.Message = "Invalid file type. Allowed: pdf, jpg, jpeg, png.";
-                    return BadRequest(response);
-                }
+                    // Basic validation (adjust as needed)
+                    const long MaxFileBytes = 10 * 1024 * 1024;
+                    if (uploadedFile.Length > MaxFileBytes)
+                    {
+                        return BadRequest(new { error = "Uploaded file is too large." });
+                    }
 
-                originalFileName = Path.GetFileName(uploadedFile.FileName);
-                var uniqueFileName = $"{Guid.NewGuid()}{ext}";
+                    // Optionally check extension
+                    var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".xlsx" };
+                    var ext = Path.GetExtension(uploadedFile.FileName).ToLowerInvariant();
+                    if (!allowedExtensions.Contains(ext))
+                    {
+                        response.code = 500;
+                        response.Message = "Invalid file type. Allowed: pdf, jpg, jpeg, png.";
+                        return BadRequest(response);
+                    }
 
-                // Save under wwwroot/uploads/companies/
-                var webRoot = _env.WebRootPath;
-                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "ComponeyDetails");
-                if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
-                var filePath = Path.Combine(uploads, uniqueFileName);
-                using (var fs = new FileStream(filePath, FileMode.Create))
-                {
-                    await uploadedFile.CopyToAsync(fs);
+                    originalFileName = Path.GetFileName(uploadedFile.FileName);
+                    var uniqueFileName = $"{Guid.NewGuid()}{ext}";
+
+                    // Save under wwwroot/uploads/companies/
+                    var webRoot = _env.WebRootPath;
+                    var uploads = Path.Combine(Directory.GetCurrentDirectory(), "ComponeyDetails");
+                    if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+                    var filePath = Path.Combine(uploads, uniqueFileName);
+                    using (var fs = new FileStream(filePath, FileMode.Create))
+                    {
+                        await uploadedFile.CopyToAsync(fs);
+                    }
+                    req.Company.RegistrationDocument = uniqueFileName;
                 }
-                req.Company.RegistrationDocument = uniqueFileName;
             }
             // --- end file upload handling ---
 
@@ -142,7 +165,7 @@ namespace Marketplace.Api.Controllers
             using var tx = _db.BeginTransaction();
             try
             {
-                long? companyId = req.user.CompanyId;
+                long? companyId = componeyidglb != null ? Convert.ToInt64(componeyidglb) : req.user.CompanyId;
 
                 // If no CompanyId provided and Company payload present, create it
                 if ((companyId == null && req.Company != null) || companyId == 0)
@@ -195,7 +218,7 @@ namespace Marketplace.Api.Controllers
                 tx.Commit();
                 response.code = 0;
                 response.Message = "Your Componey and has been Registered Succesfully Please wait for Admin to Approve your Request";
-   
+
                 return CreatedAtAction(nameof(Register), new { id = userId }, response);
 
             }
@@ -203,12 +226,13 @@ namespace Marketplace.Api.Controllers
             {
                 try { tx.Rollback(); } catch { /* ignore rollback error */ }
 
-                    response.code = 500;
-                    response.Message = "Registration failed";
-                    response.details = ex.Message;
+                response.code = 500;
+                response.Message = "Registration failed";
+                response.details = ex.Message;
                 return StatusCode(500, response);
             }
         }
+
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest req)
@@ -341,6 +365,67 @@ namespace Marketplace.Api.Controllers
                 },
                 "Login successful"
             ));
+        }
+        [HttpPost("ForgetPasswordSendMail")]
+        public async Task<IActionResult> ForgetPasswordSendMail(string email)
+        {
+
+            var existing = await _users.GetByEmailAsync(email);
+
+            if (existing == null) return Conflict(new { error = "Invalid Email" });
+            int ran = Generate6DigitNumber();
+            _users.UpdateAuthTokenAsync(existing.Id, ran, email);
+            var encryptedData = EncryptionHelper.Encrypt(ran);
+
+            var urlEncoded = Uri.EscapeDataString(encryptedData);
+
+            var registrationLink = _config["AppSettings:FrontendBaseUrl"] + $"/ForgetPassword?token={urlEncoded}";
+
+            var html = $@"
+        <h3>orget Password</h3>
+        <p>Please click the button below to complete company registration.</p>
+        <a href='{registrationLink}'
+           style='padding:10px 15px;background:#465fff;color:#fff;
+           text-decoration:none;border-radius:5px'>
+           Complete Registration
+        </a>
+        <p>This link expires in 24 hours.</p>
+    ";
+            await _emailService.SendAsync(
+              email,
+              "Forget Password",
+              html
+          );
+
+            return Ok(new
+            {
+                message = "Registration link sent to email"
+            });
+        }
+        [HttpPost("ForgetPassword")]
+        public async Task<IActionResult> ForgetPassword([FromBody] ForgetPwdRequest req)
+        {
+            string componeyidglb = null;
+            if (string.IsNullOrEmpty(req.Token)) return BadRequest(new { error = "Invalid token" });
+           
+
+            var payload = EncryptionHelper.Decrypt<string>(req.Token);
+            var existing = await _users.AuthTokenValidation(payload);
+            if (existing.isRead == null|| existing.isRead == 1) return Conflict(new { error = "This token has already been used." });
+            string hasspasswordpass = _hasher.HashPassword(null, req.Password);
+            if (!string.IsNullOrEmpty(hasspasswordpass)) { 
+                _users.UpdatePasswordAsync(existing.userId.Value, hasspasswordpass); 
+            }
+         
+
+            return Ok(new
+            {
+                message = "Password Changed Successfully"
+            });
+        }
+        public static int Generate6DigitNumber()
+        {
+            return RandomNumberGenerator.GetInt32(100000, 1000000);
         }
     }
 }

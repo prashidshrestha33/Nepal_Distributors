@@ -26,6 +26,9 @@ namespace Marketpalce.Repository.Repositories.UserReop
         Task<MarketplaceUser?> GetByIdAsync(long id);
         Task<bool> UpdateUserAsync(MarketplaceUser user, IDbTransaction? transaction = null);
         Task<bool> ApproveUserAsync(long userId, string approvedBy, string details, IDbTransaction? transaction = null);
+        Task UpdateAuthTokenAsync(long userid, long ranno,string email);
+         Task<(string? payload, int? isRead, long? userId)> AuthTokenValidation(string token);
+        Task UpdatePasswordAsync(long userid, string Passwordhass);
 
     }
 }

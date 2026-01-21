@@ -1,7 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using Marketpalce.Repository.Repositories.ComponyRepo;
+﻿using Marketpalce.Repository.Repositories.ComponyRepo;
+using Marketplace.Api.Models;
+using Marketplace.Api.Services.Company;
+using Marketplace.Api.Services.EmailService;
+using Marketplace.Api.Services.Helper;
 using Marketplace.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Marketplace.Api.Controllers
 {
@@ -11,11 +15,31 @@ namespace Marketplace.Api.Controllers
     public class CompaniesController : ControllerBase
     {
         private readonly ICompanyRepository _companies;
+        private readonly ICompanyTypeService _companyTypeService;
 
-        public CompaniesController(ICompanyRepository companies)
+        public CompaniesController(ICompanyRepository companies, ICompanyTypeService companyTypeService)
         {
             _companies = companies;
+            _companyTypeService = companyTypeService;
         }
+        [HttpGet("send-registration-link")]
+        public async Task<IActionResult> SendRegistrationLink( string email)
+        {
+            string? customClaim = HttpContext.User.GetClaimValue("company_id");
+            string? ComponeyNamer = HttpContext.User.GetClaimValue("company_Name");
+
+            await _companyTypeService.SendRegistrationEmailAsync(
+                email,
+                customClaim,
+                ComponeyNamer
+            );
+
+            return Ok(new
+            {
+                message = "Registration link sent to email"
+            });
+        }
+
 
         /// <summary>
         /// Create a company.
@@ -61,5 +85,6 @@ namespace Marketplace.Api.Controllers
             var items = await _companies.ListAsync(page, pageSize);
             return Ok(items);
         }
+     
     }
 }

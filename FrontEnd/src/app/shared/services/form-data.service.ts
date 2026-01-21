@@ -24,6 +24,11 @@ export interface UserFormData {
   id: string;
   token: string;
 }
+export interface ForgetPassword {
+  Password: string;
+  Provider: string;
+  Token: string;
+}
 
 export interface FormWizardData {
   company: CompanyFormData | null;

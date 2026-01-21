@@ -6,6 +6,12 @@ namespace Marketplace.Api.Models
     {
         public RegisterRequestCommonModel Register {get; set; }
         public CompanyCreateRequestCommonModel Company { get; set; }
+        public string? Token { get; set; }
+        public IFormFile CompanyDocument { get; set; }
+    }
+    public class UserCommonModel
+    {
+        public RegisterRequestCommonModel Register { get; set; }
         public IFormFile CompanyDocument { get; set; }
     }
     public class RegisterRequestCommonModel
@@ -22,19 +28,12 @@ namespace Marketplace.Api.Models
     }
     public class CompanyCreateRequestCommonModel
     {
-        [Required]
-        public string Name { get; set; }
-        [Required]
+        public string? Name { get; set; }
         public string? CompamyPerson { get; set; }
-        [Required]
         public string? MobilePhone { get; set; }
-        [Required]
         public string? LandLinePhone { get; set; }
-        [Required]
         public string? CompanyType { get; set; }
-        [Required]
         public string? Address { get; set; }
-        [Required]
         public string? GoogleMapLocation { get; set; }
     }
 }

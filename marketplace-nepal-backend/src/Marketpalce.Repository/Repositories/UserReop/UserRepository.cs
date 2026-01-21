@@ -14,31 +14,34 @@ namespace Marketpalce.Repository.Repositories.UserReop
         public async Task<MarketplaceUser?> GetByEmailAsync(string email = null, string googleId = null, string facebookId = null)
         {
             string sql = @"SELECT TOP (1)
-    id AS Id,
-    company_id AS CompanyId,
-    email AS Email,
-    password_hash AS PasswordHash,
-    full_name AS FullName,
-    phone AS Phone,
-    role AS Role,
-    status AS Status,
-    credits AS Credits,
-    tier AS Tier,
-    google_id AS GoogleId,
-    facebook_id AS FacebookId,
-    created_at AS CreatedAt,
-    updated_at AS UpdatedAt,
-    last_login_at AS LastLoginAt,
+    users.id AS Id,
+    users.company_id AS CompanyId,
+    users.email AS Email,
+    users.password_hash AS PasswordHash,
+    users.full_name AS FullName,
+    users.phone AS Phone,
+    users.role AS Role,
+    users.status AS Status,
+    users.credits AS Credits,
+    users.tier AS Tier,
+    users.google_id AS GoogleId,
+    users.facebook_id AS FacebookId,
+    users.created_at AS CreatedAt,
+    users.updated_at AS UpdatedAt,
+    users.last_login_at AS LastLoginAt,
     case when isnull(approve_fg,'n')='y' then 'y' else 'n'
-    end AS ApproveFG
-    FROM dbo.users WHERE 1=1";
+    end AS ApproveFG,
+    companie.name as CompanyName
+    FROM dbo.users as users join 
+[dbo].[companies] as companie on users.company_id=companie.id WHERE 1=1";
             if (email != null)
                 sql += "AND LOWER(email) = LOWER(@Email);  ";
             else if (googleId != null)
                 sql += "AND google_id = @GoogleId; ";
             else if (facebookId != null)
                 sql += "AND facebook_id = @FacebookId;";
-            return await _db.QueryFirstOrDefaultAsync<MarketplaceUser>(sql, new { Email = email , GoogleId = googleId, FacebookId = facebookId });
+            MarketplaceUser test = await _db.QueryFirstOrDefaultAsync<MarketplaceUser>(sql, new { Email = email, GoogleId = googleId, FacebookId = facebookId });
+            return await _db.QueryFirstOrDefaultAsync<MarketplaceUser>(sql, new { Email = email, GoogleId = googleId, FacebookId = facebookId });
         }
         public async Task<long> CreateAsync(MarketplaceUser user, IDbTransaction? transaction = null)
         {
@@ -236,6 +239,54 @@ WHERE
             var sql = "SELECT TOP (1000) * FROM [NepalDistributers].[dbo].[users]";
             return await _db.QueryAsync<MarketplaceUser>(sql);
         }
+        public async Task UpdateAuthTokenAsync(long userid, long ranno, string email)
+        {
+            const string sql = "insert into notifications(user_id,type,is_read,created_at,otp_token,payload) " +
+                "values (@userid,'auth',0,SYSUTCDATETIME(),@ranno,@email)";
+            await _db.ExecuteAsync(sql, new { @userid = userid, @ranno = ranno, @email = email });
+        }
+        public async Task UpdatePasswordAsync(long userid,string Passwordhass)
+        {
+            const string sql = "update users set password_hash = @Passwordhass where id = @userid";
+            await _db.ExecuteAsync(sql, new { @userid = userid, @Passwordhass = Passwordhass });
+        }
+        public async Task<(string? payload, int? isRead, long? userId)> AuthTokenValidation(string token)
+        {
+            // Step 1: Select the notification within the last 5 minutes
+            const string selectSql = @"
+        SELECT TOP 1 payload, is_read, user_id
+        FROM notifications
+        WHERE created_at >= DATEADD(MINUTE, -50, SYSUTCDATETIME())
+          AND otp_token = @token;
+    ";
+
+            var result = await _db.QueryFirstOrDefaultAsync<(string payload, int is_read, long user_id)>(
+                selectSql,
+                new { token }
+            );
+
+            if (result == default)
+            {
+                return (null, null, null);
+            }
+
+            // Step 2: If unread, mark as read
+            if (result.is_read == 0)
+            {
+                const string updateSql = @"
+            UPDATE notifications
+            SET is_read = 1
+            WHERE otp_token = @token;
+        ";
+
+                await _db.ExecuteAsync(updateSql, new { token });
+                result.is_read = 0;
+            }
+
+            return (result.payload, result.is_read, result.user_id);
+        }
+
+
 
     }
 }
