@@ -85,7 +85,6 @@ export class NotificationService {
 
   private async saveFcmTokenToBackend(token: string): Promise<void> {
     try {
-        debugger;
       // Replace with your actual API endpoint
       const apiUrl = `${environment.apiBaseUrl}/api/notifications/register-token`;
       

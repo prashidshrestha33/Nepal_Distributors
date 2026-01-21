@@ -1,5 +1,6 @@
 ﻿using Marketpalce.Repository.Repositories.ProductRepo;
 using Marketplace.Api.Models;
+using Marketplace.Api.Services.Helper;
 using Marketplace.Model.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -17,6 +18,7 @@ namespace Marketplace.Api.Controllers
     {
         private readonly IProductRepository repositorysitory;
         private readonly IDbConnection _db;
+        private ModuleToCommon moduleToCommon = new ModuleToCommon();
         public ProductController(IProductRepository repo, IDbConnection db)
         {
             repositorysitory = repo;
@@ -86,71 +88,52 @@ namespace Marketplace.Api.Controllers
         }
 
         [HttpPost("AddProduct")]
-        public async Task<ActionResult<ProductModel>> AddProducts([FromForm] ProductModels dto)
+        public async Task<ActionResult<ProductModels>> AddProducts([FromForm] ProductModels dto)
         {
-            string imageFileName = null;
-            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
-            {
-                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
-                if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+                string imageFileName = null;
+                if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+                {
+                    var uploads = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
+                    if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
 
-                imageFileName = $"{Guid.NewGuid()}_{dto.ImageFile.FileName}";
-                var filePath = Path.Combine(uploads, imageFileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                    await dto.ImageFile.CopyToAsync(stream);
+                    imageFileName = $"{Guid.NewGuid()}_{dto.ImageFile.FileName}";
+                    var filePath = Path.Combine(uploads, imageFileName);
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                        await dto.ImageFile.CopyToAsync(stream);
+                }
+                ProductModel product = moduleToCommon.Map<ProductModel>(dto);
+                product.ImageName = imageFileName;
+                product.Id = await repositorysitory.CreateAsync(product);
+                return CreatedAtAction(nameof(Get), new { id = product.Id }, product);
             }
-
-            var product = new ProductModel
-            {
-                Sku = dto.Sku,
-                Name = dto.Name,
-                Description = dto.Description,
-                ShortDescription = dto.ShortDescription,
-                CategoryId = dto.CategoryId,
-                BrandId = dto.BrandId,
-                ManufacturerId = dto.ManufacturerId,
-                Rate = dto.Rate,
-                HsCode = dto.HsCode,
-                Status = dto.Status,
-                IsFeatured = dto.IsFeatured,
-                SeoTitle = dto.SeoTitle,
-                SeoDescription = dto.SeoDescription,
-                Attributes = dto.Attributes,
-                ImageName = imageFileName,
-                CreatedBy = dto.CreatedBy,
-                CreatedAt = DateTime.UtcNow,
-            };
-            product.Id = await repositorysitory.CreateAsync(product);
-            return CreatedAtAction(nameof(Get), new { id = product.Id }, product);
-        }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(int id, [FromForm] ProductModels dto)
         {
-            var product = await repositorysitory.GetByIdAsync(id);
-            if (product == null) return NotFound();
+                var product = await repositorysitory.GetByIdAsync(id);
+                if (product == null) return NotFound();
 
-            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
-            {
-                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
-                if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+                if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+                {
+                    var uploads = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
+                    if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
 
-                var imageFileName = $"{Guid.NewGuid()}_{dto.ImageFile.FileName}";
-                var filePath = Path.Combine(uploads, imageFileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                    await dto.ImageFile.CopyToAsync(stream);
+                    var imageFileName = $"{Guid.NewGuid()}_{dto.ImageFile.FileName}";
+                    var filePath = Path.Combine(uploads, imageFileName);
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                        await dto.ImageFile.CopyToAsync(stream);
 
-                product.ImageName = imageFileName;
+                    product.ImageName = imageFileName;
+                }
+
+                // Update other fields
+                product.Sku = dto.Sku; product.Name = dto.Name;
+                product.Description = dto.Description; // etc.
+                product.UpdatedAt = DateTime.UtcNow;
+
+                await repositorysitory.UpdateAsync(product);
+                return NoContent();
             }
-
-            // Update other fields
-            product.Sku = dto.Sku; product.Name = dto.Name;
-            product.Description = dto.Description; // etc.
-            product.UpdatedAt = DateTime.UtcNow;
-
-            await repositorysitory.UpdateAsync(product);
-            return NoContent();
-        }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)

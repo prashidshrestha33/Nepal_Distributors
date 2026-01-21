@@ -136,12 +136,10 @@ export class SigninFormComponent implements OnInit {
 
     this.authService.socialLogin(socialUser,rememberMe).subscribe({
       next: (response: any) => {
-         debugger;
         this.isSocialLoading = false;
         console.log('Backend response:', response);
     
          const token = response?.result?.token || response?.token;
-        debugger;
         if (token) {
           console.log('User logged in successfully');
           this.inactivityService.initInactivityTimer();
@@ -150,9 +148,7 @@ export class SigninFormComponent implements OnInit {
           this.errorMessage = 'No token received from server. ';
         }
       },
-      error: (error: any) => {
-        debugger;
-      
+      error: (error: any) => {      
         this.isSocialLoading = false;
             if(error?.status==401){
           localStorage.setItem('socialUser', JSON.stringify(socialUser));

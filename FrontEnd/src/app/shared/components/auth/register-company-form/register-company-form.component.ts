@@ -84,7 +84,6 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    debugger;
       const Messagelg = localStorage.getItem('Messagelg');
     
     if (Messagelg && Messagelg!="") {

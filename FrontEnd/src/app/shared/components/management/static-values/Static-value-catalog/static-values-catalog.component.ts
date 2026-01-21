@@ -25,7 +25,6 @@ export class StaticValuesCatalogComponent implements OnInit {
   }
 
   load() {
-    debugger;
     this.service.getStaticValuesCatagory().subscribe((data: StaticValueCatalog[]) => {
       this.items = data;
       this.filteredItems = data;
