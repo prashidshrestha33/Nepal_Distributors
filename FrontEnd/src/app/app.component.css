@@ -1,13 +1,18 @@
-.notification-btn {
-  padding: 8px 16px;
-  background: #4285f4;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
+.notification-btn{
+    padding: 5px 7px;
+    background: #4285f4;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    bottom: 17px;
+    left: 12px;
+    border-radius: 100px;
+    position: absolute;
+    z-index: 1000;
+    font-size: 25px;
 }
-
 .notification-btn:hover {
   background: #357ae8;
 }

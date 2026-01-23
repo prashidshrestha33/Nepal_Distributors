@@ -16,7 +16,7 @@ import { filter } from 'rxjs/operators';
 })
 export class AppComponent implements OnInit, OnDestroy {
   title = 'Nepal Distributors';
-
+  notificationsEnabled = false; 
   constructor(
     private inactivityService: InactivityService,
     private authService: AuthService,
@@ -28,7 +28,7 @@ export class AppComponent implements OnInit, OnDestroy {
     // 🔥 Initialize Firebase notifications listener
     this.notificationService. listenForMessages();
     console.log('🔥 Firebase notifications initialized');
-
+    this.checkNotificationStatus() 
     // 🔥 Auto-request notification permission if user is authenticated
     if (this.authService.isAuthenticated()) {
       this.requestNotificationPermission();
@@ -56,6 +56,21 @@ export class AppComponent implements OnInit, OnDestroy {
       });
   }
 
+  // ✅ Check if notifications are already allowed
+  private async checkNotificationStatus() {
+    debugger;
+    if (Notification.permission === 'granted') {
+      this.notificationsEnabled = true;
+      return;
+    }
+
+    if (Notification.permission === 'denied') {
+      this.notificationsEnabled = false;
+      return;
+    }
+
+  }
+
   // 🔥 Request notification permission
   private async requestNotificationPermission() {
     try {
@@ -73,11 +88,12 @@ export class AppComponent implements OnInit, OnDestroy {
     const token = await this.notificationService.requestPermission();
     if (token) {
       alert('✅ Notifications enabled successfully!');
+      
       return token;
     } else {
       alert('❌ Please allow notifications in your browser settings.');
       return null;
-    }
+    }this.checkNotificationStatus();
   }
 
   ngOnDestroy() {

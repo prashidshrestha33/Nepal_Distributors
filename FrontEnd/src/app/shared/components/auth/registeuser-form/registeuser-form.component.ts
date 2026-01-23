@@ -5,7 +5,6 @@ import { LabelComponent } from '../../form/label/label.component';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormGroup, FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
-import { InactivityService } from '../../../services/inactivity.service';
 import { SocialAuthSimpleService } from '../../../services/social-auth-simple.service';
 import { SocialUser } from '../../../models/auth.models';  // Import SocialUser, not SocialLoginRequest
 
@@ -70,7 +69,11 @@ debugger;
         this.errorMessage = error?. message || 'Google sign-in failed. Please try again.';
       });
   }
-
+SignInWithEmail() {
+ this.router.navigate(['/signup'], {
+            queryParamsHandling: 'preserve'  
+      });
+}
   signInWithFacebook() {
     // Prevent double-click
     if (this. isSocialLoading) {

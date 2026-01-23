@@ -28,12 +28,12 @@ namespace Marketplace.Models
 
         // Location
         public string? Location { get; set; }
-        // For simplicity in C# keep as string; repositories map to geography column as text or handle conversion externally
         public string? GoogleMapLocation { get; set; }
 
         public string? ApproveDt { get; set; }
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
-        public string? ApproveTs { get; set; }
+       
+    public string? ApproveTs { get; set; }
     }
 }

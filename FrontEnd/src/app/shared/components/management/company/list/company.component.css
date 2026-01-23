@@ -1,0 +1,21 @@
+.bg-white.dark\:bg-gray-900.rounded-lg.shadow-lg.w-full.p-6.custompopupmodel {
+    max-width: 88%;
+}.custom.model-body {
+    max-height: 80vh;
+    overflow: auto;
+    margin-bottom: 21px;
+}h2.text-lg.font-semibold.text-gray-800.dark\:text-white.mb-4 {
+    padding: 10px;
+    background: #cfcfcf;
+    border: 1px solid;
+    border-radius: 10px;
+}.custompopupmodel1 {
+    min-height: 20vh;
+}.custom.model-body{
+    max-height: 80vh;
+    min-height: 20vh;
+    overflow: auto;
+    margin-bottom: 21px;
+}.custom.model-body1 {
+    min-height: 20vh;
+}

@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Marketplace.Models
 {
+
     public class CompanyCreateRequest
     {
         [Required]
@@ -19,7 +20,13 @@ namespace Marketplace.Models
         public string? Address { get; set; }
         public string? GoogleMapLocation { get; set; }
     }
-
+    public class ApproveCompanyRequest
+    {
+        public long CompanyId { get; set; }
+        public string? AssignCategory { get; set; }  // e.g., "1,2,5"
+        public string ApproveFg { get; set; } = "Y"; // Y or N
+        public string? RejectComment { get; set; }  // optional
+    }
     public class NewRegisterRequest
     {
         public RegisterRequest? user { get; set; }

@@ -23,11 +23,44 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
             return await _db.QueryAsync<ProductModel>(sql);
         }
 
-        public async Task<IEnumerable<CategoryDto>> GetAllCategoryAsync()
+        public async Task<List<CategoryDto>> GetAllCategoryAsync()
         {
-            var sql = "SELECT TOP (1000) * FROM [NepalDistributers].[dbo].[Product_Categories]";
-            return await _db.QueryAsync<CategoryDto>(sql);
+            const string sql = @"
+        SELECT
+            id AS Id,
+            name AS Name,
+            slug AS Slug,
+            parent_id AS ParentId,
+            depth AS Depth
+        FROM [NepalDistributers].[dbo].[Product_Categories]
+        ORDER BY depth ASC"; // make sure parents come first
+
+            // Fetch flat list
+            var flatList = (await _db.QueryAsync<CategoryDto>(sql)).ToList();
+
+            // Build hierarchical tree
+            var lookup = flatList.ToDictionary(c => c.Id);
+            var rootCategories = new List<CategoryDto>();
+
+            foreach (var category in flatList)
+            {
+                if (category.ParentId.HasValue)
+                {
+                    if (lookup.TryGetValue(category.ParentId.Value, out var parent))
+                    {
+                        parent.Children ??= new List<CategoryDto>();
+                        parent.Children.Add(category);
+                    }
+                }
+                else
+                {
+                    rootCategories.Add(category); // top-level
+                }
+            }
+
+            return rootCategories;
         }
+
 
         public async Task<ProductModel> GetByIdAsync(int id)
         {

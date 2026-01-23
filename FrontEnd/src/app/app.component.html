@@ -1,5 +1,7 @@
-<button (click)="enableNotifications()" class="notification-btn">
-  🔔 Enable Notifications
-</button>
 
+      @if (notificationsEnabled==false) {
+<button (click)="enableNotifications()" class="notification-btn" >
+  🔔
+</button>
+      }
 <router-outlet></router-outlet>

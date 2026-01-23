@@ -1,7 +1,8 @@
-﻿using System.Data;
-using Dapper;
+﻿using Dapper;
 using Marketplace.Models;
 using System.Collections.Generic;
+using System.Data;
+using System.Transactions;
 
 namespace Marketpalce.Repository.Repositories.ComponyRepo
 {
@@ -63,11 +64,9 @@ SELECT TOP (1)
   credits AS Credits,
   tier AS Tier,
   location AS Location,
-  google_map_location AS GoogleMapLocation,
+   CAST(google_map_location AS NVARCHAR(MAX)) AS GoogleMapLocation,
   created_at AS CreatedAt,
-  updated_at AS UpdatedAt,
-  approve_dt AS ApproveDt,
-  approve_ts AS ApproveTs
+  updated_at AS UpdatedAt
 FROM dbo.companies
 WHERE id = @Id;";
 
@@ -76,11 +75,11 @@ WHERE id = @Id;";
 
         public async Task<IEnumerable<Company>> ListAsync(int page = 1, int pageSize = 50)
         {
-            const string sql = @"
-SELECT id AS Id, name AS Name, company_type AS CompanyType, registration_document AS RegistrationDocument,
-       location AS Location, google_map_location AS GoogleMapLocation, created_at AS CreatedAt, updated_at AS UpdatedAt
+            const string sql = @"SELECT id AS Id, name AS Name,Contact_Person as ContactPerson,Mobile_Phone as MobilePhone,Landline_Phone as LandlinePhone,
+        company_type AS CompanyType, registration_document AS RegistrationDocument,user_type as UserType,Credits,
+       location AS Location, status AS status, created_at AS CreatedAt, updated_at AS UpdatedAt
 FROM dbo.companies
-ORDER BY id
+ORDER BY id 
 OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
 
             return await _db.QueryAsync<Company>(sql, new { Skip = (page - 1) * pageSize, Take = pageSize });
@@ -114,5 +113,92 @@ OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
                 return false;
             }
         }
+        public async Task<long> AssignCategoryAsync(long CategoryId, long companyId)
+        {
+            try
+            {
+                const string sql = @"
+        INSERT INTO dbo.companies_category_assigned
+            (category_id, company_id, created_at, updated_at, push_notificaion)
+        OUTPUT INSERTED.id
+        VALUES
+            (@CategoryId, @CompanyId, SYSUTCDATETIME(), SYSUTCDATETIME(), @PushNotification);";
+
+                var id = await _db.ExecuteAsync(sql, new
+                {
+                    CategoryId = CategoryId,
+                    CompanyId = companyId,
+                    PushNotification = "N"
+                });
+
+                return id;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error assigning category: {ex.Message}");
+                throw;
+            }
+        }
+        public async Task<(int totalRows, List<string> emails)> ApproveCompanyAsync(
+     long companyId,
+     string approveFg,
+     string rejectComment)
+        {
+            try
+            {
+                // 1️⃣ Update companies table
+                const string sqlCompany = @"
+        UPDATE dbo.companies
+        SET 
+            approve_ts = SYSDATETIME(),
+            approve_fg = @ApproveFg,
+            updated_at = SYSDATETIME(),
+            reject_comment = @RejectComment
+        WHERE id = @CompanyId;";
+
+                var companyRows = await _db.ExecuteAsync(sqlCompany, new
+                {
+                    CompanyId = companyId,
+                    ApproveFg = approveFg,
+                    RejectComment = rejectComment
+                });
+                // 2️⃣ Update users table
+                const string sqlUsers = @"
+        UPDATE dbo.users
+        SET 
+status
+            approve_dt = SYSDATETIME(),
+            approve_fg = @ApproveFg,
+            updated_at = SYSDATETIME()
+        WHERE company_id = @CompanyId;";
+
+                var userRows = await _db.ExecuteAsync(sqlUsers, new
+                {
+                    CompanyId = companyId,
+                    ApproveFg = approveFg
+                });
+
+                // 3️⃣ Select emails of users with role 'Cadmin'
+                const string sqlEmails = @"
+        SELECT email 
+        FROM dbo.users
+        WHERE company_id = @CompanyId
+          AND role = 'Cadmin';";
+
+                var emails = (await _db.QueryAsync<string>(sqlEmails, new { CompanyId = companyId })).ToList();
+
+                // Return total affected rows and emails
+                return (companyRows + userRows, emails);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error approving company and users: {ex.Message}");
+                throw;
+            }
+        }
+
+
+
+
     }
 }

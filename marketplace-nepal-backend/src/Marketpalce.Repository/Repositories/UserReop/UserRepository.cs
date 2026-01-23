@@ -29,7 +29,7 @@ namespace Marketpalce.Repository.Repositories.UserReop
     users.created_at AS CreatedAt,
     users.updated_at AS UpdatedAt,
     users.last_login_at AS LastLoginAt,
-    case when isnull(approve_fg,'n')='y' then 'y' else 'n'
+    case when isnull(companie.approve_fg,'n')='y' then 'y' else 'n'
     end AS ApproveFG,
     companie.name as CompanyName
     FROM dbo.users as users join 

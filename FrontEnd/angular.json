@@ -30,7 +30,8 @@
               "src/firebase-messaging-sw.js"
             ],
             "styles": [
-              "src/styles.css"
+              "src/styles.css",
+              "node_modules/@ng-select/ng-select/themes/default.theme.css"
             ],
             "scripts": [
               "node_modules/apexcharts/dist/apexcharts.min.js"

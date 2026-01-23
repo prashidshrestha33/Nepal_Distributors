@@ -77,7 +77,7 @@ function passwordMismatchValidator(form: AbstractControl): ValidationErrors | nu
     ReactiveFormsModule,
   ],
   templateUrl: './forget-password-form.component.html',
-  styles: ``
+  styles: './forget-password-form.component.css'
 })
 export class ForgetPasswordFormComponent implements OnInit {
   showPassword = false;

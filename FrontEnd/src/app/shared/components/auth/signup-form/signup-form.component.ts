@@ -204,7 +204,23 @@ if (sSocialUser) {
   finally{
     
   }
-} else {
+} 
+else if(!sSocialUser && this.returnUrl){
+  debugger;
+ this.signupForm = this.formBuilder.group({
+    firstName: ['', [Validators.required]],
+    phoneNo: ['', [Validators.required]],
+    email: ['', [Validators. required, emailFormatValidator]],
+    password: ['', [Validators.required, strongPasswordValidator]],
+    confirmPassword: ['', [Validators.required]],
+    agreeToTerms: [''],
+    provider: [''],
+    id: [''],
+    token: ['']
+  }, { validators: passwordMismatchValidator });
+}
+  
+  else {
   // Regular signup (no social user)
   this.signupForm = this.formBuilder.group({
     firstName: ['', [Validators.required]],

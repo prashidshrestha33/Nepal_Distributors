@@ -11,7 +11,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
     public interface IProductRepository
     {
         Task<IEnumerable<ProductModel>> GetAllAsync();
-        Task<IEnumerable<CategoryDto>> GetAllCategoryAsync();
+        Task<List<CategoryDto>> GetAllCategoryAsync();
         Task<ProductModel> GetByIdAsync(int id);
         Task<int> CreateAsync(ProductModel product);
         Task<bool> UpdateAsync(ProductModel product);

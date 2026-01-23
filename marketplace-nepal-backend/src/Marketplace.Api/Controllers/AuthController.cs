@@ -366,7 +366,7 @@ namespace Marketplace.Api.Controllers
                 "Login successful"
             ));
         }
-        [HttpPost("ForgetPasswordSendMail")]
+        [HttpGet("ForgetPasswordSendMail")]
         public async Task<IActionResult> ForgetPasswordSendMail(string email)
         {
 

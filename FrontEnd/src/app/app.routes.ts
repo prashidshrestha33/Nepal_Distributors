@@ -4,6 +4,7 @@ import { AppLayoutComponent } from './shared/layout/app-layout/app-layout.compon
 import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
 import { RegisterUser } from './pages/auth-pages/register-user/register-user.component';
 import { ForgetPasswordComponent } from './pages/auth-pages/forget-password/forget-password.component';
+import { ForgetPasswordRequestComponent } from './pages/auth-pages/forget-password-request/forget-password-request.component';
 import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
 import { RegisterCompanyComponent } from './pages/auth-pages/register-company/register-company.component';
 import { TermsAndConditionsComponent } from './pages/auth-pages/terms-and-conditions/terms-and-conditions.component';
@@ -12,6 +13,9 @@ import { AuthGuard } from './guards/auth.guard';
 // Management Components - Users
 import { UsersComponent } from './shared/components/management/users/list/users.component';
 import { UserFormComponent } from './shared/components/management/users/form/user-form.component';
+// Management Components - Users
+import { CompanyComponent } from './shared/components/management/company/list/company.component';
+import { CompanyFormComponent } from './shared/components/management/company/form/Company-form.component';
 
 // Management Components - Categories
 import { CategoriesComponent } from './shared/components/management/categories/list/categories.component';
@@ -53,6 +57,10 @@ export const routes: Routes = [
     path: 'ForgetPassword',
      component: ForgetPasswordComponent,
     title: 'Nepal Distributors - Forget Pasword'
+  },{
+    path: 'ForgetPasswordRequest',
+     component: ForgetPasswordRequestComponent,
+    title: 'Nepal Distributors - Forget Pasword Request'
   },
   {
     path: 'signup',
@@ -88,6 +96,15 @@ export const routes: Routes = [
             path: 'users/add',
             component: UserFormComponent,
             title: 'Nepal Distributors - Add User'
+          }, {
+            path: 'company',
+            component: CompanyComponent,
+            title: 'Nepal Distributors - Company'
+          },
+          {
+            path: 'company/add',
+            component: CompanyFormComponent,
+            title: 'Nepal Distributors - Add Company'
           },
           {
             path: 'categories',

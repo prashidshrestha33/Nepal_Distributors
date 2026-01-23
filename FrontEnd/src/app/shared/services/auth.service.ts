@@ -237,7 +237,11 @@ export class AuthService {
       const headers = new HttpHeaders({ 'Content-Type': 'application/json', Accept: 'application/json' });
     return this.http.post<any>(`${this.api}/api/auth/ForgetPassword`, body, { headers });
   }
-
+ forgetPasswordrequest(email: string): Observable<any> {
+    return this.http.get<any>(`${this.api}/api/auth/ForgetPasswordSendMail`, {
+      params: { email }
+    });
+  }
   /**
    * Logout user
    * Removes token from both storages and redirects to signin page
