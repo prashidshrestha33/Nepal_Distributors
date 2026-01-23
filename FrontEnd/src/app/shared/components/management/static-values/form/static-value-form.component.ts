@@ -35,7 +35,6 @@ export class StaticValueFormComponent implements OnInit {
   }
 
   ngOnInit() {
-    debugger;
     this.route.queryParams.subscribe(params => {
       const id = params['catalogId'];
       const staticid = params['staticid'];
@@ -56,7 +55,6 @@ export class StaticValueFormComponent implements OnInit {
   }
   
  load(): void {
-  debugger;
   if (!this.catalogId) {
     this.error = 'Invalid catalog ID';
     return;
@@ -96,7 +94,6 @@ export class StaticValueFormComponent implements OnInit {
   }
 
   onSubmit() {
-    debugger;
     if (this.form.valid) {
       this.loading = true;
       const staticValue: StaticValue = this.form.value;

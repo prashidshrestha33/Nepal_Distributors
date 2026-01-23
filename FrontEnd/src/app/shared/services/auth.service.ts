@@ -283,7 +283,6 @@ export class AuthService {
       const jwtToken = response?.result?.token || response?.token;
       
       if (jwtToken) {
-        debugger;
         this.saveToken(jwtToken, rememberMe);
         // Store token
         if (rememberMe) {

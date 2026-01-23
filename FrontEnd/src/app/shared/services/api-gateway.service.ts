@@ -65,12 +65,13 @@ export class ApiGatewayService {
 
   // POST
   post<T>(endpoint: string, body: any = null, options: RequestOptions = {}): Observable<T> {
-    const url = this.buildUrl(endpoint);
-    const httpOptions = this.buildHttpOptions(options);
-    return this.http.post<T>(url, body, httpOptions).pipe(
-      catchError(this.handleError.bind(this))
-    );
-  }
+  const url = this.buildUrl(endpoint);
+  // Pass the body to buildHttpOptions so it can check for FormData
+  const httpOptions = this.buildHttpOptions({ ...options, body });
+  return this.http.post<T>(url, body, httpOptions).pipe(
+    catchError(this.handleError.bind(this))
+  );
+}
 
   // POST with automatic extraction
   postWithResult<T>(endpoint: string, body: any = null, options: RequestOptions = {}): Observable<T> {
@@ -194,9 +195,9 @@ export class ApiGatewayService {
       }
     }
 
-    if (!headers.has('Content-Type')) {
-      headers = headers.set('Content-Type', 'application/json');
-    }
+    if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
+  headers = headers.set('Content-Type', 'application/json');
+}
 
     // Use HttpParams if passed as object
     let finalParams = options.params;

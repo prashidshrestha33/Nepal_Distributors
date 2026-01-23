@@ -17,20 +17,32 @@ export interface Category {
   createdAt?: string;
   updatedAt?: string;
 }
-
 export interface Product {
-  id?:  number;
-  sku: string;
+  id: number;
+  sku?: string;
   name: string;
-  shortDescription: string;
+  description: string;
+  shortDescription?: string;
+  categoryId: number;
+  subCategoryId?: number;
+  subSubCategoryId: number;
+  brandId: number;
+  manufacturerId: number;
   rate: number;
-  status:  string;
-  isFeatured: boolean;
+  hsCode: string;
+  status: string;
+  isFeatured?: boolean;
+  seoTitle: string;
+  seoDescription: string;
+  attributes?: string;
+  createdBy: string;
+  imageFile?: File | string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  approveFg?: string;
+  approveTs?: Date;
   imageUrl?: string;
-  imageFile?:  File;
-  createdAt?:  Date;
 }
-
 export interface ProductResponse {
   data: Product[];
   totalCount: number;
@@ -75,12 +87,25 @@ export interface StaticValue {
 }
 
 export interface StaticValueCatalog {
-  catalogId?: number;
+  id:number;
+  catalogId: number;
   catalogName: string;
   catalogType:  string;
   catalogDescription: string;
 }
 
+export interface Brand {
+id?: number;
+name?: string;
+}
+export interface Users {
+id?: number;
+name?: string;
+email?:string;
+company?:number;
+credit?:number;
+}
+@Injectable({ providedIn: 'root' })
 // ============================================
 // CATEGORY SERVICE
 // ============================================
@@ -150,9 +175,12 @@ export class ProductService {
       { requiresAuth: true }
     );
   }
-
-  createProduct(product: Product): Observable<Product> {
-    const formData = this.buildProductFormData(product);
+  createProduct(product: Product, image?: File): Observable<Product> {
+    
+    const formData = this.buildProductFormData(product, image);
+    for (let pair of formData.entries()) {
+      console.log(pair[0]+ ': ' + pair[1]);
+    }
     return this.apiGateway.post<Product>(
       '/api/Product/AddProduct',
       formData,
@@ -162,6 +190,36 @@ export class ProductService {
       }
     );
   }
+
+  private buildProductFormData(product: Product, imageFile?: File): FormData { 
+  const formData = new FormData();
+  formData.append('Sku', (product.sku ?? 0).toString());
+  formData.append('Name', product.name ?? '');
+  formData.append('Description', product.description ?? '');
+  formData.append('ShortDescription', (product.shortDescription ?? 0).toString());
+  formData.append('CategoryId', (product.categoryId ?? 0).toString());
+  formData.append('SubCategoryId', (product.subCategoryId ?? 0).toString());
+  formData.append('SubSubCategoryId', (product.subSubCategoryId ?? 0).toString());
+  formData.append('BrandId', (product.brandId ?? 0).toString());
+  formData.append('ManufacturerId', (product.manufacturerId ?? 0).toString());
+  formData.append('Rate', (product.rate ?? 0).toString());
+  formData.append('HsCode', product.hsCode ?? '');
+  formData.append('Status', product.status ?? '');
+  formData.append('IsFeatured', product.isFeatured ? 'true' : 'false');
+  formData.append('SeoTitle', product.seoTitle ?? '');
+  formData.append('SeoDescription', product.seoDescription ?? '');
+  formData.append('Attributes', (product.attributes ?? 0).toString());
+  formData.append('CreatedBy', product.createdBy ?? '');
+
+  // Append file if exists
+  if (imageFile) {
+    formData.append('ImageFile', imageFile, (imageFile as File).name);
+  } else if (typeof product.imageFile === 'string') {
+    formData.append('ImageFile', product.imageFile);
+  }
+
+  return formData;
+}
 
   updateProduct(id:  number, product: Product): Observable<Product> {
     const formData = this.buildProductFormData(product);
@@ -180,22 +238,6 @@ export class ProductService {
       `/api/Product/${id}`,
       { requiresAuth: true }
     );
-  }
-
-  private buildProductFormData(product:  Product): FormData {
-    const formData = new FormData();
-    formData.append('sku', product.sku);
-    formData.append('name', product.name);
-    formData.append('shortDescription', product.shortDescription);
-    formData.append('rate', product.rate.toString());
-    formData.append('status', product.status);
-    formData.append('isFeatured', product.isFeatured.toString());
-    
-    if (product.imageFile) {
-      formData.append('ImageFile', product.imageFile, product. imageFile.name);
-    }
-    
-    return formData;
   }
 }
 
@@ -401,6 +443,19 @@ getStaticValueByFilter(filter: { catalogId?: string; staticId?: string; key?: st
   deleteStaticValue(id: number): Observable<void> {
     return this.apiGateway.delete<void>(
       `/api/static-values/${id}`,
+      { requiresAuth: true }
+    );
+  }
+}
+
+
+//Get User
+@Injectable({ providedIn: 'root' })
+export class Users {
+  constructor(private apiGateway: ApiGatewayService) {}
+getUserById(id: number): Observable<Users[]> {
+    return this.apiGateway.getWithResult<Users[]>(
+      `/api/Users`,
       { requiresAuth: true }
     );
   }
