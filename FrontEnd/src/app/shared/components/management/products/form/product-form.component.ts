@@ -1,4 +1,4 @@
-import { Component, OnInit,ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -27,6 +27,7 @@ export class ProductFormComponent implements OnInit {
   error: string | null = null;
   staticItem: StaticValueCatalog[] = [];
   staticFilteredItems: StaticValueCatalog[] = [];
+
   // Files
   productImage?: File;
   treeCategories: Category[] = [];
@@ -49,7 +50,7 @@ export class ProductFormComponent implements OnInit {
       sku: [''],
       name: ['', Validators.required],
       description: ['', Validators.required],
-      shortDescription: [null],
+      shortDescription: [''],
       categoryId: ['', Validators.required],
       subCategoryId: [0],
       subSubCategoryId: [0],
@@ -57,23 +58,24 @@ export class ProductFormComponent implements OnInit {
       manufacturerId: [0, Validators.required],
       rate: [0, [Validators.required, Validators.min(0)]],
       hsCode: ['', Validators.required],
-      status: ['Active', Validators.required],
+      status: [null],
       isFeatured: [true],
-      seoTitle: ['', Validators.required],
-      seoDescription: ['', Validators.required],
+      seoTitle: [''],
+      seoDescription: [''],
       attributes: [''],
-      createdBy: ['admin', Validators.required],
+      createdBy: [''],
       productImage: [''],
     });
   }
 
-  // ---------------- NG ON INIT ----------------
-ngOnInit(): void {
-  this.getAllCatalog();
-  this.loadCategoryTree();
-}
+  ngOnInit(): void {
+    this.getAllCatalog();
+    this.loadCategoryTree();
+  }
 
+  // Category Functions
   showCategoryMenu = false;
+  
   getCategoryName(id: number): string | null {
     const findCat = (cats: Category[]): string | null => {
       for (const cat of cats) {
@@ -88,18 +90,6 @@ ngOnInit(): void {
     return findCat(this.treeCategories);
   }
 
-  // For custom brand dropdown
-  showBrandMenu = false;
-  getBrandName(id: number): string | null {
-    const brand = this.filteredItems.find(b => b.staticId === id);
-    return brand ? brand.staticValueKey : null;
-  }
-
-  selectBrand(brand: any) {
-    this.form.get('brandId')?.setValue(brand.staticId);
-    this.showBrandMenu = false;
-  }
-
   selectCategory(cat: Category) {
     this.form.get('categoryId')?.setValue(cat.id);
     this.showCategoryMenu = false;
@@ -112,19 +102,43 @@ ngOnInit(): void {
     return found.children.map(child => child.name).join(', ');
   }
 
-private updateSku() {
-  const categoryId = this.form.get('categoryId')?.value;
-  const name = this.form.get('name')?.value || '';
-  const selectedCategory = this.staticFilteredItems.find(cat => cat.catalogId === categoryId);
-  if (selectedCategory && name) {
-    const sku = `${selectedCategory.catalogName}-${name}-${Math.floor(1000 + Math.random() * 9000)}`;
-    this.form.get('sku')?.setValue(sku, { emitEvent: false });
-    console.log(sku);
+  // Brand Functions
+  showBrandMenu = false;
+
+  getBrandName(id: number): string | null {
+    const brand = this.filteredItems.find(b => b.staticId === id);
+    return brand ? brand.staticValueKey : null;
   }
-}
 
-  // ---------------- LOAD STATIC VALUES ----------------
+  selectBrand(brand: any) {
+    this.form.get('brandId')?.setValue(brand.staticId);
+    this.showBrandMenu = false;
+  }
 
+  // SKU Generation
+  private updateSku() {
+    const categoryId = this.form.get('categoryId')?.value;
+    const name = this.form.get('name')?.value || '';
+    const selectedCategory = this.staticFilteredItems.find(cat => cat.catalogId === categoryId);
+    if (selectedCategory && name) {
+      const sku = `${selectedCategory.catalogName}-${name}-${Math.floor(1000 + Math.random() * 9000)}`;
+      this.form.get('sku')?.setValue(sku, { emitEvent: false });
+      console.log(sku);
+    }
+  }
+
+  // Clear Functions
+  clearCategory() {
+    this.form.get('categoryId')?.setValue(null);
+    this.showCategoryMenu = false;
+  }
+
+  clearBrand() {
+    this.form.get('brandId')?.setValue(null);
+    this.showBrandMenu = false;
+  }
+
+  // Static Values
   loadStaticValue(): void {
     if (!this.catalogId) {
       this.error = 'Invalid catalog ID';
@@ -174,43 +188,41 @@ private updateSku() {
     return result;
   }
 
-  //Load Catalog
+  // Load Catalog
   getAllCatalog(): void {
-  this.loading = true;
-  this.error = null;
+    this.loading = true;
+    this.error = null;
 
-  this.service.getStaticValuesCatagory().subscribe({
-    next: (data: StaticValueCatalog[]) => {
-      this.staticItem = data;
-      this.staticFilteredItems = data;
+    this.service.getStaticValuesCatagory().subscribe({
+      next: (data: StaticValueCatalog[]) => {
+        this.staticItem = data;
+        this.staticFilteredItems = data;
 
-      // Find catalog with name 'Brand'
-      const brandCatalog = data.find(
-        (catalog) => catalog.catalogName === 'Brand'
-      );
+        // Find catalog with name 'Brand'
+        const brandCatalog = data.find(
+          (catalog) => catalog.catalogName === 'Brand'
+        );
 
-      if (brandCatalog) {
-        this.catalogId = brandCatalog.catalogId;
-        this.loadStaticValue();
-      } else {
-        this.error = 'Brand catalog not found';
+        if (brandCatalog) {
+          this.catalogId = brandCatalog.catalogId;
+          this.loadStaticValue();
+        } else {
+          this.error = 'Brand catalog not found';
+        }
+
+        this.loading = false;
+
+        // Call updateSku after staticFilteredItems is set
+        this.updateSku();
+      },
+      error: () => {
+        this.loading = false;
+        this.error = 'Failed to load catalog list';
       }
+    });
+  }
 
-      this.loading = false;
-
-      // Call updateSku after staticFilteredItems is set
-      this.updateSku();
-    },
-    error: () => {
-      this.loading = false;
-      this.error = 'Failed to load catalog list';
-    }
-  });
-}
-
-
-  // ---------------- FILE HANDLERS ----------------
-
+  // File Handlers
   onProductImageChange(event: any) {
     this.productImage =
       event.target.files && event.target.files.length > 0
@@ -218,16 +230,22 @@ private updateSku() {
         : undefined;
   }
 
-  // ---------------- SUBMIT ----------------
-
+  // Submit Form
   onSubmit() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
+    // Auto-generate SKU as categoryName/brandName/productName
+    const categoryName = this.getCategoryName(this.form.value.categoryId) || '';
+    const brandName = this.getBrandName(this.form.value.brandId) || '';
+    const productName = this.form.value.name || '';
+    const sku = `${categoryName}/${brandName}/${productName}`.replace(/\s+/g, '').toLowerCase();
+
     const product: Product = {
       ...this.form.value,
+      sku,
       isFeatured: true
     };
 
@@ -251,8 +269,7 @@ private updateSku() {
     this.router.navigate(['/management/products']);
   }
 
-  // ---------------- VALIDATION ----------------
-
+  // Validation Helper
   isFieldInvalid(fieldName: string): boolean {
     const field = this.form.get(fieldName);
     return !!(field && field.invalid && (field.dirty || field.touched));

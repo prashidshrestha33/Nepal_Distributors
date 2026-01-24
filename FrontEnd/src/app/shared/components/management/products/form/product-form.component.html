@@ -46,25 +46,28 @@
         />
       </div>
 
-
-      <!-- 3 rows, 2 columns each for Rate, Category, Brand, Manufacturer, HS Code, SEO Title -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Product Rate -->
         <div class="space-y-1">
-          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-            Product Rate <span class="text-red-500">*</span>
-          </label>
-          <input
-            type="number"
-            formControlName="rate"
-            placeholder="0.00"
-            class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <span *ngIf="isFieldInvalid('rate')" class="text-red-500 text-xs">
-            Product rate is required.
-          </span>
-        </div>
-        <!-- HS Code -->         
+            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Product Rate <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              formControlName="rate"
+              placeholder="Price"
+              min="0"
+              step="1"
+              pattern="\d*"
+              inputmode="numeric"
+              class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 no-spinner"
+            />
+            <span *ngIf="isFieldInvalid('rate')" class="text-red-500 text-xs">
+              Product rate is required.
+            </span>
+          </div>
+
+        <!-- HS Code -->
         <div class="space-y-1">
           <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">HS Code</label>
           <input
@@ -75,68 +78,115 @@
           />
         </div>
       </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <!-- Brand -->
+        <!-- Category -->
         <div class="space-y-1 relative">
           <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
             Category <span class="text-red-500">*</span>
           </label>
           <div class="relative">
-            <button type="button" class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500" (click)="showCategoryMenu = !showCategoryMenu">
+            <button
+              type="button"
+              class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+              (click)="showCategoryMenu = !showCategoryMenu"
+            >
               {{ getCategoryName(form.get('categoryId')?.value) || 'Select Category' }}
             </button>
+            <!--Clear Category -->
+            <button
+              *ngIf="form.get('categoryId')?.value"
+              type="button"
+              class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-red-600"
+              (click)="clearCategory()"
+            >
+              ✕
+            </button>
+
             <div *ngIf="showCategoryMenu" class="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-64 overflow-auto">
               <ul>
-                <ng-container *ngFor="let cat of treeCategories">
-                  <li *ngIf="!cat.parent_id || cat.depth === 1">
-                    <button type="button" class="w-full text-left px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900" (click)="selectCategory(cat)">
-                      {{ cat.name }}
-                      <span *ngIf="cat.children && cat.children.length > 0" class="text-xs text-gray-500">
-                        ({{ getChildNames(cat) }})
-                      </span>
-                    </button>
-                  </li>
-                </ng-container>
+                <li *ngFor="let cat of treeCategories">
+                  <button
+                    type="button"
+                    class="w-full text-left px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900"
+                    (click)="selectCategory(cat)"
+                  >
+                    {{ cat.name }}
+                  </button>
+                </li>
               </ul>
             </div>
           </div>
-          <span *ngIf="isFieldInvalid('categoryId')" class="text-red-500 text-xs">Category is required.</span>
+          <span *ngIf="isFieldInvalid('categoryId')" class="text-red-500 text-xs">
+            Category is required.
+          </span>
         </div>
+
+        <!-- Brand -->
         <div class="space-y-1 relative">
           <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
             Brand <span class="text-red-500">*</span>
           </label>
           <div class="relative">
-            <button type="button" class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500" (click)="showBrandMenu = !showBrandMenu">
+            <button
+              type="button"
+              class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+              (click)="showBrandMenu = !showBrandMenu"
+            >
               {{ getBrandName(form.get('brandId')?.value) || 'Select Brand' }}
             </button>
+            <!-- ❌ Clear Brand -->
+            <button
+              *ngIf="form.get('brandId')?.value"
+              type="button"
+              class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-red-600"
+              (click)="clearBrand()"
+            >
+              ✕
+            </button>
+
             <div *ngIf="showBrandMenu" class="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-64 overflow-auto">
               <ul>
                 <li *ngFor="let brand of filteredItems">
-                  <button type="button" class="w-full text-left px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900" (click)="selectBrand(brand)">
+                  <button
+                    type="button"
+                    class="w-full text-left px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900"
+                    (click)="selectBrand(brand)"
+                  >
                     {{ brand.staticValueKey }}
                   </button>
                 </li>
               </ul>
             </div>
           </div>
-          <span *ngIf="isFieldInvalid('brandId')" class="text-red-500 text-xs">Brand is required.</span>
+          <span *ngIf="isFieldInvalid('brandId')" class="text-red-500 text-xs">
+            Brand is required.
+          </span>
         </div>
       </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
         <!-- Manufacturer -->
-        <div class="space-y-1">          
-          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-            Manufacturer
-          </label>
-          <input
-            type="number"
-            formControlName="manufacturerId"
-            placeholder="Manufacturer ID"
-            class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <span *ngIf="isFieldInvalid('manufacturerId')" class="text-red-500 text-xs">Manufacturer is required.</span>
+        <div class="space-y-1">
+           <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+             Manufacturer
+           </label>
+           <input
+             type="number"
+             formControlName="manufacturerId"
+             placeholder="Manufacturer ID"
+             min="0"
+             step="1"
+             pattern="\d*"
+             inputmode="numeric"
+             class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 no-spinner"
+           />
+           <span *ngIf="isFieldInvalid('manufacturerId')" class="text-red-500 text-xs">
+             Manufacturer is required.
+           </span>
         </div>
+
+
         <!-- SEO Title -->
         <div class="space-y-1">
           <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">SEO Friendly Page Title</label>
@@ -149,6 +199,7 @@
         </div>
       </div>
 
+      <!-- SEO Description -->
       <div class="space-y-1">
         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">SEO Description</label>
         <textarea
@@ -159,17 +210,22 @@
         ></textarea>
       </div>
 
-
-      <!-- Error & Buttons -->
+      <!-- Error -->
       <div *ngIf="error" class="text-red-600 font-medium text-sm p-3 bg-red-50 border border-red-300 rounded-lg">
         {{ error }}
       </div>
 
+      <!-- Buttons -->
       <div class="flex gap-4 justify-end">
         <button
           type="submit"
-          [disabled]="!form.valid || loading"
-          class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded-lg shadow-md transition"
+          [disabled]="form.invalid || loading"
+          class="px-6 py-2 rounded-lg font-bold shadow-md transition
+                 bg-blue-600 text-white
+                 hover:bg-blue-700
+                 disabled:bg-gray-400
+                 disabled:cursor-not-allowed
+                 disabled:hover:bg-gray-400"
         >
           {{ loading ? 'Saving...' : 'Save Product' }}
         </button>

@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Security.Claims;
 using System.Threading.Tasks;
 namespace Marketplace.Api.Controllers
 {
@@ -90,22 +91,51 @@ namespace Marketplace.Api.Controllers
         [HttpPost("AddProduct")]
         public async Task<ActionResult<ProductModels>> AddProducts([FromForm] ProductModels dto)
         {
-                string imageFileName = null;
-                if (dto.ImageFile != null && dto.ImageFile.Length > 0)
-                {
-                    var uploads = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
-                    if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+            var companyIdClaim = User.FindFirst("company_id");
+            if (companyIdClaim == null || string.IsNullOrEmpty(companyIdClaim.Value))
+                return Unauthorized("Company information not found for this user");
 
-                    imageFileName = $"{Guid.NewGuid()}_{dto.ImageFile.FileName}";
-                    var filePath = Path.Combine(uploads, imageFileName);
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                        await dto.ImageFile.CopyToAsync(stream);
-                }
-                ProductModel product = moduleToCommon.Map<ProductModel>(dto);
-                product.ImageName = imageFileName;
-                product.Id = await repositorysitory.CreateAsync(product);
-                return CreatedAtAction(nameof(Get), new { id = product.Id }, product);
+            int companyId = int.Parse(companyIdClaim.Value);
+
+            // 🔹 Get the email of the logged-in user from JWT claims
+            string userEmail = User?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+
+            // 🔹 Handle image upload
+            string imageFileName = null;
+            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+            {
+                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
+                if (!Directory.Exists(uploads))
+                    Directory.CreateDirectory(uploads);
+
+                imageFileName = $"{Guid.NewGuid()}_{dto.ImageFile.FileName}";
+                var filePath = Path.Combine(uploads, imageFileName);
+                using var stream = new FileStream(filePath, FileMode.Create);
+                await dto.ImageFile.CopyToAsync(stream);
             }
+
+            // 🔹 Map DTO to ProductModel
+            ProductModel product = moduleToCommon.Map<ProductModel>(dto);
+            product.ImageName = imageFileName;
+
+            // 🔹 Assign JWT info and defaults
+            product.CompanyId = companyId;
+            product.CreatedBy = userEmail;
+            product.Status = "Pending";  // Set status as pending by default
+
+            // 🔹 Insert product
+            try
+            {
+                product.Id = await repositorysitory.CreateAsync(product);
+            }
+            catch (Exception ex)
+            {
+                // Optional: handle exception gracefully
+                return BadRequest($"Error creating product: {ex.Message}");
+            }
+
+            return CreatedAtAction(nameof(Get), new { id = product.Id }, product);
+        }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(int id, [FromForm] ProductModels dto)
