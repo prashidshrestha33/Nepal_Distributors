@@ -1,25 +1,29 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { ApproveProductModalComponent } from './approve-product-modal.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule, FormGroup } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { ProductService } from '../../../../services/management/management.service';
-import type { Product, ProductResponse } from '../../../../services/management/management.service';
+import type { Product } from '../../../../services/management/management.service';
 import { Category } from '../../../../services/management/management.service';
 import { CategoryService } from '../../../../services/management/management.service';
-import { UserService} from '../../../../services/management/user.service';
 import { Users } from '../../../../services/management/management.service';
 
 
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, ApproveProductModalComponent],
   templateUrl: './products.component.html',
   styleUrl: './products.component.css'
 })
 export class ProductsComponent implements OnInit {
   products: Product[] = [];
   filteredProducts: Product[] = [];
+  // Modal state
+  showApproveModal = false;
+  approveProductData: (Product & { categoryName?: string; brandName?: string }) | null = null;
+  approveStatus: string = 'Pending';
   users:Users[] = [];
   searchTerm = '';
   loading = false;
@@ -67,35 +71,50 @@ export class ProductsComponent implements OnInit {
     }
     
   // View product details
-  viewProduct(product: Product) {
-    if (product && product.id) {
-      this.router.navigate(['/products', product.id]);
+viewProduct(product: Product) {
+  if (product && product.id) this.router.navigate(['/products', product.id]);
+}
+
+editProduct(product: Product) {
+  if (product && product.id) this.router.navigate(['/products/edit', product.id]);
+}
+
+
+approveProduct(product: Product) {
+  // Open modal with product details
+  this.approveProductData = {
+    ...product,
+    categoryName: this.getCategoryName(product.categoryId),
+    brandName: this.getBrandName(product.brandId)
+  };
+  this.approveStatus = product.status || 'Pending';
+  this.showApproveModal = true;
+}
+
+onApproveSave(newStatus: string) {
+  if (!this.approveProductData) return;
+  const updatedProduct: Product = { ...this.approveProductData, status: newStatus };
+  this.productService.updateProduct(updatedProduct.id, updatedProduct).subscribe({
+    next: () => {
+      // Update local table
+      const idx = this.products.findIndex(p => p.id === updatedProduct.id);
+      if (idx > -1) {
+        this.products[idx].status = newStatus;
+      }
+      this.filteredProducts = [...this.products];
+      this.showApproveModal = false;
+      alert(`Product "${updatedProduct.name}" status updated to ${newStatus}.`);
+    },
+    error: err => {
+      console.error('Error updating product status:', err);
+      alert('Failed to update product status.');
     }
-  }
+  });
+}
 
-  // Edit product
-  editProduct(product: Product) {
-    if (product && product.id) {
-      this.router.navigate(['/products/edit', product.id]);
-    }
-  }
-
-  // Approve product (stub)
-  approveProduct(product: Product) {
-    // Implement approval logic here
-    alert('Approve product: ' + product.name);
-  }
-
-  // Delete product (wrapper for existing delete)
-  deleteProduct(product: Product) {
-    if (product && product.id) {
-      this.delete(product.id);
-    }
-  }
-
-  /**
-   * Load products with pagination
-   */
+onApproveCancel() {
+  this.showApproveModal = false;
+}
   loadProducts() {
   this.loading = true;
 
@@ -106,7 +125,7 @@ export class ProductsComponent implements OnInit {
       this.filteredProducts = response.result;
 
       // Set totalCount and totalPages
-      this.totalCount = response.result.length; // If API provides totalCount, use that instead
+      this.totalCount = response.result.length;
       this.totalPages = Math.ceil(this.totalCount / this.pageSize);
 
       this.loading = false;
@@ -139,77 +158,46 @@ loadUser() {
 }
   // Helper to get category name by ID
   getCategoryName(id: number | null | undefined): string {
-    if (!id || id === 0) return 'N/A';
-    const findCat = (cats: Category[]): string | null => {
-      for (const cat of cats) {
-        if (cat.id === id) return cat.name;
-        if (cat.children) {
-          const found = findCat(cat.children);
-          if (found) return found;
-        }
+  if (!id || id === 0) return 'N/A';
+  const findCat = (cats: Category[]): string | null => {
+    for (const cat of cats) {
+      if (cat.id === id) return cat.name;
+      if (cat.children) {
+        const found = findCat(cat.children);
+        if (found) return found;
       }
-      return null;
-    };
-    return findCat(this.treeCategories) || 'N/A';
-  }
+    }
+    return null;
+  };
+  return findCat(this.treeCategories) || 'N/A';
+}
 
+getBrandName(id: number | null | undefined): string {
+  if (!id) return 'N/A';
+  const brand = this.treeCategories.flatMap(c => c.children || []).find(b => b.id === id);
+  return brand ? brand.name : `Brand-${id}`;
+}
 
-  getBrandName(id: number | null | undefined): string {
-    if (!id || id === 0) return 'N/A';
-    return id.toString();
-  }
-
-  /**
-   * Search products by name or SKU
-   */
   onSearch() {
     this.filteredProducts = this.products.filter(p =>
       p.name.toLowerCase().includes(this.searchTerm.toLowerCase())
     );
   }
 
-  /**
-   * Get placeholder image if product image is missing
-   */
   getImageUrl(product: Product): string {
     return product.imageUrl || '/images/placeholder-product.png';
   }
 
-  /**
-   * Check if product is featured
-   */
   isFeatured(product: Product): boolean {
     return product.isFeatured === true;
   }
 
-  /**
-   * Delete product
-   */
-  delete(id: number | undefined) {
-    if (!id) return;
-    if (confirm('Are you sure you want to delete this product?')) {
-      this.productService.deleteProduct(id).subscribe({
-        next: () => {
-          this.loadProducts();
-        },
-        error: (err) => console.error('Error deleting product:', err)
-      });
-    }
-  }
-
-  /**
-   * Pagination: Go to previous page
-   */
   previousPage() {
     if (this.currentPage > 1) {
       this.currentPage--;
       this.loadProducts();
     }
   }
-
-  /**
-   * Pagination: Go to next page
-   */
   nextPage() {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
@@ -217,9 +205,6 @@ loadUser() {
     }
   }
 
-  /**
-   * Pagination: Go to specific page
-   */
   goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
@@ -227,9 +212,6 @@ loadUser() {
     }
   }
 
-  /**
-   * Get array of page numbers for pagination display
-   */
   getPageNumbers(): number[] {
     const pages: number[] = [];
     const maxPagesToShow = 5;
@@ -246,16 +228,10 @@ loadUser() {
     return pages;
   }
 
-  /**
-   * Check if there are more pages
-   */
   hasNextPage(): boolean {
     return this.currentPage < this.totalPages;
   }
 
-  /**
-   * Check if there are previous pages
-   */
   hasPreviousPage(): boolean {
     return this.currentPage > 1;
   }

@@ -1,35 +1,34 @@
 <div class="space-y-6">
-  <!-- Header Section -->
+  <!-- Header -->
   <div class="flex justify-between items-center">
     <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Products</h1>
-    <a routerLink="/products/add" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg dark:bg-blue-600 dark:hover:bg-blue-700">
+    <a routerLink="/products/add"
+       class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg dark:bg-blue-600 dark:hover:bg-blue-700">
       + Add Product
     </a>
   </div>
 
   <!-- Search Bar -->
   <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4">
-    <input
-      type="text"
-      placeholder="Search by product name"
-      [(ngModel)]="searchTerm"
-      (input)="onSearch()"
-      class="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-    />
+    <input type="text"
+           placeholder="Search by product name"
+           [(ngModel)]="searchTerm"
+           (input)="onSearch()"
+           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"/>
   </div>
 
-  <!-- Loading State -->
+  <!-- Loading -->
   <div *ngIf="loading" class="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg text-blue-700 dark:text-blue-200">
     Loading products...
   </div>
 
   <!-- Empty State -->
-  <div *ngIf="!loading && filteredProducts && filteredProducts.length === 0" class="bg-yellow-50 dark:bg-yellow-900 p-4 rounded-lg text-yellow-700 dark:text-yellow-200 text-center">
+  <div *ngIf="!loading && filteredProducts?.length === 0" class="bg-yellow-50 dark:bg-yellow-900 p-4 rounded-lg text-yellow-700 dark:text-yellow-200 text-center">
     {{ searchTerm ? 'No products found matching your search' : 'No products available' }}
   </div>
 
-  <!-- Products Table List -->
-  <div *ngIf="!loading && filteredProducts && filteredProducts.length > 0" class="overflow-x-auto bg-white dark:bg-gray-900 rounded-lg shadow">
+  <!-- Products Table -->
+  <div *ngIf="!loading && filteredProducts.length > 0" class="overflow-x-auto bg-white dark:bg-gray-900 rounded-lg shadow">
     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
       <thead class="bg-gray-100 dark:bg-gray-800">
         <tr>
@@ -40,6 +39,8 @@
           <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Rate</th>
           <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">HsCode</th>
           <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Created By</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Status</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Actions</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -48,13 +49,36 @@
           <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ product.name }}</td>
           <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ getCategoryName(product.categoryId) }}</td>
           <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ getBrandName(product.brandId) }}</td>
-          <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">${{ product.rate | number: '1.2-2' }}</td>
+          <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">Rs.{{ product.rate | number:'1.2-2' }}</td>
           <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ product.hsCode }}</td>
-          <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ product.isFeatured ? 'Yes' : 'No' }}</td>
-          <!-- <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ getUserById(users.email) }}</td> -->
+          <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ product.createdBy }}</td>
+          <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ product.status || 'Pending' }}</td>
+          <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 flex gap-2">
+            <button type="button" (click)="viewProduct(product)"
+                    class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-xs font-semibold">
+              Details
+            </button>
+            <button type="button" (click)="editProduct(product)"
+                    class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg text-xs font-semibold">
+              Edit
+            </button>
+            <button type="button" (click)="approveProduct(product)"
+                    [disabled]="product.status === 'Approved'"
+                    class="bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-1 rounded-lg text-xs font-semibold">
+              Approve
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>
+    <!-- Approve Product Modal -->
+    <app-approve-product-modal
+      *ngIf="showApproveModal"
+      [product]="approveProductData"
+      [status]="approveStatus"
+      (save)="onApproveSave($event)"
+      (cancel)="onApproveCancel()"
+    />
   </div>
 
   <!-- Pagination Section -->
@@ -63,39 +87,19 @@
       Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, totalCount) }} of {{ totalCount }} products
     </div>
     <div class="flex items-center gap-2">
-      <button
-        (click)="previousPage()"
-        [disabled]="!hasPreviousPage()"
-        [ngClass]="{
-          'opacity-50 cursor-not-allowed': !hasPreviousPage(),
-          'hover:bg-gray-200 dark:hover:bg-gray-700': hasPreviousPage()
-        }"
-        class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 transition-colors"
-      >
+      <button (click)="previousPage()" [disabled]="!hasPreviousPage()"
+              class="px-3 py-2 border rounded text-sm font-medium transition-colors">
         Previous
       </button>
       <div class="flex gap-1">
-        <button
-          *ngFor="let page of getPageNumbers()"
-          (click)="goToPage(page)"
-          [ngClass]="{
-            'bg-blue-500 text-white': page === currentPage,
-            'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 bg-white dark:bg-gray-800': page !== currentPage
-          }"
-          class="px-3 py-2 border rounded text-sm font-medium transition-colors"
-        >
+        <button *ngFor="let page of getPageNumbers()" (click)="goToPage(page)"
+                [ngClass]="{'bg-blue-500 text-white': page === currentPage, 'bg-white dark:bg-gray-800': page !== currentPage}"
+                class="px-3 py-2 border rounded text-sm font-medium transition-colors">
           {{ page }}
         </button>
       </div>
-      <button
-        (click)="nextPage()"
-        [disabled]="!hasNextPage()"
-        [ngClass]="{
-          'opacity-50 cursor-not-allowed': !hasNextPage(),
-          'hover:bg-gray-200 dark:hover:bg-gray-700': hasNextPage()
-        }"
-        class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 transition-colors"
-      >
+      <button (click)="nextPage()" [disabled]="!hasNextPage()"
+              class="px-3 py-2 border rounded text-sm font-medium transition-colors">
         Next
       </button>
     </div>
