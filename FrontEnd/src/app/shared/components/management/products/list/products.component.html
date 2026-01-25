@@ -54,18 +54,9 @@
           <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ product.createdBy }}</td>
           <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ product.status || 'Pending' }}</td>
           <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 flex gap-2">
-            <button type="button" (click)="viewProduct(product)"
-                    class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-xs font-semibold">
-              Details
-            </button>
-            <button type="button" (click)="editProduct(product)"
-                    class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg text-xs font-semibold">
-              Edit
-            </button>
             <button type="button" (click)="approveProduct(product)"
-                    [disabled]="product.status === 'Approved'"
-                    class="bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-1 rounded-lg text-xs font-semibold">
-              Approve
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-semibold">
+              View
             </button>
           </td>
         </tr>
@@ -75,8 +66,7 @@
     <app-approve-product-modal
       *ngIf="showApproveModal"
       [product]="approveProductData"
-      [status]="approveStatus"
-      (save)="onApproveSave($event)"
+      (save)="onApproveSave($event.status)"
       (cancel)="onApproveCancel()"
     />
   </div>

@@ -172,6 +172,8 @@ loadUser() {
   return findCat(this.treeCategories) || 'N/A';
 }
 
+
+
 getBrandName(id: number | null | undefined): string {
   if (!id) return 'N/A';
   const brand = this.treeCategories.flatMap(c => c.children || []).find(b => b.id === id);

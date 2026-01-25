@@ -18,7 +18,30 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
 
         public async Task<IEnumerable<ProductModel>> GetAllAsync()
         {
-            var sql = "SELECT TOP (1000) * FROM [NepalDistributers].[dbo].[products]";
+            var sql = @"SELECT
+    id                  AS Id,
+    sku                 AS Sku,
+    name                AS Name,
+    description         AS Description,
+    short_description   AS ShortDescription,
+    category_id         AS CategoryId,
+    company_id          AS CompanyId,
+    rate                AS Rate,
+    brand_id            AS BrandId,
+    manufacturer_id     AS ManufacturerId,
+    hs_code             AS HsCode,
+    status              AS Status,
+    is_featured         AS IsFeatured,
+    seo_title           AS SeoTitle,
+    seo_description     AS SeoDescription,
+    attributes          AS Attributes,
+    ImageName           AS ImageName,
+    created_by          AS CreatedBy,
+    created_at          AS CreatedAt,
+    approve_fg          AS ApproveFg,
+    approve_ts          AS ApproveTs
+FROM [NepalDistributers].[dbo].[Products]
+";
             return await _db.QueryAsync<ProductModel>(sql);
         }
 
