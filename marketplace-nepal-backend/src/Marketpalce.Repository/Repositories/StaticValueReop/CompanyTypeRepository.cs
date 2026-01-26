@@ -18,7 +18,8 @@ namespace Marketpalce.Repository.Repositories.StaticValueReop
                     static_value as StaticValueKey ,
                     static_data as StaticData,
                     COALESCE(display_order, 0) AS DisplayOrder
-                FROM static_value s join [static_value_cataglog] sc on s.[Catalog_id] = sc.[Catalog_id] where sc.Catalog_id=1
+                FROM static_value s join [static_value_cataglog] sc on s.[Catalog_id] = sc.[Catalog_id] where sc.Catalog_id=1 and  
+                sc.catalog_name='CompanyType'
                 ORDER BY display_order ASC;
             ";
 
