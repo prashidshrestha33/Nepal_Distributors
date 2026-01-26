@@ -453,7 +453,7 @@ getStaticValueByFilter(filter: { catalogId?: string; staticId?: string; key?: st
 @Injectable({ providedIn: 'root' })
 export class Users {
   constructor(private apiGateway: ApiGatewayService) {}
-getUserById(id: number): Observable<Users[]> {
+getUser(id: number): Observable<Users[]> {
     return this.apiGateway.getWithResult<Users[]>(
       `/api/Users`,
       { requiresAuth: true }

@@ -1,9 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using Dapper;
+using Marketplace.Model.Models;
+using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
-using Dapper;
-using System;
-using Marketplace.Model.Models;
 
 
 namespace Marketpalce.Repository.Repositories.ProductRepo
@@ -70,14 +69,20 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
 
         public async Task<int> CreateAsync(ProductModel product)
         {
-            var sql = @"
+                var sql = @"
             INSERT INTO [NepalDistributers].[dbo].[products]
-            (sku, name, description, short_description, category_id, brand_id, manufacturer_id, rate, hs_code, status, is_featured, seo_title, seo_description, attributes,ImageName, created_by, created_at,updated_at)
-            VALUES (@Sku, @Name, @Description, @ShortDescription, @CategoryId, @BrandId, @ManufacturerId, @Rate, @HsCode, @Status, @IsFeatured, @SeoTitle, @SeoDescription, @Attributes,@ImageName, @CreatedBy, SYSDATETIME(), SYSDATETIME());
-            SELECT CAST(SCOPE_IDENTITY() as int);
-            ";
-            return await _db.ExecuteScalarAsync<int>(sql, product);
-        }
+            (company_id, sku, name, description, short_description, category_id, brand_id, manufacturer_id,
+             rate, hs_code, status, is_featured, seo_title, seo_description, attributes, ImageName,
+             created_by, created_at, updated_at)
+            VALUES
+            (@CompanyId, @Sku, @Name, @Description, @ShortDescription, @CategoryId, @BrandId, @ManufacturerId,
+             @Rate, @HsCode, @Status, @IsFeatured, @SeoTitle, @SeoDescription, @Attributes, @ImageName,
+             @CreatedBy, SYSDATETIME(), SYSDATETIME());
+
+            SELECT CAST(SCOPE_IDENTITY() AS int);
+        ";
+                return await _db.ExecuteScalarAsync<int>(sql, product);
+            }
 
         public async Task<bool> UpdateAsync(ProductModel product)
         {
