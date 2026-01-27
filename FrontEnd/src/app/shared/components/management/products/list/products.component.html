@@ -2,10 +2,13 @@
   <!-- Header -->
   <div class="flex justify-between items-center">
     <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Products</h1>
-    <a routerLink="/products/add"
-       class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg dark:bg-blue-600 dark:hover:bg-blue-700">
-      + Add Product
-    </a>
+    <div class="flex gap-2 items-center">
+      <!--  -->
+      <a routerLink="/products/add"
+         class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg dark:bg-blue-600 dark:hover:bg-blue-700">
+        + Add Product
+      </a>
+    </div>
   </div>
 
   <!-- Search Bar -->
@@ -55,7 +58,7 @@
           <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">{{ product.status || 'Pending' }}</td>
           <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 flex gap-2">
             <button type="button" (click)="approveProduct(product)"
-                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-semibold">
+                    class="text-green-500 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 text-sm font-semibold">
               View
             </button>
           </td>
@@ -63,12 +66,15 @@
       </tbody>
     </table>
     <!-- Approve Product Modal -->
-    <app-approve-product-modal
-      *ngIf="showApproveModal"
-      [product]="approveProductData"
-      (save)="onApproveSave($event.status)"
-      (cancel)="onApproveCancel()"
-    />
+      <ng-container *ngIf="showApproveModal">
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <app-approve-product
+            [product]="approveProductData"
+            (approve)="onApproveSave($event)"
+            (cancel)="onApproveCancel()"
+          ></app-approve-product>
+        </div>
+      </ng-container>
   </div>
 
   <!-- Pagination Section -->

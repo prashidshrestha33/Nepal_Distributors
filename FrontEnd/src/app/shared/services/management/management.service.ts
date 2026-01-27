@@ -233,6 +233,18 @@ export class ProductService {
     );
   }
 
+    approveProduct(id:  number, product: Product): Observable<Product> {
+    const formData = this.buildProductFormData(product);
+    return this.apiGateway.put<Product>(
+      `/api/Product/ApproveProduct/${id}`,
+      formData,
+      { 
+        requiresAuth: true,
+        headers: {}
+      }
+    );
+  }
+
   deleteProduct(id:  number): Observable<void> {
     return this.apiGateway.delete<void>(
       `/api/Product/${id}`,

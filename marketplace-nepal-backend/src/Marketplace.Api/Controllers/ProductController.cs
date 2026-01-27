@@ -2,6 +2,7 @@
 using Marketplace.Api.Models;
 using Marketplace.Api.Services.Helper;
 using Marketplace.Model.Models;
+using Marketplace.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -173,20 +174,33 @@ namespace Marketplace.Api.Controllers
             return NoContent();
         }
         [HttpPost("ApproveProduct/{id}")]
-        public async Task<IActionResult> ApproveProduct(long id, [FromBody] string? details = null)
+        public async Task<IActionResult> ApproveProduct(int id)
         {
-            var approvedBy = User?.Identity?.Name ?? "system";
-            details ??= "User approved";
+            var approvedByEmail =
+                User.FindFirstValue(ClaimTypes.Email)
+                ?? User.FindFirstValue("email");
 
-            if (_db.State != ConnectionState.Open) _db.Open();
+            if (string.IsNullOrEmpty(approvedByEmail))
+                return Unauthorized();
+
+            if (_db.State != ConnectionState.Open)
+                _db.Open();
+
             using var tx = _db.BeginTransaction();
+
             try
             {
-                var product = await repositorysitory.GetCatagoryByIdAsync(id);
+                var product = await repositorysitory.GetByIdAsync(id, tx);
                 if (product == null)
                     return NotFound(new { error = "product not found." });
 
-                var success = await repositorysitory.ApproveProductAsync(id, approvedBy, details, tx);
+                var success = await repositorysitory.ApproveProductAsync(
+                    id,
+                    approvedByEmail,
+                    "Approved by admin",
+                    tx
+                );
+
                 if (!success)
                 {
                     tx.Rollback();
@@ -194,13 +208,22 @@ namespace Marketplace.Api.Controllers
                 }
 
                 tx.Commit();
-                return Ok(new { id });
+                return Ok(new
+                {
+                    id,
+                    approvedBy = approvedByEmail
+                });
             }
             catch (Exception ex)
             {
-                try { tx.Rollback(); } catch { }
-                return StatusCode(500, new { error = "Approval failed", details = ex.Message });
+                tx.Rollback();
+                return StatusCode(500, new
+                {
+                    error = "Approval failed",
+                    details = ex.Message
+                });
             }
         }
+
     }
 }

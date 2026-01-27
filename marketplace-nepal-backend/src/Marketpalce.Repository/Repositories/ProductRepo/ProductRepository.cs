@@ -38,8 +38,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
     ImageName           AS ImageName,
     created_by          AS CreatedBy,
     created_at          AS CreatedAt,
-    approve_fg          AS ApproveFg,
-    approve_ts          AS ApproveTs
+    approve_fg          AS ApproveFg
 FROM [NepalDistributers].[dbo].[Products]
 ";
             return await _db.QueryAsync<ProductModel>(sql);

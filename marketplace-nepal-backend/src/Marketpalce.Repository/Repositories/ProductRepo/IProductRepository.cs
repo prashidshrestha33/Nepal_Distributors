@@ -21,6 +21,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
         Task<string> GetCatagoryTreeJsonAsync();
         Task<IEnumerable<CategoryDto>> GetCatagoryChildrenAsync(long? parentId);
         Task<CategoryDto?> GetCatagoryByIdAsync(long id);
+        Task<ProductModel> GetByIdAsync(int id, IDbTransaction? transaction = null);
         Task<bool> ApproveProductAsync(long Productid, string approvedBy, string details, IDbTransaction? transaction = null);
 
 

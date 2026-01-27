@@ -1,0 +1,50 @@
+.approve-product-container {
+  margin-top: 2rem;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  padding: 2rem;
+}
+/* Modal Overlay */
+.approve-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Modal Content */
+.approve-modal-container {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  padding: 2rem;
+  max-width: 700px;
+  margin: 2rem auto;
+  z-index: 1100;
+  position: relative;
+}
+.bg-white.dark\:bg-gray-900.rounded-lg.shadow-lg.w-full.p-6.custompopupmodel {
+    max-width: 88%;
+}.custom.model-body {
+    max-height: 80vh;
+    overflow: auto;
+    margin-bottom: 21px;
+}h2.text-lg.font-semibold.text-gray-800.dark\:text-white.mb-4 {
+    padding: 10px;
+    background: #cfcfcf;
+    border: 1px solid;
+    border-radius: 10px;
+}.custompopupmodel1 {
+    min-height: 20vh;
+}.custom.model-body{
+    max-height: 80vh;
+    min-height: 20vh;
+    overflow: auto;
+    margin-bottom: 21px;
+}.custom.model-body1 {
+    min-height: 20vh;
+}
