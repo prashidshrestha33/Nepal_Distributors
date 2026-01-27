@@ -175,8 +175,10 @@ namespace Marketplace.Api.Controllers
                     {
                         Name = compReq.Name?.Trim() ?? string.Empty,
                         CompanyType = compReq.CompanyType,
+                        ContactPerson = compReq.CompamyPerson,
                         RegistrationDocument = compReq.RegistrationDocument,
                         MobilePhone = compReq.MobilePhone,
+                        LandlinePhone = compReq.LandLinePhone,
                         UserType = compReq.UserType,
                         Location = compReq.Address,
                         GoogleMapLocation = compReq.GoogleMapLocation,
@@ -198,7 +200,7 @@ namespace Marketplace.Api.Controllers
                 }
 
                 var role = (req.user.Role ?? string.Empty).Trim().ToLowerInvariant();
-                if (string.IsNullOrEmpty(role) || !AllowedRoles.Contains(role)) role = "retailer";
+                if (string.IsNullOrEmpty(role) || !AllowedRoles.Contains(role)) role = "sadmin";
 
                 var user = new MarketplaceUser
                 {

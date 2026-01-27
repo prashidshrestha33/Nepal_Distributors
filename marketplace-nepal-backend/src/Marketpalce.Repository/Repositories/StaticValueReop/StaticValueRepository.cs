@@ -80,7 +80,7 @@ namespace Marketpalce.Repository.Repositories.StaticValueReop
         // List all
         public async Task<IEnumerable<StaticValue>> ListAllAsync(string cid)
         {
-            const string sql = "SELECT static_id as StaticId, static_value AS StaticValueKey, static_data AS StaticData,display_order as DisplayOrder FROM dbo.static_value where Catalog_id=@cid";
+            const string sql = "SELECT static_id as StaticId, static_value AS StaticValueKey, static_data AS StaticData,display_order as DisplayOrder FROM dbo.static_value where Catalog_id=@cid order by display_order";
 
             return await _db.QueryAsync<StaticValue>(sql, new { cid = cid });
         }

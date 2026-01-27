@@ -12,7 +12,6 @@ namespace Marketplace.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize] 
-    [AllowAnonymous]
     public class CompaniesController : ControllerBase
     {
         private readonly ICompanyRepository _companies;
