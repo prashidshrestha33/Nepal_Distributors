@@ -13,13 +13,15 @@
         <tr>
           <th class="px-6 py-3 text-left text-sm font-semibold">Key</th>
           <th class="px-6 py-3 text-left text-sm font-semibold">Value</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold">Display order</th>
           <th class="px-6 py-3 text-center text-sm font-semibold">Actions</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let item of filteredItems" class="border-b hover:bg-gray-50">
-          <td class="px-6 py-4 text-sm">{{ item.staticData }}</td>
           <td class="px-6 py-4 text-sm">{{ item.staticValueKey }}</td>
+          <td class="px-6 py-4 text-sm">{{ item.staticData }}</td>
+          <td class="px-6 py-4 text-sm">{{ item.displayOrder }}</td>
             <td class="px-6 py-4 text-center">
              <a href="/static-values/add?staticid={{item.staticId!}}&catalogId={{catalogId}}" class="text-blue-500 text-sm"> Edit </a>
 

@@ -27,14 +27,10 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit() {
     // 🔥 Initialize Firebase notifications listener
     this.notificationService. listenForMessages();
-    console.log('🔥 Firebase notifications initialized');
     this.checkNotificationStatus() 
-    // 🔥 Auto-request notification permission if user is authenticated
     if (this.authService.isAuthenticated()) {
       this.requestNotificationPermission();
     }
-
-    // Initialize inactivity timer if user is authenticated
     if (this.authService.isAuthenticated()) {
       this.inactivityService.initInactivityTimer();
     }
@@ -79,7 +75,6 @@ export class AppComponent implements OnInit, OnDestroy {
         console.log('✅ FCM Token obtained:', token);
       }
     } catch (error) {
-      console.error('❌ Error requesting notification permission:', error);
     }
   }
 
@@ -91,7 +86,6 @@ export class AppComponent implements OnInit, OnDestroy {
       
       return token;
     } else {
-      alert('❌ Please allow notifications in your browser settings.');
       return null;
     }this.checkNotificationStatus();
   }

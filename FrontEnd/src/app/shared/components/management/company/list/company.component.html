@@ -1,6 +1,11 @@
-<!-- Approve Confirmation Modal -->
-<div *ngIf="showApproveModal"
-     class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+<div *ngIf="successModal2" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;">
+  <div style="background: white; padding: 20px; border: 1px solid black; width: 300px; text-align: center;">
+    <h3>Success</h3>
+    <p>{{ successMessage2 }}</p>
+    <button (click)="successModal2 = false">OK</button>
+  </div>
+</div><!-- Approve Confirmation Modal -->
+<div *ngIf="showApproveModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
 
   <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg w-full max-w-3xl p-6 custompopupmodel overflow-auto">
     <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
@@ -188,6 +193,68 @@
   </div>
 </div>
 
+<div *ngIf="showApproveModal2"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg w-full max-w-3xl p-6 custompopupmodel1">
+    <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4" >
+      Send Register Link
+    </h2>  
+<div class="custom model-body1">
+ <div *ngIf="errorModal2" class="bg-red-50 dark:bg-red-900 p-4 rounded-lg text-red-700 dark:text-red-200">
+    {{ errorModal2 }}
+  </div>
+<div class="w-full">
+  <label class="block text-sm font-medium mb-1">Select Roles</label>
+
+<ng-select
+  [items]="StaticValue"
+  bindLabel="staticValueKey"   
+  bindValue="staticData"      
+  placeholder="Select Roles"
+  [(ngModel)]="selectedStaticValueId"
+  class="Selectorcustom w-full">
+
+  <ng-template ng-label-tmp let-item="item">
+    {{ item.staticValueKey }}
+  </ng-template>
+
+  <ng-template ng-option-tmp let-item="item">
+    {{ item.staticData }}
+  </ng-template>
+
+</ng-select>
+
+</div>
+<div class="w-full" *ngIf="isreject">
+  <label class="block text-sm font-medium mb-1">
+    Email ID
+  </label>
+<input 
+      type="text" 
+      placeholder="Enter Register Email ID............." 
+    [(ngModel)]="RegisterEmailID"
+    name="RegisterEmailID" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+    />
+    
+  
+</div>
+</div>
+    <div class="flex justify-end gap-3">
+      <button
+        (click)="closeApproveModal2()"
+        class="px-4 py-2 rounded-lg border">
+        Cancel
+      </button> 
+ <button
+        (click)="RegisterNewUserLink()"
+        class="px-4 py-2 rounded-lg bg-green-500 text-white">
+        <span>Send Email</span>
+      </button>
+    
+    </div>
+  </div>
+</div>
+
 
 <div class="space-y-6">
   <div class="flex justify-between items-center">
@@ -254,8 +321,24 @@
           <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ Company.credits }}</td>
           <td class="px-6 py-4 text-center">
             <div class="flex justify-center gap-2">
-             <button *ngIf="Company.status === 'pending'"  (click)="openApproveModal(Company.id!)"  class="text-green-500 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 text-sm font-semibold">
-             View</button>
+              <button
+  (click)="openRegisterUser(Company.id!)"
+  class="text-green-500 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 text-sm font-semibold flex items-center gap-1">
+  <!-- Tick icon -->  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m0 0v10a2 2 0 01-2 2H5a2 2 0 01-2-2V8m18 0L12 13 3 8" />
+  </svg>
+</button>
+
+<button
+  (click)="openApproveModal(Company.id!)"
+  class="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-semibold flex items-center gap-1">
+  <!-- Email / envelope icon -->
+
+  <svg  xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+  </svg>
+</button>
+
             </div>
           </td>
         </tr>

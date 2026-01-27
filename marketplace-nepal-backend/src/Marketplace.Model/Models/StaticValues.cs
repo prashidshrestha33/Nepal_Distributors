@@ -27,6 +27,7 @@ namespace Marketplace.Model.Models
     {
         public string? staticId { get; set; }
         public string? catalogId { get; set; }
+        public string? catalogkey { get; set; }
         public string? key { get; set; }
     }
 }

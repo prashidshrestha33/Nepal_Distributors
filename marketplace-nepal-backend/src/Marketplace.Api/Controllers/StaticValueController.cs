@@ -93,12 +93,13 @@ namespace Marketplace.Api.Controllers
 
         // READ SINGLE STATIC VALUE
         [HttpGet("GetStaticValue")]
-        public async Task<ActionResult<StaticValue>> GetStaticValue(string staticId=null,string catalogId=null,string key = null)
+        public async Task<ActionResult<StaticValue>> GetStaticValue(string staticId=null, string catalogId = null, string catalogkey = null, string key = null)
         {
             StaticValueFilter filter = new StaticValueFilter
             {
                 staticId = staticId,
                 catalogId = catalogId,
+                catalogkey = catalogkey,
                 key = key
             };
             var item = await _repo.GetAsync(filter);
