@@ -75,20 +75,22 @@ namespace Marketplace.Api.Controllers
         public async Task<IActionResult> Register([FromForm] ComponieCommonModel common)
         {
             string componeyidglb=null;
+            string decrole=null;
+            Reasult response = new Reasult();
+            NewRegisterRequest req = new NewRegisterRequest();
+            req.user = moduleToCommon.Map<RegisterRequest>(common.Register);
             if (!string.IsNullOrEmpty(common.Token))
             {
 
                 var payload = EncryptionHelper.Decrypt<RegistrationEmailPayload>(common.Token);
                 componeyidglb = payload.CompanyId;
-
+                req.user.Role = payload.role;
             }
-            Reasult response = new Reasult();
-            NewRegisterRequest req = new NewRegisterRequest();
-            req.user = moduleToCommon.Map<RegisterRequest>(common.Register);
             if (common.Company != null && string.IsNullOrEmpty(common.Token))
             {
                 req.Company = moduleToCommon.Map<CompanyCreateRequest>(common.Company);
             }
+
             if (req == null) return BadRequest(new { error = "Request body required." });
 
 

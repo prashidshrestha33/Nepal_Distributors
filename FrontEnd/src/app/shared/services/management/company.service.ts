@@ -27,6 +27,21 @@ export interface ApproveCompanyRequest {
   approveFg?: 'Y' | 'N';     // Y or N
   rejectComment?: string;    // optional
 }
+export interface StaticValue { 
+  catalogId?: number;
+  staticId?:  number;
+  staticValueKey: string;
+  staticData?: string;
+  displayOrder:  string;
+}
+
+export interface StaticValueCatalog {
+  id:number;
+  catalogId: number;
+  catalogName: string;
+  catalogType:  string;
+  catalogDescription: string;
+}
 
 export interface Category {
    id: number;
@@ -45,9 +60,7 @@ export class CompanyService {
 
   constructor(private http: HttpClient, private authService: AuthService,private apiGateway: ApiGatewayService) {}
 getCompanys(): Observable<company[]> {
-  console.log('Fetching Companys from API:', this.apiUrl);
   const token = this.authService.getToken();
-  console.log('Token in getCompanys():', token ? 'Present (' + token.substring(0, 20) + '...)' : 'Missing');
 
   let request$: Observable<any>;
 
@@ -100,6 +113,20 @@ getCompanys(): Observable<company[]> {
     })
   );
 }
+  getStaticValuesrole(): Observable<StaticValueCatalog[]> {
+    return this. apiGateway.getWithResult<StaticValueCatalog[]>(
+      '/api/StaticValue/GetStaticValue?catalogkey=roles',
+      { requiresAuth: true }
+    );
+  }
+sendRegisterLink(email: string, role: string, company_id: string): Observable<any[]> {
+  debugger;
+  return this.apiGateway.get<any[]>(
+    `/api/Companies/send-registration-link?email=${encodeURIComponent(email)}&company_id=${encodeURIComponent(company_id)}&role=${encodeURIComponent(role)}`,
+    { requiresAuth: true }
+  );
+}
+
   getCategories(): Observable<Category[]> {
     return this.apiGateway.getWithResult<Category[]>(`${environment.apiBaseUrl}/api/Product/Category`);
   }

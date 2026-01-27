@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiBaseUrl: 'https://nddapi.nepaldistributors.com',
+  apiBaseUrl: 'https://localhost:49856',
   googleClientId: '18394576174-vv1lsjd434m63mvjo9agtm0f8cphjfoq.apps.googleusercontent.com',
   facebookAppId: '1214519130615264',  
   vapidKey: "BOIbmUDEF74tKwTiPO6f4o11N-Hlh14UGKK2b9PvR7epgUk6a_F3npOXCgs2iYZmUOtZSDguaRfgUAnZuw6fsds",

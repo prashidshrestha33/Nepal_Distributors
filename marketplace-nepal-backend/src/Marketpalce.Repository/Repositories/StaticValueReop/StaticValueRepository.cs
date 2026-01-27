@@ -31,21 +31,27 @@ namespace Marketpalce.Repository.Repositories.StaticValueReop
         }
 
         // Read single
-        public async Task<StaticValue?> GetAsync(StaticValueFilter model)
+        public async Task<IEnumerable<StaticValue>> GetAsync(StaticValueFilter model)
         {
-             string sql = "SELECT static_id as StaticId,Catalog_id as CatalogId, static_value AS StaticValueKey, static_data AS StaticData,display_order as DisplayOrder FROM dbo.static_value" +
-                " where 1=1 ";
-            if (model.key != null)
-            {
-                sql += "AND static_value = @staticValue ";
-            }
-            else if(model.catalogId !=null && model.staticId != null)
-            {
-                sql += "AND Catalog_id = @catalogId AND static_id =@staticId ";
+                string sql = "SELECT s.static_id as StaticId,s.Catalog_id as CatalogId, s.static_value AS StaticValueKey, s.static_data AS StaticData,s.display_order as " +
+                   "DisplayOrder, c.* FROM dbo.static_value s " +
+                   "left join  static_value_cataglog c on s.Catalog_id = c.Catalog_id where 1=1 ";
+                if (model.key != null)
+                {
+                    sql += "AND static_value = @staticValue ";
+                }
+                else if (model.catalogId != null && model.staticId != null)
+                {
+                    sql += "AND Catalog_id = @catalogId AND static_id =@staticId ";
 
-            }
-            sql += ";";
-            return await _db.QuerySingleOrDefaultAsync<StaticValue>(sql, model);
+                }
+                else if (model.catalogkey != null && model.catalogkey != null)
+                {
+                    sql += " AND c.Catalog_Name =  @catalogkey ";
+
+                }
+                sql += ";";
+                return await _db.QueryAsync<StaticValue>(sql, model);
         }
 
         // Update

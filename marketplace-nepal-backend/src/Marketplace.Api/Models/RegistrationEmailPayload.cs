@@ -7,6 +7,7 @@ namespace Marketplace.Api.Models
         public string CompanyId { get; set; }
         public string CompanyEmail { get; set; }
         public string CompanyName { get; set; }
+        public string role { get; set; }
 
         public DateTime Expiry { get; set; }
     }
