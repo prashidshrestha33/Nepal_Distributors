@@ -21,6 +21,31 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
         Task<string> GetCatagoryTreeJsonAsync();
         Task<IEnumerable<CategoryDto>> GetCatagoryChildrenAsync(long? parentId);
         Task<CategoryDto?> GetCatagoryByIdAsync(long id);
+        Task<ProductModel> GetByIdAsync(int id, IDbTransaction tx);
+
+        Task ApproveProductAsync(
+            int id,
+            string approvedByEmail,
+            IDbTransaction tx);
+
+        Task RejectProductAsync(
+            int id,
+            string rejectedByEmail,
+            IDbTransaction tx);
+
+        Task AddProductCreditAsync(
+            int companyId,
+            int productId,
+            string remarks,
+            IDbTransaction tx);
+
+        Task InsertRejectNoteAsync(
+            int companyId,
+            int productId,
+            string email,
+            string remarks,
+            IDbTransaction tx);
+
         Task<bool> ApproveProductAsync(long Productid, string approvedBy, string details, IDbTransaction? transaction = null);
 
 

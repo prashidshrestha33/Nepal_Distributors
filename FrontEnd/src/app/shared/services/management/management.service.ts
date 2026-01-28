@@ -42,6 +42,7 @@ export interface Product {
   approveFg?: string;
   approveTs?: Date;
   imageUrl?: string;
+  imageName?: string;
 }
 export interface ProductResponse {
   data: Product[];
@@ -105,6 +106,18 @@ email?:string;
 company?:number;
 credit?:number;
 }
+
+export interface ApproveProduct {
+  id?: number;
+  action?: string;
+  remarks?:string;
+}
+interface Toast {
+  message: string;
+  type: 'success' | 'error';
+}
+
+
 @Injectable({ providedIn: 'root' })
 // ============================================
 // CATEGORY SERVICE
@@ -175,11 +188,17 @@ export class ProductService {
       { requiresAuth: true }
     );
   }
+ApprovedProductById(id: number, payload: ApproveProduct): Observable<Product> {
+  return this.apiGateway.post<Product>(
+    `api/Product/ApproveProduct/${id}`,
+    payload
+  );
+}
+
   createProduct(product: Product, image?: File): Observable<Product> {
     
     const formData = this.buildProductFormData(product, image);
     for (let pair of formData.entries()) {
-      console.log(pair[0]+ ': ' + pair[1]);
     }
     return this.apiGateway.post<Product>(
       '/api/Product/AddProduct',
@@ -221,10 +240,22 @@ export class ProductService {
   return formData;
 }
 
-  updateProduct(id:  number, product: Product): Observable<Product> {
+  updateProduct(id:  number, product: Product): Observable<ApproveProduct> {
+    const formData = this.buildProductFormData(product);
+    return this.apiGateway.put<ApproveProduct>(
+      `/api/Product/${id}`,
+      formData,
+      { 
+        requiresAuth: true,
+        headers: {}
+      }
+    );
+  }
+
+    approveProduct(id:  number, product: Product): Observable<Product> {
     const formData = this.buildProductFormData(product);
     return this.apiGateway.put<Product>(
-      `/api/Product/${id}`,
+      `/api/Product/ApproveProduct/${id}`,
       formData,
       { 
         requiresAuth: true,

@@ -70,7 +70,6 @@ export class SigninFormComponent implements OnInit {
         const token = response?.result?.token || response?.token;
         
         if (token) {
-          console.log('User logged in successfully');
           this.inactivityService.initInactivityTimer();
           this.navigateAfterLogin();
         } else {
@@ -116,11 +115,9 @@ export class SigninFormComponent implements OnInit {
 
     this.isSocialLoading = true;
     this.errorMessage = '';
-    console.log('🔵 Initiating Facebook sign-in...');
 
     this.socialAuthService.signInWithFacebook()
       .then(user => {
-        console.log('Facebook sign-in successful:', user);
         this.handleSocialLogin(user);  // Pass entire user object
       })
       .catch(error => {
@@ -131,18 +128,15 @@ export class SigninFormComponent implements OnInit {
   }
 
   private handleSocialLogin(socialUser: SocialUser) {
-    console.log('📤 Sending social user data to backend... ', socialUser);
     const rememberMe = this.loginForm.get('rememberMe')?.value || false;
 
 
     this.authService.socialLogin(socialUser,rememberMe).subscribe({
       next: (response: any) => {
         this.isSocialLoading = false;
-        console.log('Backend response:', response);
     
          const token = response?.result?.token || response?.token;
         if (token) {
-          console.log('User logged in successfully');
           this.inactivityService.initInactivityTimer();
           this.navigateAfterLogin();
         } else {
@@ -173,8 +167,6 @@ export class SigninFormComponent implements OnInit {
     const navigationPath = this.returnUrl.startsWith('/') 
       ? this.returnUrl 
       : '/' + this.returnUrl;
-    
-    console.log('🚀 Navigating to:', navigationPath);
     this.router.navigate([navigationPath], { replaceUrl: true });
   }
 

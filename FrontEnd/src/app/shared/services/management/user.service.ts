@@ -26,9 +26,7 @@ export class UserService {
   constructor(private http: HttpClient, private authService: AuthService) {}
 
   getUsers(): Observable<User[]> {
-    console.log('Fetching users from API:', this.apiUrl);
     const token = this.authService.getToken();
-    console.log('Token in getUsers():', token ? 'Present (' + token.substring(0, 20) + '...)' : 'Missing');
     
     let request$: Observable<any>;
     
@@ -45,23 +43,19 @@ export class UserService {
     // Handle both array response and object response with data property
     return request$.pipe(
       map(response => {
-        console.log('API response:', response);
         
         let users: any[] = [];
         
         // If response is already an array, use it
         if (Array.isArray(response)) {
-          console.log('Response is an array, using directly');
           users = response;
         }
         // If response has a 'data' property, use that
         else if (response && response.data && Array.isArray(response.data)) {
-          console.log('Response has data property, extracting array');
           users = response.data;
         }
         // If response has a 'result' property with array, use that
         else if (response && response.result && Array.isArray(response.result)) {
-          console.log('Response has result property, extracting array');
           users = response.result;
         }
         // Fallback: return empty array if format is unexpected
@@ -106,15 +100,12 @@ export class UserService {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     });
-    
-    console.log('Approving user with ID:', id);
     return this.http.post<User>(
   `${this.apiUrl}/ApproveUser/${id}`,
   {},
   { headers }
 ).pipe(
   map(response => {
-    console.log('User approved successfully:', response);
     return response;
   })
 );

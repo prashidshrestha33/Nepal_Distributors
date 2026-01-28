@@ -1,5 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { ApproveProductModalComponent } from './approve-product-modal.component';
+import { ApproveProductComponent } from '../approve/approve-product.component';
+import { PaginationComponent } from '../../Pagination/app-pagination.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule, FormGroup } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -8,12 +9,13 @@ import type { Product } from '../../../../services/management/management.service
 import { Category } from '../../../../services/management/management.service';
 import { CategoryService } from '../../../../services/management/management.service';
 import { Users } from '../../../../services/management/management.service';
+import { environment } from '../../../../../../environments/environment';
 
 
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ApproveProductModalComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ApproveProductComponent, PaginationComponent],
   templateUrl: './products.component.html',
   styleUrl: './products.component.css'
 })
@@ -52,6 +54,7 @@ export class ProductsComponent implements OnInit {
   ngOnInit() {
     this.loadProducts();
     this.loadCategoryTree();
+    this.getImageUrl();
   }
     loadCategoryTree() {
       this.categoryService.getTreeCategories().subscribe({
@@ -71,14 +74,25 @@ export class ProductsComponent implements OnInit {
     }
     
   // View product details
-viewProduct(product: Product) {
-  if (product && product.id) this.router.navigate(['/products', product.id]);
-}
+  viewProduct(product: Product) {
+    if (product && product.id) {
+      this.router.navigate(['/products', product.id]);
+    }
+  }
 
 editProduct(product: Product) {
   if (product && product.id) this.router.navigate(['/products/edit', product.id]);
 }
 
+  removeProduct(product: Product) {
+    // Open the same modal, but you can handle remove logic in the modal
+    this.approveProductData = {
+      ...product,
+      categoryName: this.getCategoryName(product.categoryId),
+      brandName: this.getBrandName(product.brandId)
+    };
+    this.showApproveModal = true;
+  }
 
 approveProduct(product: Product) {
   // Open modal with product details
@@ -91,21 +105,25 @@ approveProduct(product: Product) {
   this.showApproveModal = true;
 }
 
-onApproveSave(newStatus: string) {
+onApproveSave(event: { status: string; reason?: string }) {
   if (!this.approveProductData) return;
-  const updatedProduct: Product = { ...this.approveProductData, status: newStatus };
-  this.productService.updateProduct(updatedProduct.id, updatedProduct).subscribe({
-    next: () => {
+  const payload = {
+    id: this.approveProductData.id,
+    action: event.status,
+    remarks: event.reason || ''
+  };
+  this.productService.ApprovedProductById(this.approveProductData.id, payload).subscribe({
+    next: (updatedProduct: Product) => {
       // Update local table
       const idx = this.products.findIndex(p => p.id === updatedProduct.id);
       if (idx > -1) {
-        this.products[idx].status = newStatus;
+        this.products[idx].status = updatedProduct.status;
       }
       this.filteredProducts = [...this.products];
       this.showApproveModal = false;
-      alert(`Product "${updatedProduct.name}" status updated to ${newStatus}.`);
+      alert(`Product "${this.approveProductData?.name}" status updated to ${event.status}.`);
     },
-    error: err => {
+    error: (err: unknown) => {
       console.error('Error updating product status:', err);
       alert('Failed to update product status.');
     }
@@ -120,12 +138,16 @@ onApproveCancel() {
 
   this.productService.getProducts(this.currentPage, this.pageSize).subscribe({
     next: (response: any) => {
-      // Use 'result' instead of 'data'
-      this.products = response.result;
-      this.filteredProducts = response.result;
+      // Map products and add imageUrl
+      this.products = response.result.map((p: Product) => ({
+        ...p,
+        imageUrl: this.getImageUrl(p.imageName) // map imageUrl from imageName
+      }));
 
-      // Set totalCount and totalPages
-      this.totalCount = response.result.length;
+      this.filteredProducts = [...this.products];
+
+      // Set pagination
+      this.totalCount = this.products.length;
       this.totalPages = Math.ceil(this.totalCount / this.pageSize);
 
       this.loading = false;
@@ -137,25 +159,6 @@ onApproveCancel() {
   });
 }
 
-loadUser() {
-  this.loading = true;
-
-  this.productService.getProducts(this.currentPage, this.pageSize).subscribe({
-    next: (response: any) => {
-      this.products = response.result;
-      this.filteredProducts = response.result;
-
-      this.totalCount = response.result.length; 
-      this.totalPages = Math.ceil(this.totalCount / this.pageSize);
-
-      this.loading = false;
-    },
-    error: (err) => {
-      console.error('Error loading products:', err);
-      this.loading = false;
-    }
-  });
-}
   // Helper to get category name by ID
   getCategoryName(id: number | null | undefined): string {
   if (!id || id === 0) return 'N/A';
@@ -179,60 +182,32 @@ getBrandName(id: number | null | undefined): string {
 }
 
   onSearch() {
-    this.filteredProducts = this.products.filter(p =>
-      p.name.toLowerCase().includes(this.searchTerm.toLowerCase())
-    );
+    this.filteredProducts = this.products
+      .filter(p => p.name.toLowerCase().includes(this.searchTerm.toLowerCase()));
   }
 
-  getImageUrl(product: Product): string {
-    return product.imageUrl || '/images/placeholder-product.png';
+  getImageUrl(imageName?: string): string {
+    if (!imageName || typeof imageName !== 'string' || !imageName.trim()) {
+      // Return a placeholder image if imageName is missing
+      return 'assets/images/no-image.png';
+    }
+    // Remove leading slashes if present
+    const cleanName = imageName.replace(/^\/+/, '');
+    return `${environment.apiBaseUrl}/api/CompanyFile/${cleanName}`;
   }
 
   isFeatured(product: Product): boolean {
     return product.isFeatured === true;
   }
+  //Pagination
+  onPageChange(newPage: number) {
+  this.currentPage = newPage;
+  this.loadProducts();
+}
 
-  previousPage() {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-      this.loadProducts();
-    }
-  }
-  nextPage() {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-      this.loadProducts();
-    }
-  }
-
-  goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-      this.loadProducts();
-    }
-  }
-
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxPagesToShow = 5;
-    let startPage = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
-    let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
-    
-    if (endPage - startPage + 1 < maxPagesToShow) {
-      startPage = Math.max(1, endPage - maxPagesToShow + 1);
-    }
-    
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-    return pages;
-  }
-
-  hasNextPage(): boolean {
-    return this.currentPage < this.totalPages;
-  }
-
-  hasPreviousPage(): boolean {
-    return this.currentPage > 1;
-  }
+onPageSizeChange(newSize: number) {
+  this.pageSize = newSize;
+  this.currentPage = 1;
+  this.loadProducts();
+}
 }

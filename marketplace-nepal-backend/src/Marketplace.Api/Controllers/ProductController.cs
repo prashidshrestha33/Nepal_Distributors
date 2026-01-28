@@ -2,6 +2,7 @@
 using Marketplace.Api.Models;
 using Marketplace.Api.Services.Helper;
 using Marketplace.Model.Models;
+using Marketplace.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -173,33 +174,85 @@ namespace Marketplace.Api.Controllers
             return NoContent();
         }
         [HttpPost("ApproveProduct/{id}")]
-        public async Task<IActionResult> ApproveProduct(long id, [FromBody] string? details = null)
+        public async Task<IActionResult> ApproveProduct(
+    int id,
+    [FromBody] ProductDecisionRequest request)
         {
-            var approvedBy = User?.Identity?.Name ?? "system";
-            details ??= "User approved";
+            var email =
+                User.FindFirstValue(ClaimTypes.Email)
+                ?? User.FindFirstValue("email");
 
-            if (_db.State != ConnectionState.Open) _db.Open();
+            if (string.IsNullOrEmpty(email))
+                return Unauthorized();
+
+            var companyClaim =
+                User.FindFirstValue("company_id")
+                ?? User.FindFirstValue("CompanyId");
+
+            if (!int.TryParse(companyClaim, out int companyId))
+                return Unauthorized(new { error = "Invalid CompanyId claim" });
+
+            if (_db.State != ConnectionState.Open)
+                _db.Open();
+
             using var tx = _db.BeginTransaction();
+
             try
             {
-                var product = await repositorysitory.GetCatagoryByIdAsync(id);
-                if (product == null)
-                    return NotFound(new { error = "product not found." });
+                var product = await repositorysitory.GetByIdAsync(id, tx);
 
-                var success = await repositorysitory.ApproveProductAsync(id, approvedBy, details, tx);
-                if (!success)
+                if (request.Action == "Approved")
                 {
-                    tx.Rollback();
-                    return StatusCode(500, new { error = "Approval failed." });
+                    await repositorysitory.ApproveProductAsync(
+                        id,
+                        email,
+                        tx
+                    );
+
+                    await repositorysitory.AddProductCreditAsync(
+                        companyId,
+                        product.Id,
+                        request.Remarks ?? "Approved",
+                        tx
+                    );
+                }
+                else if (request.Action == "Rejected")
+                {
+                    await repositorysitory.RejectProductAsync(
+                        id,
+                        email,
+                        tx
+                    );
+
+                    await repositorysitory.InsertRejectNoteAsync(
+                        companyId,
+                        product.Id,
+                        email,
+                        request.Remarks ?? "Rejected",
+                        tx
+                    );
+                }
+                else
+                {
+                    return BadRequest("Invalid action. Use Approve or Reject.");
                 }
 
                 tx.Commit();
-                return Ok(new { id });
+
+                return Ok(new
+                {
+                    productId = id,
+                    action = request.Action
+                });
             }
             catch (Exception ex)
             {
-                try { tx.Rollback(); } catch { }
-                return StatusCode(500, new { error = "Approval failed", details = ex.Message });
+                tx.Rollback();
+                return StatusCode(500, new
+                {
+                    error = "Operation failed",
+                    details = ex.Message
+                });
             }
         }
     }
