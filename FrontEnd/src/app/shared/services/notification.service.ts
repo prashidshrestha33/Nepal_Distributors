@@ -11,30 +11,23 @@ export class NotificationService {
   private http = inject(HttpClient);
 
   constructor() {
-    console.log('🔥 NotificationService initialized');
   }
 
   async requestPermission(): Promise<string | null> {
     try {
-      console.log('🔔 Requesting notification permission...');
       
       // Request permission
       const permission = await Notification.requestPermission();
-      console.log('Permission result:', permission);
 
       if (permission === 'granted') {
-        console.log('✅ Notification permission granted');
         
         // Register service worker
         const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
           scope: '/'
         });
         
-        console.log('✅ Service Worker registered:', registration);
-        
         // Wait for service worker to be ready
         await navigator.serviceWorker.ready;
-        console.log('✅ Service Worker is ready');
 
         // Get FCM token with VAPID key
         const token = await getToken(this.messaging, {
@@ -43,22 +36,18 @@ export class NotificationService {
         });
 
         if (token) {
-          console.log('🔥 FCM Token:', token);
           
           // Save token to backend
           await this.saveFcmTokenToBackend(token);
           
           return token;
         } else {
-          console.log('❌ No registration token available');
           return null;
         }
       } else {
-        console.log('❌ Notification permission denied');
         return null;
       }
     } catch (error:  any) {
-      console.error('❌ Error getting FCM token:', error);
       return null;
     }
   }
@@ -66,7 +55,6 @@ export class NotificationService {
   listenForMessages() {
     try {
       onMessage(this.messaging, (payload) => {
-        console.log('📩 Message received (foreground):', payload);
         
         // Show notification
         if (payload.notification) {
@@ -77,9 +65,7 @@ export class NotificationService {
           });
         }
       });
-      console.log('👂 Listening for foreground messages...');
     } catch (error) {
-      console.error('❌ Error setting up message listener:', error);
     }
   }
 
@@ -92,8 +78,6 @@ export class NotificationService {
         fcmToken: token,
         deviceType: 'web'
       }).toPromise();
-      
-      console.log('✅ FCM token saved to backend');
     } catch (error) {
       // Don't throw - token is still valid even if backend save fails
     }

@@ -174,14 +174,23 @@ namespace Marketplace.Api.Controllers
             return NoContent();
         }
         [HttpPost("ApproveProduct/{id}")]
-        public async Task<IActionResult> ApproveProduct(int id)
+        public async Task<IActionResult> ApproveProduct(
+    int id,
+    [FromBody] ProductDecisionRequest request)
         {
-            var approvedByEmail =
+            var email =
                 User.FindFirstValue(ClaimTypes.Email)
                 ?? User.FindFirstValue("email");
 
-            if (string.IsNullOrEmpty(approvedByEmail))
+            if (string.IsNullOrEmpty(email))
                 return Unauthorized();
+
+            var companyClaim =
+                User.FindFirstValue("company_id")
+                ?? User.FindFirstValue("CompanyId");
+
+            if (!int.TryParse(companyClaim, out int companyId))
+                return Unauthorized(new { error = "Invalid CompanyId claim" });
 
             if (_db.State != ConnectionState.Open)
                 _db.Open();
@@ -191,27 +200,49 @@ namespace Marketplace.Api.Controllers
             try
             {
                 var product = await repositorysitory.GetByIdAsync(id, tx);
-                if (product == null)
-                    return NotFound(new { error = "product not found." });
 
-                var success = await repositorysitory.ApproveProductAsync(
-                    id,
-                    approvedByEmail,
-                    "Approved by admin",
-                    tx
-                );
-
-                if (!success)
+                if (request.Action == "Approved")
                 {
-                    tx.Rollback();
-                    return StatusCode(500, new { error = "Approval failed." });
+                    await repositorysitory.ApproveProductAsync(
+                        id,
+                        email,
+                        tx
+                    );
+
+                    await repositorysitory.AddProductCreditAsync(
+                        companyId,
+                        product.Id,
+                        request.Remarks ?? "Approved",
+                        tx
+                    );
+                }
+                else if (request.Action == "Rejected")
+                {
+                    await repositorysitory.RejectProductAsync(
+                        id,
+                        email,
+                        tx
+                    );
+
+                    await repositorysitory.InsertRejectNoteAsync(
+                        companyId,
+                        product.Id,
+                        email,
+                        request.Remarks ?? "Rejected",
+                        tx
+                    );
+                }
+                else
+                {
+                    return BadRequest("Invalid action. Use Approve or Reject.");
                 }
 
                 tx.Commit();
+
                 return Ok(new
                 {
-                    id,
-                    approvedBy = approvedByEmail
+                    productId = id,
+                    action = request.Action
                 });
             }
             catch (Exception ex)
@@ -219,11 +250,10 @@ namespace Marketplace.Api.Controllers
                 tx.Rollback();
                 return StatusCode(500, new
                 {
-                    error = "Approval failed",
+                    error = "Operation failed",
                     details = ex.Message
                 });
             }
         }
-
     }
 }

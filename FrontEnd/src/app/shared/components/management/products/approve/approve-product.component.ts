@@ -69,15 +69,13 @@ export class ApproveProductComponent {
   }
 
   /** Confirm action from reason modal */
-  confirmAction() {
-    if (this.actionType === 'Rejected' && !this.reason.trim()) return;
-    if (this.actionType === 'Approved' && !this.approvalType) return;
-
+  confirmAction(reason: string, actionType: 'Approved' | 'Rejected') {
+    if (actionType === 'Rejected' && !reason.trim()) return;
+    // If you need to check approvalType for 'Approved', add logic here, otherwise just use reason
     this.approve.emit({
-      status: this.actionType!,
-      reason: this.reason || this.approvalType
+      status: actionType,
+      reason: reason
     });
-
     this.closeReason();
   }
 

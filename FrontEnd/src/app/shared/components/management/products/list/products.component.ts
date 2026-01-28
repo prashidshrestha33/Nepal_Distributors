@@ -1,5 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ApproveProductComponent } from '../approve/approve-product.component';
+import { PaginationComponent } from '../../Pagination/app-pagination.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule, FormGroup } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -14,7 +15,7 @@ import { environment } from '../../../../../../environments/environment';
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ApproveProductComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ApproveProductComponent, PaginationComponent],
   templateUrl: './products.component.html',
   styleUrl: './products.component.css'
 })
@@ -53,7 +54,6 @@ export class ProductsComponent implements OnInit {
   ngOnInit() {
     this.loadProducts();
     this.loadCategoryTree();
-    debugger;
     this.getImageUrl();
   }
     loadCategoryTree() {
@@ -107,19 +107,23 @@ approveProduct(product: Product) {
 
 onApproveSave(event: { status: string; reason?: string }) {
   if (!this.approveProductData) return;
-  const updatedProduct: Product = { ...this.approveProductData, status: event.status };
-  this.productService.updateProduct(updatedProduct.id, updatedProduct).subscribe({
-    next: () => {
+  const payload = {
+    id: this.approveProductData.id,
+    action: event.status,
+    remarks: event.reason || ''
+  };
+  this.productService.ApprovedProductById(this.approveProductData.id, payload).subscribe({
+    next: (updatedProduct: Product) => {
       // Update local table
       const idx = this.products.findIndex(p => p.id === updatedProduct.id);
       if (idx > -1) {
-        this.products[idx].status = event.status;
+        this.products[idx].status = updatedProduct.status;
       }
       this.filteredProducts = [...this.products];
       this.showApproveModal = false;
-      alert(`Product "${updatedProduct.name}" status updated to ${event.status}.`);
+      alert(`Product "${this.approveProductData?.name}" status updated to ${event.status}.`);
     },
-    error: err => {
+    error: (err: unknown) => {
       console.error('Error updating product status:', err);
       alert('Failed to update product status.');
     }
@@ -134,30 +138,17 @@ onApproveCancel() {
 
   this.productService.getProducts(this.currentPage, this.pageSize).subscribe({
     next: (response: any) => {
-      // Use 'result' instead of 'data'
-      this.products = response.result;
-      this.filteredProducts = response.result;
+      // Map products and add imageUrl
+      this.products = response.result.map((p: Product) => ({
+        ...p,
+        imageUrl: this.getImageUrl(p.imageName) // map imageUrl from imageName
+      }));
 
-      // Set totalCount and totalPages
-      this.totalCount = response.result.length;
+      this.filteredProducts = [...this.products];
+
+      // Set pagination
+      this.totalCount = this.products.length;
       this.totalPages = Math.ceil(this.totalCount / this.pageSize);
-
-      this.loading = true;
-
-      this.productService.getProducts(this.currentPage, this.pageSize).subscribe({
-        next: (response: any) => {
-         
-          // Set totalCount and totalPages
-          this.totalCount = this.filteredProducts.length;
-          this.totalPages = Math.ceil(this.totalCount / this.pageSize);
-
-          this.loading = false;
-        },
-        error: (err) => {
-          console.error('Error loading products:', err);
-          this.loading = false;
-        }
-      });
 
       this.loading = false;
     },
@@ -167,6 +158,7 @@ onApproveCancel() {
     }
   });
 }
+
   // Helper to get category name by ID
   getCategoryName(id: number | null | undefined): string {
   if (!id || id === 0) return 'N/A';
@@ -207,48 +199,15 @@ getBrandName(id: number | null | undefined): string {
   isFeatured(product: Product): boolean {
     return product.isFeatured === true;
   }
+  //Pagination
+  onPageChange(newPage: number) {
+  this.currentPage = newPage;
+  this.loadProducts();
+}
 
-  previousPage() {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-      this.loadProducts();
-    }
-  }
-  nextPage() {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-      this.loadProducts();
-    }
-  }
-
-  goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-      this.loadProducts();
-    }
-  }
-
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxPagesToShow = 5;
-    let startPage = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
-    let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
-    
-    if (endPage - startPage + 1 < maxPagesToShow) {
-      startPage = Math.max(1, endPage - maxPagesToShow + 1);
-    }
-    
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-    return pages;
-  }
-
-  hasNextPage(): boolean {
-    return this.currentPage < this.totalPages;
-  }
-
-  hasPreviousPage(): boolean {
-    return this.currentPage > 1;
-  }
+onPageSizeChange(newSize: number) {
+  this.pageSize = newSize;
+  this.currentPage = 1;
+  this.loadProducts();
+}
 }

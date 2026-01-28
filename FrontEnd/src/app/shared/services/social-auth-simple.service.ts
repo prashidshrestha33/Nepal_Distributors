@@ -22,7 +22,6 @@ export class SocialAuthSimpleService {
     const check = () => {
       if (typeof google !== 'undefined' && google?. accounts?. id) {
         this.googleInitialized = true;
-        console.log('✅ Google SDK loaded');
       } else {
         setTimeout(check, 100);
       }
@@ -41,7 +40,6 @@ export class SocialAuthSimpleService {
             version: 'v18.0'
           });
           this.facebookInitialized = true;
-          console.log('✅ Facebook SDK loaded');
         } catch (error) {
           console.error('Facebook init error:', error);
         }
@@ -81,7 +79,6 @@ export class SocialAuthSimpleService {
                   provider: 'GOOGLE',
                   token: tokenResponse.access_token
                 };
-                console.log('✅ Google user created:', user);
                 resolve(user);
               } catch (error) {
                 reject(new Error('Failed to get Google user info'));
@@ -143,7 +140,6 @@ export class SocialAuthSimpleService {
                   provider: 'FACEBOOK',
                   token: accessToken
                 };
-                console.log('✅ Facebook user created:', user);
                 resolve(user);
               } else {
                 reject(new Error('Failed to get Facebook user info'));

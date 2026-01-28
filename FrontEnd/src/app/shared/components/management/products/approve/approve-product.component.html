@@ -72,7 +72,7 @@
   <div *ngIf="showReasonModal"
        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
 
-    <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg w-full max-w-3xl p-6">
+    <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg w-full max-w-2xl p-6">
 
       <!-- Modal Header -->
       <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4"
@@ -117,15 +117,16 @@
                 class="px-4 py-2 rounded-lg border hover:bg-gray-100 transition">
           Cancel
         </button>
-        <button (click)="confirmAction()"
-                [disabled]="actionType === 'Rejected' && !reason?.trim()"
-                class="px-4 py-2 rounded-lg text-white"
-                [ngClass]="{
-                  'bg-red-500 hover:bg-red-600': actionType === 'Rejected',
-                  'bg-green-500 hover:bg-green-600': actionType === 'Approved'
-                }">
-          <span *ngIf="actionType === 'Rejected'">Reject</span>
-          <span *ngIf="actionType === 'Approved'">Approve</span>
+        <button *ngIf="actionType === 'Rejected'"
+                (click)="confirmAction(reason, 'Rejected')"
+                [disabled]="!reason?.trim()"
+                class="px-4 py-2 rounded-lg text-white bg-red-500 hover:bg-red-600">
+          Reject
+        </button>
+        <button *ngIf="actionType === 'Approved'"
+                (click)="confirmAction(reason, 'Approved')"
+                class="px-4 py-2 rounded-lg text-white bg-green-500 hover:bg-green-600">
+          Approve
         </button>
       </div>
 

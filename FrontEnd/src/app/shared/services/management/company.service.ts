@@ -120,7 +120,6 @@ getCompanys(): Observable<company[]> {
     );
   }
 sendRegisterLink(email: string, role: string, company_id: string): Observable<any[]> {
-  debugger;
   return this.apiGateway.get<any[]>(
     `/api/Companies/send-registration-link?email=${encodeURIComponent(email)}&company_id=${encodeURIComponent(company_id)}&role=${encodeURIComponent(role)}`,
     { requiresAuth: true }
@@ -141,7 +140,6 @@ sendRegisterLink(email: string, role: string, company_id: string): Observable<an
     return this.http.post<company>(this.apiUrl, Company);
   }
   ApproveCompany(Company: ApproveCompanyRequest): Observable<ApproveCompanyRequest> {
-    debugger;
      return this.apiGateway.post<ApproveCompanyRequest>(
           `${environment.apiBaseUrl}/api/Companies/approve`,Company,
           { requiresAuth: true }

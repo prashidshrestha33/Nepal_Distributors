@@ -18,7 +18,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
 
         public async Task<IEnumerable<ProductModel>> GetAllAsync()
         {
-            var sql = @"SELECT
+                var sql = @"SELECT
     id                  AS Id,
     sku                 AS Sku,
     name                AS Name,
@@ -37,13 +37,12 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
     attributes          AS Attributes,
     ImageName           AS ImageName,
     created_by          AS CreatedBy,
-    created_at          AS CreatedAt,
-    approve_fg          AS ApproveFg
+    created_at          AS CreatedAt
 FROM [NepalDistributers].[dbo].[Products]
 ";
-            return await _db.QueryAsync<ProductModel>(sql);
-        }
+                return await _db.QueryAsync<ProductModel>(sql);
 
+            }
         public async Task<List<CategoryDto>> GetAllCategoryAsync()
         {
             const string sql = @"
@@ -198,12 +197,103 @@ FROM [NepalDistributers].[dbo].[Products]
                     return true;
                 }
 
-                return false;
+                return true;
             }
             catch (Exception)
             {
                 return false;
             }
         }
+        public async Task<ProductModel> GetByIdAsync(int id, IDbTransaction tx)
+        {
+            var sql = @"SELECT *
+                    FROM products
+                    WHERE id = @Id";
+
+            return await _db.QuerySingleAsync<ProductModel>(
+                sql,
+                new { Id = id },
+                tx
+            );
+        }
+
+        public async Task ApproveProductAsync(
+            int id,
+            string approvedByEmail,
+            IDbTransaction tx)
+        {
+            await _db.ExecuteAsync(
+                @"UPDATE dbo.products
+                    SET
+                        approve_ts = SYSUTCDATETIME(),
+                        approve_fg = 1,
+                        updated_at = SYSUTCDATETIME(),
+                        status = 'Approved'
+                    WHERE
+                    id = @Id;",
+                new { id, approvedByEmail },
+                tx
+            );
+        }
+
+        public async Task RejectProductAsync(
+            int id,
+            string rejectedByEmail,
+            IDbTransaction tx)
+        {
+            await _db.ExecuteAsync(
+                @"UPDATE dbo.products
+                    SET
+                        approve_ts = SYSUTCDATETIME(),
+                        approve_fg = 0,
+                        updated_at = SYSUTCDATETIME(),
+                        status = 'Rejected'
+                    WHERE
+                    id = @Id;",
+                new { id, rejectedByEmail },
+                tx
+            );
+        }
+        public async Task AddProductCreditAsync(
+            int companyId,
+            int productId,
+            string remarks,
+            IDbTransaction tx)
+        {
+            await _db.ExecuteAsync(
+                "sp_AddProductAndUpdateCredit",
+                new
+                {
+                    company_id = companyId,
+                    product_id = productId,
+                    remarks
+                },
+                tx,
+                commandType: CommandType.StoredProcedure
+            );
+        }
+
+        public async Task InsertRejectNoteAsync(
+            int companyId,
+            int productId,
+            string email,
+            string remarks,
+            IDbTransaction tx)
+        {
+            await _db.ExecuteAsync(
+                @"INSERT INTO Notes (companyId, source, email, Remarks)
+              VALUES (@companyId, @source, @email, @remarks)",
+                new
+                {
+                    companyId,
+                    source = productId.ToString(),
+                    email,
+                    remarks
+                },
+                tx
+            );
+        }
+
+
     }
 }

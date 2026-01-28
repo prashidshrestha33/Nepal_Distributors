@@ -23,17 +23,16 @@ namespace Marketplace.Models
     public class ApproveCompanyRequest
     {
         public long CompanyId { get; set; }
-        public string? AssignCategory { get; set; }  // e.g., "1,2,5"
-        public string ApproveFg { get; set; } = "Y"; // Y or N
+        public string? AssignCategory { get; set; }
+        public string ApproveFg { get; set; } = "Y";
         public string? RejectComment { get; set; }  // optional
     }
-    public class ApproveProductRequest
+    public class ProductDecisionRequest
     {
-        public long CompanyId { get; set; }
-        public int productId { get; set; }  // e.g., "1,2,5"
-        public string ApproveFg { get; set; } = "Y"; // Y or N
-        public string? RejectComment { get; set; }  // optional
+        public string Action { get; set; }  // "Approve" or "Reject"
+        public string? Remarks { get; set; }
     }
+
     public class NewRegisterRequest
     {
         public RegisterRequest? user { get; set; }
