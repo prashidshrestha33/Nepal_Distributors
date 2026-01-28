@@ -151,7 +151,7 @@
                  formControlName="token"
               />
       <!-- Password -->
-       {{isglfb}}
+     
       <div *ngIf="!isglfb">
         <app-label>Password <span class="text-error-500">*</span></app-label>
         <div class="relative">
@@ -233,9 +233,8 @@
           </div>
         </div>
       </div>
-
       <!-- Terms and Conditions Checkbox -->
-      <div *ngif="returnUrl" class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+      <div *ngIf="returnUrl===null" class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
         <div class="flex items-start gap-3">
           <input
             type="checkbox"

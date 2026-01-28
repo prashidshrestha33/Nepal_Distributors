@@ -145,8 +145,22 @@ if (sSocialUser) {
     
     if (socialUser.provider === "GOOGLE" || socialUser.provider === "FACEBOOK") {
       this.isglfb = true;
-      
-      // ✅ Create form for social signup
+      if(this.returnUrl){
+// ✅ Create form for social signup
+      this.signupForm = this.formBuilder.group({
+        firstName: ['', [Validators.required]],
+        phoneNo: ['', [Validators.required]],
+        email: ['', [Validators.required, emailFormatValidator]],
+        password:  [''],
+        confirmPassword: [''],
+         agreeToTerms: [''],
+    provider: [''],
+    id: [''],
+    token: ['']    // ✅ Changed from requiredTrue
+      });
+      }
+      else{
+        // ✅ Create form for social signup
       this.signupForm = this.formBuilder.group({
         firstName: ['', [Validators.required]],
         phoneNo: ['', [Validators.required]],
@@ -158,6 +172,8 @@ if (sSocialUser) {
         id: ['', [Validators.required]],        // ✅ Changed from requiredTrue
         token: ['', [Validators.required]]      // ✅ Changed from requiredTrue
       });
+      }
+      
       // ✅ FIXED: Use this.signupForm instead of this.formBuilder
       this.signupForm.patchValue({
         firstName: socialUser.name,

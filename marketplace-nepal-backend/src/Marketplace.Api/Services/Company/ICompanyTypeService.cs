@@ -7,6 +7,6 @@ namespace Marketplace.Api.Services.Company
     public interface ICompanyTypeService
     {
         Task<List<StaticValue>> GetCompanyTypesAsync();
-        Task SendRegistrationEmailAsync(string email, string componeyid, string componeyName);
+        Task SendRegistrationEmailAsync(string email, string componeyid, string componeyName, string role);
     }
 }   

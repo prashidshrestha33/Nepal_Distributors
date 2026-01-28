@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CompanyService } from '../../../../services/management/company.service';
-import type { company, Category,ApproveCompanyRequest } from '../../../../services/management/company.service';
+import type { company, Category,ApproveCompanyRequest,StaticValue } from '../../../../services/management/company.service';
 import { environment } from '../../../../../../environments/environment';
 import { LightboxModule, Lightbox } from 'ngx-lightbox';
 import { SafeHtmlPipe } from '../../../../pipe/safe-html.pipe';
@@ -17,20 +17,25 @@ import { NgSelectModule } from '@ng-select/ng-select';
 })
 export class CompanyComponent implements OnInit {
   company: company[] = [];
+  StaticValue: StaticValue[] = [];
+  selectedStaticValueId: string = '';
   filteredCompany: company[] = [];
   searchTerm: string = '';
   loading = false;
   error: string | null = null;
-
+  errorModal2: string | null = null;
   categories: Category[] = [];
   nestedCategories: Category[] = []; // flattened for ng-select
   selectedCategoryIds: number[] = [];
-
   showApproveModal = false;
   isreject = true;
   rejectReason: string = '';
+  RegisterEmailID: string = '';
   showApproveModal1 = false;
+  showApproveModal2 = false;
   selectedCompanyId: number | null = null;
+  successModal2: boolean = false;
+successMessage2: string = '';
 
   companylst: company = {
     id: undefined,
@@ -54,6 +59,7 @@ export class CompanyComponent implements OnInit {
   ngOnInit() {
     this.loadCompanys();
     this.loadCategories();
+    this.getStaticValuesrole();
   }
 
   // ===================== LOAD CATEGORIES =====================
@@ -141,8 +147,22 @@ flattenCategories(categories: Category[], depth = 0): Category[] {
       }
     });
   }
-openApprovestep1Modal(fg: string){
+    openRegisterUser(id: number) {
+        this.showApproveModal2 = true;
+        this.selectedCompanyId=id;
+  }
+  getStaticValuesrole(){
   debugger;
+      this.CompanyService.getStaticValuesrole().subscribe({
+       next: (res: any) => { // API wrapper
+      debugger;
+      this.StaticValue = res || [];
+      },
+      error: (err) => {
+      }
+    });
+}
+openApprovestep1Modal(fg: string){
         this.isreject=fg=="a"?false:true;
         this.showApproveModal = false;
         this.showApproveModal1 = true;
@@ -150,6 +170,10 @@ openApprovestep1Modal(fg: string){
   closeApproveModal() {
     this.showApproveModal = false;
         this.showApproveModal1 = false;
+    this.selectedCompanyId = null;
+  }
+  closeApproveModal2() {
+    this.showApproveModal2 = false;
     this.selectedCompanyId = null;
   }
 
@@ -165,7 +189,6 @@ openApprovestep1Modal(fg: string){
     rejectComment: this.isreject ? this.rejectReason : "",
     approveFg: this.isreject?'N':'Y'
   };
-  debugger;
     this.CompanyService.ApproveCompany(approveCompanyRequest).subscribe({
       next: () => {
         this.closeApproveModal();
@@ -178,7 +201,31 @@ openApprovestep1Modal(fg: string){
       }
     });
   }
+RegisterNewUserLink() {
+  const role = this.selectedStaticValueId;
+  const email = this.RegisterEmailID;
+  const companyId = this.selectedCompanyId;
 
+  if (!role || !email || !companyId) {
+    this.errorModal2 = "Please enter all required fields"; 
+    return;
+  }
+
+  this.CompanyService.sendRegisterLink(email, role, companyId.toString()).subscribe({
+    next: (response) => {
+      console.log('Registration link sent successfully:', response);
+      this.closeApproveModal2();
+      this.successMessage2 = 'Registration link sent successfully!';
+      this.successModal2 = true;
+
+      this.loadCompanys(); 
+    },
+    error: (err) => {
+      console.error('Failed to send registration link:', err);
+      this.errorModal2 = 'Failed to send registration link. Please try again.';
+    }
+  });
+}
   // ===================== LOAD & SEARCH =====================
   loadCompanys() {
     this.loading = true;

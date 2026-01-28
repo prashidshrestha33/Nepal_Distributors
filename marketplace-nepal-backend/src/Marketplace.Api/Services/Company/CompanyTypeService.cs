@@ -24,13 +24,14 @@ namespace Marketplace.Api.Services.Company
         {
             return _companyTypeRepository.GetCompanyTypesAsync();
         }
-        public async Task SendRegistrationEmailAsync( string email, string componeyid,string componeyName)
+        public async Task SendRegistrationEmailAsync( string email, string componeyid,string componeyName,string role)
         {
             var payload = new RegistrationEmailPayload
             {
                 CompanyEmail = email,
                 CompanyId = componeyid,
                 CompanyName = componeyName,
+                role = role,
                 Expiry = DateTime.UtcNow.AddHours(24)
             };
 
@@ -56,6 +57,7 @@ namespace Marketplace.Api.Services.Company
                 "Complete Your Registration",
                 html
             );
+
         }
     }
 }

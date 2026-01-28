@@ -12,7 +12,6 @@ namespace Marketplace.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize] 
-    [AllowAnonymous]
     public class CompaniesController : ControllerBase
     {
         private readonly ICompanyRepository _companies;
@@ -27,7 +26,7 @@ namespace Marketplace.Api.Controllers
             _companyTypeService = companyTypeService;
         }
         [HttpGet("send-registration-link")]
-        public async Task<IActionResult> SendRegistrationLink( string email,string company_id = null, string company_Name = null)
+        public async Task<IActionResult> SendRegistrationLink( string email, string role, string company_id = null, string company_Name = null)
         {
             string? customClaim = company_id!=null ? company_id: HttpContext.User.GetClaimValue("company_id");
             string? ComponeyNamer = company_Name != null ? company_Name: HttpContext.User.GetClaimValue("company_Name");
@@ -35,9 +34,9 @@ namespace Marketplace.Api.Controllers
             await _companyTypeService.SendRegistrationEmailAsync(
                 email,
                 customClaim,
-                ComponeyNamer
+                ComponeyNamer,
+                role
             );
-
             return Ok(new
             {
                 message = "Registration link sent to email"
@@ -45,10 +44,7 @@ namespace Marketplace.Api.Controllers
         }
 
 
-        /// <summary>
-        /// Create a company.
-        /// Only users in roles 'portal_manager' or 'super_admin' may create companies.
-        /// </summary>
+
         [HttpPost]
         [Authorize(Roles = "portal_manager,super_admin")]
         public async Task<IActionResult> Create([FromBody] CompanyCreateRequest req)
