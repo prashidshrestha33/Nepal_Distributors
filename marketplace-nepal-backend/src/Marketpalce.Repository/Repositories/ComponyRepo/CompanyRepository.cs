@@ -166,7 +166,6 @@ OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
                 const string sqlUsers = @"
         UPDATE dbo.users
         SET 
-status
             approve_dt = SYSDATETIME(),
             approve_fg = @ApproveFg,
             updated_at = SYSDATETIME()
