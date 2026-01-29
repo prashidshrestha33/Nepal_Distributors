@@ -86,7 +86,6 @@ namespace Marketplace.Api.Controllers
             return Ok(items);
         }
         [HttpPost("approve")]
-        [Authorize(Roles = "portal_manager,super_admin")]
         public async Task<IActionResult> ApproveCompany([FromBody] ApproveCompanyRequest req)
         {
             if (req == null || req.CompanyId <= 0)
