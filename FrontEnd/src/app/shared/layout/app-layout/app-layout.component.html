@@ -4,7 +4,23 @@
     <app-sidebar></app-sidebar>
     <app-backdrop></app-backdrop>
   </div>
-  
+  <app-otp-popup
+  *ngIf="showOtp$ | async"
+  (close)="ui.closeOtp()">
+</app-otp-popup>
+
+<!-- Image Viewer -->
+<app-image-viewer
+  *ngIf="(showImage$ | async) as img"
+  [imageUrl]="img.url"
+  (close)="ui.closeImage()">
+</app-image-viewer>
+  <app-status-popup
+  *ngIf="showStatus$ | async as status"
+  [state]="status"
+  (close)="ui.closeStatus()">
+</app-status-popup>
+
   <!-- Main Content Area -->
   <div
       class="flex-1 flex flex-col transition-all duration-300 ease-in-out"

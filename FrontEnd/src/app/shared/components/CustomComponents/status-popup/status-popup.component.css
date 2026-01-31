@@ -1,0 +1,65 @@
+/* Center popup */
+.status-popup-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Popup box */
+.status-popup {
+  background: #fff;
+  padding: 20px 30px;
+  border-radius: 10px;
+  text-align: center;
+  min-width: 300px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  animation: popupFadeIn 0.3s ease-out;
+}
+
+/* Success icon */
+.status-popup .icon-success {
+  color: #28a745;
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+/* Failure icon */
+.status-popup .icon-fail {
+  color: #dc3545;
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+/* Message */
+.status-popup p {
+  font-size: 16px;
+  margin: 10px 0;
+}
+
+/* Close button */
+.status-popup button {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.status-popup button:hover {
+  background: #0056b3;
+}
+
+/* Fade-in animation */
+@keyframes popupFadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

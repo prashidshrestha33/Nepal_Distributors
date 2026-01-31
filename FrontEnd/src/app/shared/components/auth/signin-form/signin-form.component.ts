@@ -8,6 +8,8 @@ import { AuthService } from '../../../services/auth.service';
 import { InactivityService } from '../../../services/inactivity.service';
 import { SocialAuthSimpleService } from '../../../services/social-auth-simple.service';
 import { SocialUser } from '../../../models/auth.models';  // Import SocialUser, not SocialLoginRequest
+import { UiService } from '../../../../../app/ui.service';
+import { OtpPopupComponent } from '../../../components/CustomComponents/otp-popup/otp-popup.component';
 
 @Component({
   selector: 'app-signin-form',
@@ -17,7 +19,7 @@ import { SocialUser } from '../../../models/auth.models';  // Import SocialUser,
     LabelComponent,
     RouterModule,
     ReactiveFormsModule,
-  ],
+    OtpPopupComponent  ],
   templateUrl:  './signin-form.component.html',
   styles: ``
 })
@@ -28,6 +30,7 @@ export class SigninFormComponent implements OnInit {
   isLoading = false;
   isSocialLoading = false;
   returnUrl: string = '';
+   showOtp = true;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -35,7 +38,8 @@ export class SigninFormComponent implements OnInit {
     private socialAuthService: SocialAuthSimpleService,
     private inactivityService: InactivityService,
     private router: Router,
-    private route:  ActivatedRoute
+    private route:  ActivatedRoute, 
+    public ui: UiService
   ) {
   }
 
@@ -45,7 +49,8 @@ export class SigninFormComponent implements OnInit {
 
     this.loginForm = this. formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: [''],
+      oTP: [''],
       rememberMe: [false]
     });
   }
@@ -53,18 +58,34 @@ export class SigninFormComponent implements OnInit {
   togglePasswordVisibility() {
     this.showPassword = !this.showPassword;
   }
+    SendOTP(){
+       if (this.loginForm.invalid) {
+      this.errorMessage = 'Email is Required';
+      return;
+    } 
+    const { email} = this.loginForm. value;
+     this.authService.SendOPT(email).subscribe({
+      next: (response: any) => {
+      
+      this.ui.openOtp(); 
+      },
+      error: (error: any) => {   
+         this.errorMessage = error;
+      }
+    });
+    } 
 
   onSignIn() {
     if (this.loginForm.invalid) {
       this.errorMessage = 'Please fill in all required fields correctly';
       return;
     }
-
-    const { email, password, rememberMe } = this.loginForm. value;
+debugger;
+    const { email, password,oTP, rememberMe } = this.loginForm. value;
     this.isLoading = true;
     this. errorMessage = '';
 
-    this. authService.login(email, password, rememberMe).subscribe({
+    this. authService.login(email, password,oTP, rememberMe).subscribe({
       next: (response:  any) => {
         this.isLoading = false;
         const token = response?.result?.token || response?.token;
@@ -195,4 +216,17 @@ export class SigninFormComponent implements OnInit {
   get rememberMeControl() {
     return this.loginForm.get('rememberMe');
   }
+  verifyOtp(otp: string) {
+      this.loginForm.patchValue({
+    oTP: otp
+  });
+  this.onSignIn();
+}
+
+sendOtpAgain() {
+  
+      this.ui.closeOtp(); 
+     this.SendOTP();
+}
+
 }

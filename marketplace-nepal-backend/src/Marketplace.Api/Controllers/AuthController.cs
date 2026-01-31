@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Linq;
+using Org.BouncyCastle.Ocsp;
 using System;
 using System.Data;
 using System.Net.Mail;
@@ -22,6 +23,7 @@ using System.Security.Cryptography;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using static Azure.Core.HttpHeader;
+using static System.Net.WebRequestMethods;
 
 namespace Marketplace.Api.Controllers
 {
@@ -39,6 +41,7 @@ namespace Marketplace.Api.Controllers
         private readonly IFacebookTokenVerifier _facebookVerifier;
         private readonly IDbConnection _db; // scoped connection to allow transactions
         private readonly IEmailService _emailService;
+        private readonly IStaticValueRepository _staticValueRepo;
         private readonly IConfiguration _config;
         private ModuleToCommon moduleToCommon = new ModuleToCommon();
         private static readonly string[] AllowedRoles = new[]
@@ -55,8 +58,9 @@ namespace Marketplace.Api.Controllers
             IGoogleTokenVerifier googleVerifier,
             IFacebookTokenVerifier facebookVerifier,
             IDbConnection db,
-            IEmailService emailService, 
-            IConfiguration config)
+            IEmailService emailService,
+            IStaticValueRepository staticValueRepo,
+        IConfiguration config)
         {
             _env = env;
             _users = users ?? throw new ArgumentNullException(nameof(users));
@@ -67,15 +71,114 @@ namespace Marketplace.Api.Controllers
             _facebookVerifier = facebookVerifier ?? throw new ArgumentNullException(nameof(facebookVerifier));
             _db = db ?? throw new ArgumentNullException(nameof(db)); _config = config;
             _emailService = emailService;
+            _staticValueRepo = staticValueRepo;
 
+        }
+        private string Generate6DigitAlphaNumeric()
+        {
+            const string letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const string digits = "0123456789";
+            var random = new Random();
+
+            // Step 1: Pick 2 random digits
+            var otpDigits = new char[2];
+            for (int i = 0; i < 2; i++)
+            {
+                otpDigits[i] = digits[random.Next(digits.Length)];
+            }
+
+            // Step 2: Pick remaining 4 characters from letters + digits
+            var allChars = letters + digits;
+            var otpChars = new char[4];
+            for (int i = 0; i < 4; i++)
+            {
+                otpChars[i] = allChars[random.Next(allChars.Length)];
+            }
+
+            // Step 3: Combine both arrays
+            var otp = otpDigits.Concat(otpChars).ToArray();
+
+            // Step 4: Shuffle the array to randomize positions
+            return new string(otp.OrderBy(x => random.Next()).ToArray());
+        }
+
+        [HttpGet("registerOTP")]
+        public async Task<IActionResult> registerOTP(string email)
+        {
+            string otp = Generate6DigitAlphaNumeric().ToString();
+            await _users.UpdateOtpTokem(otp, email);
+            string? htmlTemplate = await MailHelper.GetOtpTemplateAsync(_staticValueRepo, otp);
+            await _emailService.SendAsync(
+                email,
+                "Login Password",
+                htmlTemplate
+            );
+
+            return Ok(new
+            {
+                message = "Registration link sent to email"
+            });
+        }
+        [HttpGet("registerOTPValidate")]
+        public async Task<IActionResult> RegisterOTPValidate(string email,string oTP)
+        {
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(oTP))
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Email and OTP are required"
+                });
+            }
+
+            bool otpValid = await _users.CheckOtpAUth(email, oTP);
+
+            if (!otpValid)
+            {
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Invalid or expired OTP"
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = "OTP validated successfully"
+            });
+        }
+
+        [HttpGet("requestLoginOTP")]
+        public async Task<IActionResult> RequestLoginOTP(string email)
+        {
+            var existing = await _users.GetByEmailAsync(email);
+            if (existing == null)
+                return Conflict(new { error = "Account Not Exist" });
+            string otp = Generate6DigitAlphaNumeric().ToString();
+            await _users.UpdateAuthTokenAsync(existing.Id, otp, email);
+            var encryptedData = EncryptionHelper.Encrypt(otp);
+            var urlEncoded = Uri.EscapeDataString(encryptedData);
+            var registrationLink = _config["AppSettings:FrontendBaseUrl"] + $"/ForgetPassword?token={urlEncoded}";
+            string? htmlTemplate = await MailHelper.GetOtpTemplateAsync(_staticValueRepo, otp);
+            await _emailService.SendAsync(
+                email,
+                "Login Password",
+                htmlTemplate
+            );
+
+            return Ok(new
+            {
+                message = "Registration link sent to email"
+            });
         }
 
         [HttpPost("registerNewUser")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> Register([FromForm] ComponieCommonModel common)
         {
-            string componeyidglb=null;
-            string decrole=null;
+            string componeyidglb = null;
+            string decrole = null;
             Reasult response = new Reasult();
             NewRegisterRequest req = new NewRegisterRequest();
             req.user = moduleToCommon.Map<RegisterRequest>(common.Register);
@@ -94,8 +197,8 @@ namespace Marketplace.Api.Controllers
             if (req == null) return BadRequest(new { error = "Request body required." });
 
 
-            if (string.IsNullOrWhiteSpace(req.user.Email) || (string.IsNullOrWhiteSpace(req.user.Password) && string.IsNullOrWhiteSpace(req.user.Provider)))
-                return BadRequest(new { error = "Email and password required." });
+            if (string.IsNullOrWhiteSpace(req.user.Email))
+                return BadRequest(new { error = "Email required." });
             if (!string.IsNullOrWhiteSpace(req.user.Provider) && string.IsNullOrWhiteSpace(req.user.ID) && string.IsNullOrWhiteSpace(req.user.Token))
             {
                 return BadRequest(new { error = "Invalid ID Or token" });
@@ -242,20 +345,16 @@ namespace Marketplace.Api.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest req)
         {
             if (req == null)
-            {
                 return BadRequest(ApiResponse<LoginResponse>.BadRequest(
                     message: "Request body is required"
                 ));
-            }
 
             var email = req.Email?.Trim().ToLowerInvariant();
             if (string.IsNullOrEmpty(email))
-            {
                 return Unauthorized(ApiResponse<LoginResponse>.Create(
                     401,
                     message: "Email is required"
                 ));
-            }
 
             var user = await _users.GetByEmailAsync(email);
 
@@ -268,7 +367,7 @@ namespace Marketplace.Api.Controllers
                     {
                         Success = false,
                         Status = LoginStatus.SocialUserNotRegistered,
-                        Message = "Componey not registered. Please complete signup.",
+                        Message = "Company not registered. Please complete signup.",
                         SocialUser = new SocialUserDto
                         {
                             Email = email,
@@ -293,26 +392,35 @@ namespace Marketplace.Api.Controllers
                 ));
             }
 
-            // 🔹 Verify credentials
-            PasswordVerificationResult verify;
+            // 🔹 Credential / OTP verification
+            PasswordVerificationResult verify = PasswordVerificationResult.Failed; // Initialize to avoid null
+            bool otpValid = false;
 
-            if (req.Provider == "GOOGLE")
+            if (!string.IsNullOrEmpty(req.Provider))
             {
-                verify = _hasher.VerifyHashedPassword(
-                    user,
-                    user.GoogleId ?? string.Empty,
-                    req.id ?? string.Empty
-                );
+                // Social login
+                if (req.Provider == "GOOGLE")
+                {
+                    verify = _hasher.VerifyHashedPassword(
+                        user,
+                        user.GoogleId ?? string.Empty,
+                        req.id ?? string.Empty
+                    );
+                }
+                else if (req.Provider == "FACEBOOK")
+                {
+                    verify = _hasher.VerifyHashedPassword(
+                        user,
+                        user.FacebookId ?? string.Empty,
+                        req.id ?? string.Empty
+                    );
+                }
             }
-            else if (req.Provider == "FACEBOOK")
+            else if (!string.IsNullOrEmpty(req.OTP))
             {
-                verify = _hasher.VerifyHashedPassword(
-                    user,
-                    user.FacebookId ?? string.Empty,
-                    req.id ?? string.Empty
-                );
+                otpValid = await _users.CheckAuthTokenAsync(user.Id, req.OTP);
             }
-            else
+            else if (!string.IsNullOrEmpty(user.PasswordHash))
             {
                 verify = _hasher.VerifyHashedPassword(
                     user,
@@ -320,8 +428,7 @@ namespace Marketplace.Api.Controllers
                     req.Password ?? string.Empty
                 );
             }
-
-            if (verify == PasswordVerificationResult.Failed)
+            else
             {
                 return Unauthorized(ApiResponse<LoginResponse>.Create(
                     402,
@@ -333,8 +440,21 @@ namespace Marketplace.Api.Controllers
                     }
                 ));
             }
+            bool loginFailed = (string.IsNullOrEmpty(req.OTP) && verify == PasswordVerificationResult.Failed)
+                               || (!string.IsNullOrEmpty(req.OTP) && otpValid == false);
 
-            // 🔹 Approval pending
+            if (loginFailed)
+            {
+                return Unauthorized(ApiResponse<LoginResponse>.Create(
+                    402,
+                    new LoginResponse
+                    {
+                        Success = false,
+                        Status = LoginStatus.InvalidCredentials,
+                        Message = "Invalid credentials"
+                    }
+                ));
+            }
             if (user.ApproveFG == "n")
             {
                 return StatusCode(403, ApiResponse<LoginResponse>.Create(
@@ -343,13 +463,13 @@ namespace Marketplace.Api.Controllers
                     {
                         Success = false,
                         Status = LoginStatus.ApprovalPending,
-                        Message = "Your registration is under review. Please Contact Admin."
+                        Message = "Your registration is under review. Please contact Admin."
                     }
                 ));
             }
 
             // 🔹 Rehash password if needed
-            if (verify == PasswordVerificationResult.SuccessRehashNeeded && req.Password != null)
+            if (verify == PasswordVerificationResult.SuccessRehashNeeded && !string.IsNullOrEmpty(req.Password))
             {
                 var newHash = _hasher.HashPassword(user, req.Password);
                 await _users.UpdatePasswordHashAsync(user.Id, newHash);
@@ -357,7 +477,7 @@ namespace Marketplace.Api.Controllers
 
             await _users.UpdateLastLoginAsync(user.Id, DateTimeOffset.UtcNow);
 
-            // 🔹 SUCCESS (ONLY place token exists)
+            // 🔹 SUCCESS — Generate token
             var token = _jwt.GenerateToken(user);
 
             return Ok(ApiResponse<LoginResponse>.Ok(
@@ -370,6 +490,7 @@ namespace Marketplace.Api.Controllers
                 "Login successful"
             ));
         }
+
         [HttpGet("ForgetPasswordSendMail")]
         public async Task<IActionResult> ForgetPasswordSendMail(string email)
         {
@@ -377,7 +498,7 @@ namespace Marketplace.Api.Controllers
             var existing = await _users.GetByEmailAsync(email);
 
             if (existing == null) return Conflict(new { error = "Invalid Email" });
-            int ran = Generate6DigitNumber();
+            string ran = Generate6DigitAlphaNumeric();
             _users.UpdateAuthTokenAsync(existing.Id, ran, email);
             var encryptedData = EncryptionHelper.Encrypt(ran);
 

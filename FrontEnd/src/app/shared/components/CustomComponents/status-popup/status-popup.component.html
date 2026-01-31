@@ -1,0 +1,9 @@
+<div *ngIf="state" class="status-popup-backdrop">
+  <div class="status-popup">
+    <div [ngClass]="success ? 'icon-success' : 'icon-fail'">
+      <i class="fa" [ngClass]="success ? 'fa-check-circle' : 'fa-times-circle'"></i>
+    </div>
+    <p>{{ message }}</p>
+    <button (click)="closePopup()">Close</button>
+  </div>
+</div>

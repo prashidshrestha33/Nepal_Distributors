@@ -1,0 +1,79 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.popup {
+  background: #fff;
+  padding: 24px;
+  border-radius: 10px;
+  width: 320px;
+  text-align: center;
+}
+
+.popup h2 {
+  margin-bottom: 6px;
+}
+
+.popup p {
+  font-size: 14px;
+  color: #666;
+}
+
+.otp-box {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 0;
+}
+
+.otp-box div {
+  width: 42px;
+  height: 50px;
+  font-size: 20px;
+  text-align: center;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  line-height: 50px;
+  user-select: none;
+}
+
+.timer {
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.resend-btn {
+  background: none;
+  border: none;
+  color: #3f51b5;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.verify-btn {
+  width: 100%;
+  padding: 10px;
+  background: #3f51b5;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.cancel-btn {
+  width: 100%;
+  padding: 10px;
+  background: #e0e0e0;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.otp-box div.active {
+  border: 2px solid #3f51b5; /* blue border for active box */
+}

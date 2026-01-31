@@ -239,11 +239,84 @@ WHERE
             var sql = "SELECT TOP (1000) * FROM [NepalDistributers].[dbo].[users]";
             return await _db.QueryAsync<MarketplaceUser>(sql);
         }
-        public async Task UpdateAuthTokenAsync(long userid, long ranno, string email)
+        public async Task<bool> CheckAuthTokenAsync(long userId, string otp)
         {
-            const string sql = "insert into notifications(user_id,type,is_read,created_at,otp_token,payload) " +
-                "values (@userid,'auth',0,SYSUTCDATETIME(),@ranno,@email)";
+            const string sql = @"
+        SELECT COUNT(1)
+        FROM [notifications]
+        WHERE type = 'auth'
+          AND ISNULL(is_read, 'n') = 'n'
+          AND created_at >= DATEADD(MINUTE, -10, SYSUTCDATETIME())
+          AND otp_token = @Otp
+          AND user_id = @UserId
+    ";
+
+            var count = await _db.ExecuteScalarAsync<int>(sql, new { UserId = userId, Otp = otp });
+
+            if (count > 0)
+            {
+                const string updateSql = @"
+            UPDATE notifications
+            SET is_read = 'y'
+            WHERE user_id = @UserId
+            AND  otp_token = @Otp;";
+
+                await _db.ExecuteAsync(updateSql, new { UserId = userId, Otp = otp });
+            }
+            return count > 0; // true if a matching unread notification exists
+        }
+        public async Task<bool> CheckOtpAUth(string email, string otp)
+        {
+            const string sql = @"
+          SELECT COUNT(1)
+        FROM [notifications]
+        WHERE type = 'auth'
+          AND ISNULL(is_read, 'n') = 'n'
+          AND created_at >= DATEADD(MINUTE, -20, SYSUTCDATETIME())
+          AND otp_token = @Otp
+          AND payload = @email
+    ";
+
+            var count = await _db.ExecuteScalarAsync<int>(sql, new { email = email, Otp = otp });
+
+            if (count > 0)
+            {
+                const string updateSql = @"
+            UPDATE notifications
+            SET is_read = 'y'
+            WHERE  payload = @email
+            AND  otp_token = @Otp;";
+
+                await _db.ExecuteAsync(updateSql, new { email = email, Otp = otp });
+            }
+            return count > 0; // true if a matching unread notification exists
+        }
+        
+        public async Task UpdateAuthTokenAsync(long userid, string ranno, string email)
+        {
+            const string updateSql = @"
+            UPDATE notifications
+            SET is_read = 'e'
+            WHERE user_id = @userid;
+        ";
+
+            await _db.ExecuteAsync(updateSql, new { userid });
+            const string sql = "insert into notifications(user_id,type,created_at,otp_token,payload,is_read) " +
+                "values (@userid,'auth',SYSUTCDATETIME(),@ranno,@email,'n')";
             await _db.ExecuteAsync(sql, new { @userid = userid, @ranno = ranno, @email = email });
+        }
+        public async Task UpdateOtpTokem(string ranno, string email)
+        {
+            const string updateSql = @"
+            UPDATE notifications
+            SET is_read = 'e'
+            WHERE payload = @email ;
+        ";
+
+            await _db.ExecuteAsync(updateSql, new { email });
+            const string sql = "insert into notifications(type,created_at,otp_token,payload,is_read) " +
+                "values ('auth',SYSUTCDATETIME(),@ranno,@email,'n')";
+            await _db.ExecuteAsync(sql, new { @ranno = ranno, @email = email });
         }
         public async Task UpdatePasswordAsync(long userid,string Passwordhass)
         {
@@ -275,7 +348,7 @@ WHERE
             {
                 const string updateSql = @"
             UPDATE notifications
-            SET is_read = 1
+            SET is_read = 'y'
             WHERE otp_token = @token;
         ";
 

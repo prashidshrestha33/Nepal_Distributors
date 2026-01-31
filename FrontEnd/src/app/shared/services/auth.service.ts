@@ -167,9 +167,11 @@ export class AuthService {
    * @param password User password
    * @param rememberMe If true, remember user for future sessions
    */
-  login(email: string, password: string, rememberMe: boolean = false): Observable<any> {
+  login(email: string, password: string,oTP: string, rememberMe: boolean = false): Observable<any> {
+    
+debugger;
     const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
-    return this.http.post<any>(`${this.api}/api/auth/login`, { email, password }, { headers })
+    return this.http.post<any>(`${this.api}/api/auth/login`, { email,oTP, password }, { headers })
       .pipe(
         tap(res => {
           // Backend returns token inside result object: { result: { token: '...' } }
@@ -270,6 +272,21 @@ export class AuthService {
   checkEmailExists(email: string): Observable<any> {
     return this.http.get<any>(`${this.api}/api/auth/check-email`, {
       params: { email }
+    });
+  }
+    SendOPT(email: string): Observable<any> {
+    return this.http.get<any>(`${this.api}/api/auth/requestLoginOTP`, {
+      params: { email }
+    });
+  }
+    SendRegisterOPT(email: string): Observable<any> {
+    return this.http.get<any>(`${this.api}/api/auth/registerOTP`, {
+      params: { email }
+    });
+  }
+    ValidateRegisterOPT(email: string,oTP: string): Observable<any> {
+    return this.http.get<any>(`${this.api}/api/auth/registerOTPValidate`, {
+      params: { email,oTP }
     });
   }
   socialLogin(socialUser: SocialUser, rememberMe: boolean = false): Observable<any> {

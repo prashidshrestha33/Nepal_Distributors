@@ -74,8 +74,8 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
     this.form = this.fb.group({
       name: ['', Validators.required],
       companyPerson: ['', Validators.required],
-      mobilePhone: ['', [Validators.required, phoneNumberValidator]],
-      landLinePhone: ['', [Validators.required, phoneNumberValidator]],
+      mobilePhone: [''],
+      landLinePhone: [''],
       registrationDocument: [null, Validators.required], // To hold the file
       companyType: ['', Validators.required],
       address: ['', Validators.required],

@@ -28,11 +28,46 @@ namespace Marketpalce.Repository.Repositories.StaticValueReop
                 VALUES (@catalogid,@StaticValueKey, @StaticData,@DisplayOrder);";
             var rows = await _db.ExecuteAsync(sql, model);
             return rows > 0;
+        }// Read single
+        public async Task<StaticValue?> GetSingleAsync(StaticValueFilter model)
+        {
+            string sql = @"
+        SELECT TOP 1 
+            s.static_id AS StaticId,
+            s.Catalog_id AS CatalogId,
+            s.static_value AS StaticValueKey,
+            s.static_data AS StaticData,
+            s.display_order AS DisplayOrder,
+            c.*
+        FROM dbo.static_value s
+        LEFT JOIN static_value_cataglog c ON s.Catalog_id = c.Catalog_id
+        WHERE 1=1
+    ";
+
+            if (model.key != null)
+            {
+                sql += " AND s.static_value = @key "; // make sure param name matches
+            }
+            else if (model.catalogId != null && model.staticId != null)
+            {
+                sql += " AND c.Catalog_id = @catalogId AND s.static_id = @staticId ";
+            }
+            else if (model.catalogkey != null)
+            {
+                sql += " AND c.Catalog_Name = @catalogkey ";
+            }
+
+            sql += ";";
+
+            // Return single object (or null if not found)
+            return await _db.QueryFirstOrDefaultAsync<StaticValue>(sql, model);
         }
+
 
         // Read single
         public async Task<IEnumerable<StaticValue>> GetAsync(StaticValueFilter model)
         {
+            
                 string sql = "SELECT s.static_id as StaticId,s.Catalog_id as CatalogId, s.static_value AS StaticValueKey, s.static_data AS StaticData,s.display_order as " +
                    "DisplayOrder, c.* FROM dbo.static_value s " +
                    "left join  static_value_cataglog c on s.Catalog_id = c.Catalog_id where 1=1 ";
@@ -42,7 +77,7 @@ namespace Marketpalce.Repository.Repositories.StaticValueReop
                 }
                 else if (model.catalogId != null && model.staticId != null)
                 {
-                    sql += "AND Catalog_id = @catalogId AND static_id =@staticId ";
+                    sql += "AND c.Catalog_id = @catalogId AND s.static_id =@staticId ";
 
                 }
                 else if (model.catalogkey != null && model.catalogkey != null)

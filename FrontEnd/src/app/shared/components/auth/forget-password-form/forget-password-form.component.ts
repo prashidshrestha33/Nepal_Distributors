@@ -9,7 +9,7 @@ import { SignupFlowService } from '../../../services/signup-flow.service';
 import { FormDataService } from '../../../services/form-data.service';
 import { RegistrationFlowService } from '../../../services/registration-flow.service';
 import { SocialUser } from '../../../models/auth.models';  
-import { EncryptionHelper } from '../../../services/encryption.service';  
+//import { EncryptionHelper } from '../../../services/encryption.service';  
 
 // Custom validator for strong password
 function strongPasswordValidator(control: AbstractControl): ValidationErrors | null {
@@ -102,7 +102,7 @@ export class ForgetPasswordFormComponent implements OnInit {
     public flow: SignupFlowService,
     private formDataService: FormDataService,
     private registrationFlowService: RegistrationFlowService,
-    private encryptiondec: EncryptionHelper ,
+    //private encryptiondec: EncryptionHelper ,
     private route:  ActivatedRoute
   ) {}
 

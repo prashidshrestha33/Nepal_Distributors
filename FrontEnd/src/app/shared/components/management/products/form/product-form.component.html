@@ -135,7 +135,6 @@
             >
               {{ getBrandName(form.get('brandId')?.value) || 'Select Brand' }}
             </button>
-            <!-- ❌ Clear Brand -->
             <button
               *ngIf="form.get('brandId')?.value"
               type="button"

@@ -11,6 +11,7 @@ namespace Marketpalce.Repository.Repositories.StaticValueReop
     {
         Task<bool> CreateAsync(StaticValue model);
         Task<IEnumerable<StaticValue>> GetAsync(StaticValueFilter model);
+        Task<StaticValue?> GetSingleAsync(StaticValueFilter model);
         Task<bool> UpdateAsync(StaticValue model);
         Task<bool> DeleteAsync(string key);
         Task<IEnumerable<StaticValue>> ListAllAsync(string cid);

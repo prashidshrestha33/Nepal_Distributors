@@ -1,8 +1,15 @@
-  <div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
+
+<app-otp-popup
+  *ngIf="ui.showOtp$ | async"
+  (submitOtp)="verifyOtp($event)"
+  (resendOtp)="sendOtpAgain()"
+  (close)="ui.closeOtp()">
+</app-otp-popup>
+<div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
     <div>
       <div class="mb-5 sm:mb-8">
         <h1 class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
-          Login
+          Login sa
         </h1>
         <p class="text-sm text-gray-500 dark:text-gray-400">
           Enter your email and password to sign in!
@@ -66,7 +73,7 @@
       }
 
       <!-- Form -->
-      <form [formGroup]="loginForm" (ngSubmit)="onSignIn()" class="space-y-6">
+      <form [formGroup]="loginForm" (ngSubmit)="SendOTP()" class="space-y-6">
         <div>
           <app-label>Email <span class="text-error-500">*</span></app-label>
           <input
@@ -89,7 +96,7 @@
           }
         </div>
 
-        <div>
+        <!-- <div>
           <app-label>Password <span class="text-error-500">*</span></app-label>
           <div class="relative">
             <input
@@ -127,7 +134,7 @@
           >
             Forget Password?
           </a>
-        </div>
+        </div> -->
 
 
         <button

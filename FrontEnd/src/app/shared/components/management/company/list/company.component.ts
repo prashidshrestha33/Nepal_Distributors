@@ -7,7 +7,7 @@ import { environment } from '../../../../../../environments/environment';
 import { LightboxModule, Lightbox } from 'ngx-lightbox';
 import { SafeHtmlPipe } from '../../../../pipe/safe-html.pipe';
 import { NgSelectModule } from '@ng-select/ng-select';
-
+import { UiService } from '../../../../../../app/ui.service';
 @Component({
   selector: 'app-company',
   standalone: true,
@@ -54,7 +54,7 @@ successMessage2: string = '';
     createdAt: undefined
   };
 
-  constructor(private CompanyService: CompanyService, private lightbox: Lightbox) {}
+  constructor(private ui: UiService,private CompanyService: CompanyService, private lightbox: Lightbox) {}
 
   ngOnInit() {
     this.loadCompanys();
@@ -127,10 +127,7 @@ flattenCategories(categories: Category[], depth = 0): Category[] {
   openImage(fileName?: string): void {
     if (!fileName) return;
     const src = this.getFileUrl(fileName);
-    if (!src) return;
-
-    const album = [{ src, caption: 'Company Document', thumb: src }];
-    this.lightbox.open(album, 0);
+    this.ui.openImage(fileName);
   }
 
   // ===================== COMPANY MODAL =====================

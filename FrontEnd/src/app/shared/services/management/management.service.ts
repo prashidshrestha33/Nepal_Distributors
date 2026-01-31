@@ -436,7 +436,7 @@ export class StaticValueService {
 getStaticValueByFilter(filter: { catalogId?: string; staticId?: string; key?: string }): Observable<StaticValue> {
   // Filter props must be lowercase to match backend model binding
   return this.apiGateway.getWithResult<StaticValue>(
-    '/api/StaticValue/GetStaticValue',
+    '/api/StaticValue/GetStaticValueSingle',
     { params: filter, requiresAuth: true }
   );
 }

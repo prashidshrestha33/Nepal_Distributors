@@ -44,6 +44,7 @@ import { register } from 'swiper/element';
 
 export const routes: Routes = [
   // Public auth pages
+  
   {
     path: 'signin',
     component: SignInComponent,

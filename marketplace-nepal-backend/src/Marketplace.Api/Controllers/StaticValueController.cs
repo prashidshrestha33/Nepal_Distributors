@@ -90,6 +90,29 @@ namespace Marketplace.Api.Controllers
 
             return Conflict("A record with that key may already exist.");
         }
+        [HttpGet("GetStaticValueSingle")]
+        public async Task<ActionResult<StaticValue>> GetStaticValueSingle(
+          string staticId = null,
+          string catalogId = null,
+          string catalogkey = null,
+          string key = null)
+        {
+            var filter = new StaticValueFilter
+            {
+                staticId = staticId,
+                catalogId = catalogId,
+                catalogkey = catalogkey,
+                key = key
+            };
+
+            // Call the repository method that returns a single item
+            var item = await _repo.GetSingleAsync(filter); // <-- new single-item repo method
+
+            if (item == null)
+                return NotFound();
+
+            return Ok(item); // return single StaticValue object
+        }
 
         // READ SINGLE STATIC VALUE
         [HttpGet("GetStaticValue")]

@@ -1,0 +1,39 @@
+<div *ngIf="show$ | async" class="overlay">
+  <div class="popup">
+    <h2>OTP Verification</h2>
+    <p>Enter the 6-character OTP</p>
+
+    <!-- hidden input -->
+    <input
+      type="text"
+      maxlength="6"
+      [(ngModel)]="otp"
+      (input)="onInput($event)"
+      style="position:absolute; left:-9999px;"
+      #hiddenInput
+    />
+
+   <div class="otp-box" (click)="focusInput()">
+  <div *ngFor="let d of otpArray; let i = index" 
+       [class.active]="i === otp.length">
+    {{ d }}
+  </div>
+</div>
+
+    <div class="timer">
+      <span *ngIf="!canResend">
+        Resend OTP in <b>00:{{ timer < 10 ? '0' + timer : timer }}</b>
+      </span>
+
+      <button
+        *ngIf="canResend"
+        class="resend-btn"
+        (click)="resend()">
+        Resend OTP
+      </button>
+    </div>
+
+    <button class="verify-btn" (click)="submit()">Verify</button>
+    <button class="cancel-btn" (click)="closePopup()">Cancel</button>
+  </div>
+</div>

@@ -1,3 +1,9 @@
+<app-otp-popup
+  *ngIf="ui.showOtp$ | async"
+  (submitOtp)="verifyOtp($event)"
+  (resendOtp)="sendOtpAgain()"
+  (close)="ui.closeOtp()">
+</app-otp-popup>
 <div class="flex flex-col justify-start flex-1 w-full max-w-2xl mx-auto px-2 pt-1">
   <!-- Success Modal Overlay -->
   @if (showSuccessMessage) {
@@ -33,8 +39,11 @@
   <!-- Main Card -->
   <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4">
     <div class="mb-3 sm:mb-4">
-      <h1 class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
+      <h1 class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md"  *ngIf="returnUrl==null">
         Step 2 - Register User
+      </h1>
+      <h1 class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md"  *ngIf="returnUrl!=null">
+        Accept Invite
       </h1>
     </div>
 
@@ -46,7 +55,7 @@
     }
 
     <!-- Company summary -->
-    <div *ngIf="flow.getCompanyForm()" class="p-2.5 mb-4 text-xs text-gray-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+    <div *ngIf=" returnUrl==null && flow.getCompanyForm()" class="p-2.5 mb-4 text-xs text-gray-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
       <strong *ngif="!Componeyid" class="text-blue-900 dark:text-blue-200">Company:</strong> <span class="text-gray-700 dark:text-gray-300"> {{ flow.getCompanyForm().name }} — {{ flow.getCompanyForm().companyType }}</span>
       <strong  *ngif="Componeyid" class="text-blue-900 dark:text-blue-200">Company:</strong> <span class="text-gray-700 dark:text-gray-300">{{ flow.getCompanyForm().name }} </span>
     </div>
@@ -89,7 +98,7 @@
         <!-- Phone Number -->
         <div class="sm:col-span-1">
           <app-label>
-            Phone Number <span class="text-error-500">*</span>
+            Phone Number <span  *ngIf="returnUrl==null"  class="text-error-500">*</span>
           </app-label>
           <input
             type="text"
@@ -110,34 +119,61 @@
       </div>
 
       <!-- Email -->
-      <div>
-        <app-label>
-          Email <span class="text-error-500">*</span>
-        </app-label>
-        <input
-          type="email"
-          placeholder="info@gmail.com"
-          formControlName="email"
-          name="email"
-          class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 bg-transparent text-gray-800 border-gray-300"
-          required
-        />
-        @if (emailConflictError) {
-        <p class="mt-1 text-sm text-red-600 dark:text-red-400">
-          {{ emailConflictError }}
-        </p>
-        }
-        @if (email?.invalid && email?.touched && !emailConflictError) {
-        <p class="mt-1 text-sm text-red-600 dark:text-red-400">
-          @if (email?.errors?.['required']) {
-            Email is required
-          }
-          @if (email?.errors?.['invalidEmailFormat']) {
-            Invalid email format
-          }
-        </p>
-        }
-      </div>
+      <div *ngIf="returnUrl == null">
+  <app-label>
+    Email <span class="text-error-500">*</span>
+  </app-label>
+
+  <!-- Input + Validate Button -->
+  <div class="flex items-center gap-2">
+    <input
+      type="email"
+      placeholder="info@gmail.com"
+      formControlName="email"
+      name="email"
+      class="h-11 flex-1 rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs
+             placeholder:text-gray-400 focus:outline-none focus:ring-3
+             bg-transparent text-gray-800 border-gray-300"
+      required
+    />
+
+    <!-- Validate Button -->
+    <button
+      type="button"
+      (click)="onEmailValidatebtnclick()"
+      class="h-11 w-11 flex items-center justify-center rounded-lg
+             border border-gray-300 bg-white
+             hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+      title="Validate email"
+    >
+      <i class="fa-solid fa-envelope"></i>
+    </button>
+  </div>
+
+  <!-- Conflict Error -->
+  @if (emailConflictError) {
+    <p class="mt-1 text-sm text-red-600 dark:text-red-400">
+      {{ emailConflictError }}
+    </p>
+  }
+
+  <!-- Validation Errors -->
+  @if (email?.invalid && email?.touched && !emailConflictError) {
+    <p class="mt-1 text-sm text-red-600 dark:text-red-400">
+      @if (email?.errors?.['required']) {
+        Email is required
+      }
+      @if (email?.errors?.['invalidEmailFormat']) {
+        Invalid email format
+      }
+    </p>
+  }
+</div>
+
+       <input *ngIf="returnUrl!=null" 
+              formControlName="email"
+                type="hidden"
+              /> 
     <input
               formControlName="provider"
                 type="hidden"
@@ -152,7 +188,7 @@
               />
       <!-- Password -->
      
-      <div *ngIf="!isglfb">
+      <!-- <div *ngIf="!isglfb">
         <app-label>Password <span class="text-error-500">*</span></app-label>
         <div class="relative">
           <input
@@ -185,10 +221,10 @@
           }
         </p>
         }
-      </div>
+      </div> -->
 
       <!-- Confirm Password -->
-      <div *ngIf="!isglfb">
+      <!-- <div *ngIf="!isglfb">
         <app-label>Confirm Password <span class="text-error-500">*</span></app-label>
         <input
           [type]="showPassword ? 'text' : 'password'"
@@ -204,16 +240,16 @@
             Please confirm your password
           }
         </p>
-        }
-        @if (signupForm.errors?.['passwordMismatch'] && confirmPassword?.touched) {
+        } -->
+        <!-- @if (signupForm.errors?.['passwordMismatch'] && confirmPassword?.touched) {
         <p class="mt-1 text-sm text-red-600 dark:text-red-400">
           Passwords do not match
         </p>
         }
-      </div>
+      </div> -->
 
       <!-- Password Requirements -->
-      <div *ngIf="!isglfb" class="px-3 py-2 bg-gray-50 rounded-lg">
+      <!-- <div *ngIf="!isglfb" class="px-3 py-2 bg-gray-50 rounded-lg">
         <div class="flex flex-wrap gap-4 text-xs">
           <div class="flex items-center gap-1" [class.text-green-600]="hasMinLength(password?.value)" [class.text-red-600]="password?.value && !hasMinLength(password?.value)">
             <span [class]="hasMinLength(password?.value) ? 'text-green-600' : 'text-gray-400'">✔</span>
@@ -232,9 +268,9 @@
             <span>!@#$%</span>
           </div>
         </div>
-      </div>
+      </div> -->
       <!-- Terms and Conditions Checkbox -->
-      <div *ngIf="returnUrl===null" class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+      <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
         <div class="flex items-start gap-3">
           <input
             type="checkbox"
@@ -272,6 +308,7 @@
       <div class="flex gap-3">
         <!-- Back Button -->
         <button
+        *ngIf=" returnUrl==null"
           type="button"
           (click)="goBack()"
           class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 transition rounded-lg bg-gray-100 border border-gray-300 shadow-theme-xs hover:bg-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600"
@@ -289,7 +326,8 @@
             <span class="inline-block w-4 h-4 mr-2 border-2 border-gray-300 border-t-white rounded-full animate-spin"></span>
             Signing up...
           } @else {
-            Sign Up
+           <span  *ngIf=" returnUrl==null"> Sign Up</span>
+           <span  *ngIf=" returnUrl!=null"> Join Now</span>
           }
         </button>
       </div>

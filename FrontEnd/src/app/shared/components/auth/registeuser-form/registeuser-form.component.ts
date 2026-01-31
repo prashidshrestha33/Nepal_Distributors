@@ -6,7 +6,8 @@ import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormGroup, FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { SocialAuthSimpleService } from '../../../services/social-auth-simple.service';
-import { SocialUser } from '../../../models/auth.models';  // Import SocialUser, not SocialLoginRequest
+import { SocialUser } from '../../../models/auth.models';  
+import { OtpPopupComponent } from '../../../components/CustomComponents/otp-popup/otp-popup.component';  
 
 @Component({
   selector: 'app-reg-user-form',
@@ -16,6 +17,7 @@ import { SocialUser } from '../../../models/auth.models';  // Import SocialUser,
     LabelComponent,
     RouterModule,
     ReactiveFormsModule,
+    OtpPopupComponent
   ],
   templateUrl:  './registeuser-form.component.html',
   styles: ``
@@ -26,6 +28,7 @@ export class RegisteUserFormComponent implements OnInit {
   errorMessage = '';
   isLoading = false;
   isSocialLoading = false;
+   showOtp = true;
   returnUrl: string = '';
   constructor(
     private authService: AuthService,

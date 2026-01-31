@@ -1,0 +1,23 @@
+<div class="overlay" (mouseup)="onMouseUp()" (mouseleave)="onMouseUp()">
+
+  <div class="toolbar">
+    <button (click)="zoomIn()">＋</button>
+    <button (click)="zoomOut()">－</button>
+    <button (click)="reset()">Reset</button>
+    <button class="close-btn" (click)="closeViewer()">✕</button>
+  </div>
+
+  <div class="image-container"
+       (mousedown)="onMouseDown($event)"
+       (mousemove)="onMouseMove($event)">
+
+    <img
+      [src]="imageUrl"
+      [style.transform]="
+        'translate(' + translateX + 'px,' + translateY + 'px) scale(' + scale + ')'
+      "
+      draggable="false"
+    />
+
+  </div>
+</div>

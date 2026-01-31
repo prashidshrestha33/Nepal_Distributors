@@ -9,7 +9,9 @@ import { SignupFlowService } from '../../../services/signup-flow.service';
 import { FormDataService } from '../../../services/form-data.service';
 import { RegistrationFlowService } from '../../../services/registration-flow.service';
 import { SocialUser } from '../../../models/auth.models';  
-import { EncryptionHelper } from '../../../services/encryption.service';  
+import { EncryptionService } from '../../../services/encryption.service';  
+import { UiService } from '../../../../../app/ui.service';
+import { OtpPopupComponent } from '../../../components/CustomComponents/otp-popup/otp-popup.component';
 
 // Custom validator for strong password
 function strongPasswordValidator(control: AbstractControl): ValidationErrors | null {
@@ -75,6 +77,7 @@ function passwordMismatchValidator(form: AbstractControl): ValidationErrors | nu
     LabelComponent,
     RouterModule,
     ReactiveFormsModule,
+    OtpPopupComponent  
   ],
   templateUrl: './signup-form.component.html',
   styles: ``
@@ -102,8 +105,9 @@ export class SignupFormComponent implements OnInit {
     public flow: SignupFlowService,
     private formDataService: FormDataService,
     private registrationFlowService: RegistrationFlowService,
-    private encryptiondec: EncryptionHelper ,
-    private route:  ActivatedRoute
+     private encryptionService: EncryptionService,
+    private route:  ActivatedRoute, 
+    public ui: UiService
   ) {}
 
   // Helper methods for password validation
@@ -131,9 +135,7 @@ export class SignupFormComponent implements OnInit {
     const token = this.route.snapshot.queryParamMap.get('token') || '';
      this.returnUrl = token || null;
    const Redirecturl = localStorage.getItem('redirecturl');
-   if(this.returnUrl||Redirecturl!=undefined||Redirecturl!=''){
    
-   }
    const sSocialUser = localStorage.getItem('socialUser');
 let socialUser: SocialUser | null = null;
 let isSocialSignup = false;
@@ -151,20 +153,22 @@ if (sSocialUser) {
         firstName: ['', [Validators.required]],
         phoneNo: ['', [Validators.required]],
         email: ['', [Validators.required, emailFormatValidator]],
+        isemailvalid: [''],
         password:  [''],
         confirmPassword: [''],
-         agreeToTerms: [''],
+         agreeToTerms: [false, [Validators.requiredTrue]],
     provider: [''],
     id: [''],
     token: ['']    // ✅ Changed from requiredTrue
       });
       }
       else{
+        debugger;
         // ✅ Create form for social signup
       this.signupForm = this.formBuilder.group({
         firstName: ['', [Validators.required]],
         phoneNo: ['', [Validators.required]],
-        email: ['', [Validators.required, emailFormatValidator]],
+        email: ['', [Validators.required, emailFormatValidator]],     
         password:  [''],
         confirmPassword: [''],
         agreeToTerms: [false, [Validators.requiredTrue]],
@@ -190,15 +194,17 @@ if (sSocialUser) {
       this.signupForm = this.formBuilder.group({
         firstName: ['', [Validators.required]],
         phoneNo: ['', [Validators.required]],
-        email: ['', [Validators.required, emailFormatValidator]],
-        password:  ['', [Validators.required, strongPasswordValidator]],
-        confirmPassword: ['', [Validators. required]],
+        email: ['', [Validators.required, emailFormatValidator]],   
+        password:  [''],
+        confirmPassword: [''],
         agreeToTerms: [false, [Validators.requiredTrue]],
         provider: [''],
         id: [''],
         token: ['']
       }, { validators: passwordMismatchValidator });
           const savedUserData = this.formDataService.getUserData();
+         
+     
     if (savedUserData) {
       this.signupForm.patchValue({
         firstName: savedUserData.firstName,
@@ -208,6 +214,7 @@ if (sSocialUser) {
         confirmPassword: savedUserData.confirmPassword
       });
     }
+    
     }
     
     console.log('✅ Social user detected:', socialUser);
@@ -225,15 +232,29 @@ else if(!sSocialUser && this.returnUrl){
   debugger;
  this.signupForm = this.formBuilder.group({
     firstName: ['', [Validators.required]],
-    phoneNo: ['', [Validators.required]],
+    phoneNo: [''],
     email: ['', [Validators. required, emailFormatValidator]],
-    password: ['', [Validators.required, strongPasswordValidator]],
-    confirmPassword: ['', [Validators.required]],
-    agreeToTerms: [''],
+    password: [''],
+    confirmPassword: [''],
+    agreeToTerms: [false, [Validators.requiredTrue]],
     provider: [''],
     id: [''],
     token: ['']
   }, { validators: passwordMismatchValidator });
+    if(this.returnUrl||Redirecturl!=undefined||Redirecturl!=''){
+    const decryptedData = token
+  ? this.encryptionService.decrypt<{ CompanyEmail: string }>(token)
+  : null;
+if (decryptedData && decryptedData.CompanyEmail) {
+  this.signupForm.patchValue({
+    email: decryptedData.CompanyEmail,
+    firstName: decryptedData.CompanyEmail.split('@')[0],
+  });
+} else {
+  console.warn('Decrypted token is invalid or does not contain CompanyEmail');
+}
+   }
+
 }
   
   else {
@@ -242,8 +263,9 @@ else if(!sSocialUser && this.returnUrl){
     firstName: ['', [Validators.required]],
     phoneNo: ['', [Validators.required]],
     email: ['', [Validators. required, emailFormatValidator]],
-    password: ['', [Validators.required, strongPasswordValidator]],
-    confirmPassword: ['', [Validators.required]],
+   isemailvalid: [false, [Validators.requiredTrue]],
+    password: [''],
+    confirmPassword: [''],
     agreeToTerms: [false, [Validators.requiredTrue]],
     provider: [''],
     id: [''],
@@ -533,6 +555,45 @@ else if(!sSocialUser && this.returnUrl){
     
     this.router.navigate(['/register-company']);
   }
+
+  onEmailValidatebtnclick(){
+    const formValues = this.signupForm.value;
+     if(formValues.email== null||formValues.email==""){
+      this.emailConflictError="Email is Required";
+      return;
+     }
+       this.authService.SendRegisterOPT(formValues.email).subscribe({
+      next: (response: any) => {
+       this.ui.openOtp(); 
+      },
+      error: (error: any) => {   
+         this.errorMessage = error.message;
+      }
+    });
+  }
+
+   verifyOtp(otp: string) {
+    debugger;
+        const formValues = this.signupForm.value;
+     
+       this.authService.ValidateRegisterOPT(formValues.email,otp).subscribe({
+      next: (response: any) => {
+          this.signupForm.patchValue({
+            isemailvalid:true
+      });
+      },
+      error: (error: any) => {   
+         this.emailConflictError = error.error.message;
+      }
+    });
+    
+}
+
+sendOtpAgain() {
+      this.ui.closeOtp();
+  this.onEmailValidatebtnclick();
+     
+}
 }
 
 
