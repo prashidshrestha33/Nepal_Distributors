@@ -240,8 +240,8 @@ ApprovedProductById(id: number, payload: ApproveProduct): Observable<Product> {
   return formData;
 }
 
-  updateProduct(id:  number, product: Product): Observable<ApproveProduct> {
-    const formData = this.buildProductFormData(product);
+  updateProduct(id:  number, product: Product, image?: File): Observable<ApproveProduct> {
+    const formData = this.buildProductFormData(product, image);
     return this.apiGateway.put<ApproveProduct>(
       `/api/Product/${id}`,
       formData,
@@ -264,12 +264,30 @@ ApprovedProductById(id: number, payload: ApproveProduct): Observable<Product> {
     );
   }
 
+  bulkApproveProduct(productId: number, payload: { action: string; remarks?: string }): Observable<any> {
+  return this.apiGateway.post(`/api/Product/ApproveProduct/${productId}`, payload, {
+    requiresAuth: true
+  });
+}
+
   deleteProduct(id:  number): Observable<void> {
     return this.apiGateway.delete<void>(
       `/api/Product/${id}`,
       { requiresAuth: true }
     );
   }
+CSVImporter(file: File): Observable<any> {
+  const formData = new FormData();
+  formData.append('File', file, file.name); // MUST be "File"
+
+  return this.apiGateway.post<any>(
+    '/api/Import/products',
+    formData,
+    {
+      requiresAuth: true
+    }
+  );
+}
 }
 
 // ============================================

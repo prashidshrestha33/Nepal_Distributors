@@ -37,7 +37,8 @@ export class AppSidebarComponent {
       subItems: [
         { name: "Users", path: "/management/users" },
         { name: "Company", path: "/management/company" },
-        { name: "Static Values", path: "/management/static-values" }
+        { name: "Static Values", path: "/management/static-values" },
+        { name: "Product", path: "/management/products" }
       ],
     },
   ];

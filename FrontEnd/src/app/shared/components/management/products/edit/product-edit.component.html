@@ -1,0 +1,122 @@
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-r p-6">
+  <div class="w-full max-w-2xl bg-white rounded-lg shadow-2xl p-8 space-y-6">
+    <!-- Header Section -->
+    <h2 class="text-3xl font-bold text-center text-gray-800">{{ isEditMode ? 'Edit Product' : 'Add Product' }}</h2>
+    
+    <!-- Form Section -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+      
+      <!-- Input fields grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Name Field -->
+        <div>
+          <label class="block font-semibold text-gray-700">Name <span class="text-red-500">*</span></label>
+          <input type="text" formControlName="name" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300" />
+          <div *ngIf="isFieldInvalid('name')" class="text-red-500 text-xs mt-1">Name is required.</div>
+        </div>
+        
+        <!-- Rate Field -->
+        <div>
+          <label class="block font-semibold text-gray-700">Rate <span class="text-red-500">*</span></label>
+          <input type="number" formControlName="rate" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300" />
+          <div *ngIf="isFieldInvalid('rate')" class="text-red-500 text-xs mt-1">Rate is required.</div>
+        </div>
+        
+        <!-- Category Field -->
+        <div>
+          <label class="block font-semibold text-gray-700">Category <span class="text-red-500">*</span></label>
+          <select formControlName="categoryId" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300">
+            <option value="" disabled selected>Select Category</option>
+            <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
+          </select>
+          <div *ngIf="isFieldInvalid('categoryId')" class="text-red-500 text-xs mt-1">Category is required.</div>
+        </div>
+
+        <!-- Brand Field -->
+        <div>
+          <label class="block font-semibold text-gray-700">Brand <span class="text-red-500">*</span></label>
+          <select formControlName="brandId" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300">
+            <option value="" disabled selected>Select Brand</option>
+            <option *ngFor="let brand of brands" [value]="brand.staticId">{{ brand.staticValueKey }}</option>
+          </select>
+          <div *ngIf="isFieldInvalid('brandId')" class="text-red-500 text-xs mt-1">Brand is required.</div>
+        </div>
+        
+        <!-- Manufacturer Field -->
+        <div>
+          <label class="block font-semibold text-gray-700">Manufacturer <span class="text-red-500">*</span></label>
+          <input type="number" formControlName="manufacturerId" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300" />
+          <div *ngIf="isFieldInvalid('manufacturerId')" class="text-red-500 text-xs mt-1">Manufacturer is required.</div>
+        </div>
+        
+        <!-- HS Code -->
+        <div>
+          <label class="block font-semibold text-gray-700">HS Code</label>
+          <input type="text" formControlName="hsCode" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300" />
+        </div>
+        
+        <!-- Credit -->
+        <div>
+          <label class="block font-semibold text-gray-700">Credit</label>
+          <input type="text" formControlName="credit" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300" />
+        </div>
+        
+        <!-- Status -->
+        <div>
+          <label class="block font-semibold text-gray-700">Status</label>
+          <input type="text" formControlName="status" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300" />
+        </div>
+      </div>
+      
+      <!-- Description Field -->
+      <div>
+        <label class="block font-semibold text-gray-700">Description</label>
+        <textarea formControlName="description" rows="4" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300"></textarea>
+      </div>
+
+      <!-- SEO Fields -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block font-semibold text-gray-700">SEO Title</label>
+          <input type="text" formControlName="seoTitle" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300" />
+        </div>
+        <div>
+          <label class="block font-semibold text-gray-700">SEO Description</label>
+          <input type="text" formControlName="seoDescription" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300" />
+        </div>
+      </div>
+
+      <!-- Attributes Field -->
+      <div>
+        <label class="block font-semibold text-gray-700">Attributes</label>
+        <input type="text" formControlName="attributes" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300" />
+      </div>
+
+      <!-- Featured Checkbox -->
+      <div class="flex items-center gap-4">
+        <label class="block font-semibold text-gray-700">Is Featured</label>
+        <input type="checkbox" formControlName="isFeatured" class="w-5 h-5 text-blue-600 focus:ring-2 focus:ring-blue-500" />
+      </div>
+
+      <!-- Image Upload -->
+      <div>
+        <label class="block font-semibold text-gray-700">Product Image</label>
+        <input #fileInput type="file" accept="image/*" (change)="onFileChange($event)" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition ease-in-out duration-300" />
+        <div *ngIf="imagePreview" class="mt-2 relative inline-block">
+          <img [src]="imagePreview" alt="Preview" class="h-24 w-24 object-cover rounded-lg border-2 border-gray-300" />
+          <button type="button" (click)="removeImage()" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full h-6 w-6 flex items-center justify-center text-sm hover:bg-red-700">✕</button>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="error" class="text-red-600 font-medium text-sm p-3 bg-red-50 border border-red-300 rounded-lg">{{ error }}</div>
+
+      <!-- Form Buttons -->
+      <div class="flex gap-4 justify-end">
+        <button type="submit" [disabled]="form.invalid || loading" class="px-6 py-2 rounded-lg font-bold bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400 transition ease-in-out duration-300">{{ loading ? (isEditMode ? 'Saving...' : 'Creating...') : (isEditMode ? 'Save Changes' : 'Create Product') }}</button>
+        <button type="button" (click)="cancel()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold px-6 py-2 rounded-lg transition ease-in-out duration-300">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>

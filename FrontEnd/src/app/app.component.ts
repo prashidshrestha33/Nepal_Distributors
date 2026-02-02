@@ -54,7 +54,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // ✅ Check if notifications are already allowed
   private async checkNotificationStatus() {
-    debugger;
     if (Notification.permission === 'granted') {
       this.notificationsEnabled = true;
       return;
@@ -72,7 +71,6 @@ export class AppComponent implements OnInit, OnDestroy {
     try {
       const token = await this.notificationService. requestPermission();
       if (token) {
-        console.log('✅ FCM Token obtained:', token);
       }
     } catch (error) {
     }
@@ -82,7 +80,7 @@ export class AppComponent implements OnInit, OnDestroy {
   async enableNotifications() {
     const token = await this.notificationService.requestPermission();
     if (token) {
-      alert('✅ Notifications enabled successfully!');
+      alert('Notifications enabled successfully!');
       
       return token;
     } else {

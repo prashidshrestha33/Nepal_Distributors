@@ -46,7 +46,6 @@ namespace Marketplace.Api.Controllers
 
 
         [HttpPost]
-        [Authorize(Roles = "portal_manager,super_admin")]
         public async Task<IActionResult> Create([FromBody] CompanyCreateRequest req)
         {
             if (req == null || string.IsNullOrWhiteSpace(req.Name))

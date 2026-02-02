@@ -11,6 +11,20 @@ import type { Product } from '../../../../services/management/management.service
   styleUrls: ['./approve-product.component.css']
 })
 export class ApproveProductComponent {
+  snackbar = {
+    show: false,
+    message: '',
+    success: true
+  };
+
+  showSnackbar(message: string, success: boolean = true) {
+    this.snackbar.message = message;
+    this.snackbar.success = success;
+    this.snackbar.show = true;
+    setTimeout(() => {
+      this.snackbar.show = false;
+    }, 5000);
+  }
   /** Product to approve or reject */
   @Input() product: (Product & { categoryName?: string; brandName?: string }) | null = null;
 
@@ -70,13 +84,24 @@ export class ApproveProductComponent {
 
   /** Confirm action from reason modal */
   confirmAction(reason: string, actionType: 'Approved' | 'Rejected') {
-    if (actionType === 'Rejected' && !reason.trim()) return;
-    // If you need to check approvalType for 'Approved', add logic here, otherwise just use reason
-    this.approve.emit({
-      status: actionType,
-      reason: reason
-    });
-    this.closeReason();
+    if (actionType === 'Rejected' && !reason.trim()) {
+      this.showSnackbar('Reason is required for rejection.', false);
+      return;
+    }
+    // Simulate async approve/reject (replace with real API if needed)
+    // Show success or error snackbar based on action
+    if (actionType === 'Approved') {
+      this.showSnackbar('Product approved successfully!', true);
+    } else {
+      this.showSnackbar('Product rejected.', false);
+    }
+    setTimeout(() => {
+      this.approve.emit({
+        status: actionType,
+        reason: reason
+      });
+      this.closeReason();
+    }, 1000);
   }
 
   /** Close reason modal */

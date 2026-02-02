@@ -1,7 +1,10 @@
 ﻿using Marketpalce.Repository.Repositories.ProductRepo;
 using Marketplace.Model.Models;
+using Dapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Concurrent;
+using System.Data;
 using System.Globalization;
 using System.Security.Claims;
 
@@ -13,13 +16,15 @@ namespace Marketplace.Api.Controllers
     {
         private readonly IProductRepository _productRepo;
         private readonly ILogger<ImportController> _logger;
+        private readonly IServiceScopeFactory _scopeFactory;
 
         private static readonly ConcurrentDictionary<Guid, ImportJobInfo> Jobs = new();
 
-        public ImportController(IProductRepository productRepo, ILogger<ImportController> logger)
+        public ImportController(IProductRepository productRepo, ILogger<ImportController> logger, IServiceScopeFactory scopeFactory)
         {
             _productRepo = productRepo;
             _logger = logger;
+            _scopeFactory = scopeFactory;
         }
 
         // 🔥 IMPORTANT: Swagger now supports this (multipart/form-data)
@@ -58,13 +63,22 @@ namespace Marketplace.Api.Controllers
 
             Jobs[jobId] = job;
 
+            var createdBy = User?.FindFirst("emailaddress")?.Value
+                ?? User?.FindFirst(ClaimTypes.Email)?.Value
+                ?? "system";
+
+
             _ = Task.Run(async () =>
             {
                 job.Status = ImportStatus.Running;
                 try
                 {
+                    using var scope = _scopeFactory.CreateScope();
+                    var repo = scope.ServiceProvider.GetRequiredService<IProductRepository>();
+                    var db = scope.ServiceProvider.GetRequiredService<IDbConnection>();
+
                     if (ext == ".csv")
-                        await ProcessCsvAsync(tempFile, job);
+                        await ProcessCsvAsync(tempFile, job, repo, db, createdBy);
                     else
                     {
                         job.Errors.Enqueue("Excel import not implemented yet.");
@@ -109,7 +123,7 @@ namespace Marketplace.Api.Controllers
             });
         }
 
-        private async Task ProcessCsvAsync(string filePath, ImportJobInfo job)
+        private async Task ProcessCsvAsync(string filePath, ImportJobInfo job, IProductRepository repo, IDbConnection db, string createdBy)
         {
             int total = 0;
             using (var srCount = new StreamReader(filePath))
@@ -144,12 +158,12 @@ namespace Marketplace.Api.Controllers
                 try
                 {
                     var fields = ParseCsvLine(line);
-                    var record = MapFields(headers, fields);
+                    var record = await MapFields(headers, fields, createdBy, repo, db);
 
                     if (record == null)
                         job.Errors.Enqueue($"Line {lineNumber}: missing required fields.");
                     else
-                        await _productRepo.CreateAsync(record);
+                        await repo.CreateAsync(record);
                 }
                 catch (Exception ex)
                 {
@@ -162,7 +176,7 @@ namespace Marketplace.Api.Controllers
             }
         }
 
-        private ProductModel? MapFields(string[] headers, IList<string> fields)
+        private async Task<ProductModel?> MapFields(string[] headers, IList<string> fields, string createdBy, IProductRepository repo, IDbConnection db)
         {
             var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < headers.Length && i < fields.Count; i++)
@@ -173,20 +187,121 @@ namespace Marketplace.Api.Controllers
 
             var product = new ProductModel
             {
+                CompanyId = dict.GetValueOrDefault("company_id") != null
+                  ? int.Parse(dict.GetValueOrDefault("company_id"))
+                  : null,
                 Sku = dict.GetValueOrDefault("sku"),
                 Name = name,
                 Description = dict.GetValueOrDefault("description"),
                 ShortDescription = dict.GetValueOrDefault("short_description"),
+                // category may come as ID or name; try numeric first, else lookup by name (case-insensitive)
+                CategoryId = 0,
+                BrandId = 0,
+                ManufacturerId = dict.GetValueOrDefault("manufacturer_id") != null
+                  ? int.Parse(dict.GetValueOrDefault("manufacturer_id"))
+                  : 0,
                 Rate = decimal.TryParse(dict.GetValueOrDefault("rate"), out var r) ? r : 0,
+                HsCode = dict.GetValueOrDefault("hs_code") ?? "",
                 Status = dict.GetValueOrDefault("status") ?? "pending_approval",
+                IsFeatured = ParseBoolean(dict.GetValueOrDefault("is_featured")),
+                SeoTitle = name, // product name
+                SeoDescription = GenerateSeoDescription(dict.GetValueOrDefault("description")), // intelligent trim
                 Attributes = dict.GetValueOrDefault("attributes"),
-                ImageName = dict.GetValueOrDefault("image_name"),
-                CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                ImageName = dict.GetValueOrDefault("ImageName"),
+                CreatedBy = createdBy,
+                ProductAdded = dict.GetValueOrDefault("product_added") != null
+                    ? int.Parse(dict.GetValueOrDefault("product_added"))
+                    : null,
+                CreatedAt = dict.GetValueOrDefault("created_at") != null
+                  ? DateTime.Parse(dict.GetValueOrDefault("created_at"))
+                  : DateTime.UtcNow,
+                UpdatedAt = dict.GetValueOrDefault("updated_at") != null
+                  ? DateTime.Parse(dict.GetValueOrDefault("updated_at"))
+                  : DateTime.UtcNow
             };
+            // Resolve CategoryId
+            var catVal = dict.GetValueOrDefault("category_id");
+            if (!string.IsNullOrWhiteSpace(catVal))
+            {
+                if (int.TryParse(catVal, out var cid))
+                {
+                    product.CategoryId = cid;
+                }
+                else
+                {
+                    // try lookup by name (case-insensitive)
+                    try
+                    {
+                        var catId = await db.QueryFirstOrDefaultAsync<long?>(
+                            "SELECT TOP 1 id FROM dbo.Product_Categories WHERE LOWER(name) = LOWER(@Name);",
+                            new { Name = catVal.Trim() }
+                        );
+                        product.CategoryId = (int?)(catId ?? 0) ?? 0;
+                    }
+                    catch
+                    {
+                        product.CategoryId = 0;
+                    }
+                }
+            }
+
+            // Resolve BrandId similarly (static_value table under Brand catalog)
+            var brandVal = dict.GetValueOrDefault("brand_id") ?? dict.GetValueOrDefault("brand");
+            if (!string.IsNullOrWhiteSpace(brandVal))
+            {
+                if (int.TryParse(brandVal, out var bid))
+                {
+                    product.BrandId = bid;
+                }
+                else
+                {
+                    try
+                    {
+                        var brandId = await db.QueryFirstOrDefaultAsync<long?>(
+                            @"SELECT TOP 1 s.static_id
+                              FROM dbo.static_value s
+                              INNER JOIN dbo.static_value_cataglog c ON s.Catalog_id = c.Catalog_id
+                              WHERE LOWER(c.Catalog_Name) = LOWER('Brand')
+                                AND LOWER(s.static_value) = LOWER(@Value);",
+                            new { Value = brandVal.Trim() }
+                        );
+                        product.BrandId = (int?)(brandId ?? 0) ?? 0;
+                    }
+                    catch
+                    {
+                        product.BrandId = 0;
+                    }
+                }
+            }
 
             return product;
+        }
+        // Helper function to generate SEO description
+        string GenerateSeoDescription(string? description, int maxLength = 100)
+        {
+            if (string.IsNullOrWhiteSpace(description))
+                return "";
+
+            // Try to cut at the first period, exclamation, or question mark
+            int sentenceEnd = description.IndexOfAny(new[] { '.', '!', '?' });
+            if (sentenceEnd > 0 && sentenceEnd + 1 <= maxLength)
+            {
+                return description.Substring(0, sentenceEnd + 1).Trim();
+            }
+
+            // If no punctuation or too long, just take up to maxLength
+            return description.Length > maxLength
+                ? description.Substring(0, maxLength).Trim() + "..."
+                : description.Trim();
+        }
+// Helper method
+        private bool ParseBoolean(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return true; // default if null
+
+            value = value.Trim().ToLower();
+            return value == "1" || value == "true" || value == "yes";
         }
 
         private static List<string> ParseCsvLine(string line)
