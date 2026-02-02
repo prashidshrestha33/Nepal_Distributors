@@ -80,7 +80,6 @@ export class SigninFormComponent implements OnInit {
       this.errorMessage = 'Please fill in all required fields correctly';
       return;
     }
-debugger;
     const { email, password,oTP, rememberMe } = this.loginForm. value;
     this.isLoading = true;
     this. errorMessage = '';

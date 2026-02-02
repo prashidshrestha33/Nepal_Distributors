@@ -1,8 +1,18 @@
+
+<!-- Snackbar Notification -->
+<div *ngIf="snackbar.show"
+     [ngStyle]="{
+       'background-color': snackbar.success ? 'rgba(16, 185, 129, 0.85)' : 'rgba(220, 38, 38, 0.85)'
+     }"
+     class="fixed top-6 right-6 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-semibold transition-all duration-300 animate-fade-in">
+  {{ snackbar.message }}
+</div>
+
 <div class="min-h-screen bg-gray-100 dark:bg-gray-800 flex items-center justify-center p-6">
   <div class="w-full max-w-3xl bg-gray-50 dark:bg-gray-900 shadow-xl rounded-2xl border border-gray-200 dark:border-gray-700 p-8 space-y-8">
 
     <h2 class="text-3xl font-extrabold text-gray-800 dark:text-white text-center">
-      Add New Product
+      Add Product
     </h2>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
@@ -35,16 +45,37 @@
           class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
         ></textarea>
       </div>
+<!-- Product Image Upload -->
+<div class="space-y-1">
+  <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+    Product Image
+  </label>
 
-      <!-- Product Image Upload -->
-      <div class="space-y-1">
-        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">Product Image</label>
-        <input
-          type="file"
-          (change)="onProductImageChange($event)"
-          class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
+  <input
+    #fileInput
+    type="file"
+    accept="image/*"
+    (change)="onProductImageChange($event)"
+    class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+  />
+
+  <!-- Image Preview + Remove -->
+  <div *ngIf="imagePreview" class="relative mt-3 inline-block">
+    <img
+      [src]="imagePreview"
+      alt="Preview"
+      class="h-32 w-32 object-cover rounded-lg border border-gray-300"
+    />
+
+    <button
+      type="button"
+      (click)="removeImage()"
+      class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full h-6 w-6 flex items-center justify-center text-sm hover:bg-red-700 shadow"
+    >
+      ✕
+    </button>
+  </div>
+</div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Product Rate -->
@@ -70,12 +101,12 @@
         <!-- HS Code -->
         <div class="space-y-1">
           <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">HS Code</label>
-          <input
+           <input
             type="text"
             formControlName="hsCode"
             placeholder="HS Code"
             class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+           />
         </div>
       </div>
 
@@ -135,6 +166,7 @@
             >
               {{ getBrandName(form.get('brandId')?.value) || 'Select Brand' }}
             </button>
+            <!--Clear Brand -->
             <button
               *ngIf="form.get('brandId')?.value"
               type="button"
@@ -168,7 +200,7 @@
         <!-- Manufacturer -->
         <div class="space-y-1">
            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-             Manufacturer
+             Manufacture
            </label>
            <input
              type="number"
@@ -184,31 +216,7 @@
              Manufacturer is required.
            </span>
         </div>
-
-
-        <!-- SEO Title -->
-        <div class="space-y-1">
-          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">SEO Friendly Page Title</label>
-          <input
-            type="text"
-            formControlName="seoTitle"
-            placeholder="SEO title"
-            class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
       </div>
-
-      <!-- SEO Description -->
-      <div class="space-y-1">
-        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">SEO Description</label>
-        <textarea
-          formControlName="seoDescription"
-          rows="2"
-          placeholder="SEO description"
-          class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        ></textarea>
-      </div>
-
       <!-- Error -->
       <div *ngIf="error" class="text-red-600 font-medium text-sm p-3 bg-red-50 border border-red-300 rounded-lg">
         {{ error }}

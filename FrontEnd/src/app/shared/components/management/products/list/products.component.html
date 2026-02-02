@@ -1,72 +1,149 @@
 <div class="space-y-6">
-  <!-- Header -->
+
+  <!-- HEADER -->
+
   <div class="flex justify-between items-center">
     <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Products</h1>
-    <div class="flex gap-2 items-center">
-      <!--  -->
-      <a routerLink="/products/add"
-         class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg dark:bg-blue-600 dark:hover:bg-blue-700">
+    <div class="flex gap-2 items-center mb-4">
+      <button
+        type="button"
+        (click)="bulkApprove()"
+        [disabled]="!canBulkApprove"
+        class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:bg-gray-400"
+      >
+        Approve Selected
+      </button>
+      <!-- Hidden CSV Input -->
+      <input
+        #csvInput
+        type="file"
+        accept=".csv"
+        (change)="onFileSelected($event)"
+        class="hidden"
+      />
+      <!-- Import CSV (opens file picker) -->
+      <button
+        type="button"
+        (click)="csvInput.click()"
+        [disabled]="loading"
+        class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg disabled:bg-gray-400"
+      >
+        {{ loading ? 'Importing...' : 'Import CSV' }}
+      </button>
+      <!-- Add Product -->
+      <a
+        routerLink="/products/add"
+        class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg"
+      >
         + Add Product
       </a>
     </div>
   </div>
 
-  <!-- Search Bar -->
-  <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4">
-    <input type="text"
-           placeholder="Search by product name"
-           [(ngModel)]="searchTerm"
-           (input)="onSearch()"
-           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"/>
+  <!-- IMPORT STATUS -->
+  <div *ngIf="jobId" class="bg-green-50 text-green-700 p-3 rounded">
+    Import started successfully. Job ID:
+    <b>{{ jobId }}</b>
   </div>
 
-  <!-- Loading -->
-  <div *ngIf="loading" class="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg text-blue-700 dark:text-blue-200">
+  <div *ngIf="error" class="bg-red-50 text-red-600 p-3 rounded">
+    {{ error }}
+  </div>
+
+  <!-- SEARCH -->
+  <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4">
+    <input
+      type="text"
+      placeholder="Search by product name"
+      [(ngModel)]="searchTerm"
+      (input)="onSearch()"
+      class="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+    />
+  </div>
+
+  <!-- LOADING -->
+  <div *ngIf="loading" class="bg-blue-50 p-4 rounded text-blue-700">
     Loading products...
   </div>
 
-  <!-- Empty State -->
-  <div *ngIf="!loading && filteredProducts?.length === 0" class="bg-yellow-50 dark:bg-yellow-900 p-4 rounded-lg text-yellow-700 dark:text-yellow-200 text-center">
+  <!-- EMPTY -->
+  <div
+    *ngIf="!loading && filteredProducts?.length === 0"
+    class="bg-yellow-50 p-4 rounded text-yellow-700 text-center"
+  >
     {{ searchTerm ? 'No products found matching your search' : 'No products available' }}
   </div>
 
-
-  <!-- Products Table & Footer Card -->
-  <div *ngIf="!loading && filteredProducts.length > 0" class="overflow-x-auto bg-white dark:bg-gray-900 rounded-lg shadow flex flex-col min-h-[500px]">
+  <!-- PRODUCTS TABLE -->
+  <div
+    *ngIf="!loading && filteredProducts.length > 0"
+    class="overflow-x-auto bg-white dark:bg-gray-900 rounded-lg shadow flex flex-col min-h-[500px]"
+  >
     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
       <thead class="bg-gray-100 dark:bg-gray-800">
         <tr>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">S.N</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Name</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Category</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Brand</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Rate</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">HsCode</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Created By</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Status</th>
-          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Actions</th>
+          <th class="px-4 py-2 text-left">
+      <input 
+        type="checkbox"
+        [checked]="allSelected"
+        (change)="toggleSelectAll($event)"
+      />
+    </th>
+          <th class="px-4 py-2 text-left text-xs font-medium">S.N</th>
+          <th class="px-6 py-3 text-left text-xs font-medium">Name</th>
+          <th class="px-6 py-3 text-left text-xs font-medium">Category</th>
+          <th class="px-6 py-3 text-left text-xs font-medium">Brand</th>
+          <th class="px-6 py-3 text-left text-xs font-medium">Rate</th>
+          <th class="px-6 py-3 text-left text-xs font-medium">Created By</th>
+          <th class="px-6 py-3 text-left text-xs font-medium">Status</th>
+          <th class="px-6 py-3 text-left text-xs font-medium">Actions</th>
         </tr>
       </thead>
+
       <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-        <tr *ngFor="let product of filteredProducts; let i = index" class="hover:bg-gray-50 dark:hover:bg-gray-800">
-          <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
-          <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{{ product.name }}</td>
-          <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{{ getCategoryName(product.categoryId) }}</td>
-          <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{{ getBrandName(product.brandId) }}</td>
-          <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">Rs.{{ product.rate | number:'1.2-2' }}</td>
-          <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{{ product.hsCode }}</td>
-          <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{{ product.createdBy }}</td>
-          <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{{ product.status || 'Pending' }}</td>
-          <td class="px-6 py-3 text-sm text-gray-700 dark:text-gray-300 flex gap-2">
-            <button type="button" (click)="approveProduct(product)"
-                    class="text-green-500 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 text-sm font-semibold">
-              View
+        <tr
+          *ngFor="let product of filteredProducts; let i = index"
+          class="hover:bg-gray-50 dark:hover:bg-gray-800"
+        >
+        <td class="px-4 py-2">
+      <input
+        type="checkbox"
+        [(ngModel)]="product.selected"
+        (change)="updateBulkButtonState()"
+      />
+    </td>
+          <td class="px-6 py-3 text-sm">
+            {{ (currentPage - 1) * pageSize + i + 1 }}
+          </td>          
+          <td class="px-6 py-3 text-sm">{{ product.name }}</td>
+          <td class="px-6 py-3 text-sm">{{ getCategoryName(product.categoryId) }}</td>
+          <td class="px-6 py-3 text-sm">{{ getBrandName(product.brandId) }}</td>
+          <td class="px-6 py-3 text-sm">Rs. {{ product.rate | number:'1.2-2' }}</td>
+          <td class="px-6 py-3 text-sm">{{ product.createdBy }}</td>
+          <td class="px-6 py-3 text-sm">{{ product.status || 'Pending' }}</td>
+
+          <td class="px-6 py-3 text-sm flex gap-2">
+            <!-- Edit -->
+            <button
+              (click)="goToEditProduct(product.id)"
+              class="text-blue-500 hover:text-blue-700"
+            >
+              ✏️
+            </button>
+
+            <!-- Approve -->
+            <button
+              (click)="approveProduct(product)"
+              class="text-green-500 hover:text-green-700"
+            >
+              ✔
             </button>
           </td>
         </tr>
       </tbody>
     </table>
-    <!-- Approve Product Modal -->
+
+    <!-- APPROVE MODAL -->
     <ng-container *ngIf="showApproveModal">
       <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
         <app-approve-product
@@ -76,7 +153,8 @@
         ></app-approve-product>
       </div>
     </ng-container>
-    <!-- Sticky Footer -->
+
+    <!-- PAGINATION -->
     <app-pagination
       [currentPage]="currentPage"
       [pageSize]="pageSize"
@@ -85,6 +163,5 @@
       (pageSizeChange)="onPageSizeChange($event)"
       class="mt-auto"
     ></app-pagination>
-
   </div>
 </div>

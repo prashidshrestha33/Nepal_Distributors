@@ -123,6 +123,11 @@ export const routes: Routes = [
             title: 'Nepal Distributors - Products Management'
           },
           {
+            path: 'products/edit/:id',
+            loadComponent: () => import('./shared/components/management/products/edit/product-edit.component').then(m => m.ProductEditComponent),
+            title: 'Nepal Distributors - Edit Product'
+          },
+          {
             path: 'products/add',
             component: ProductFormComponent,
             title: 'Nepal Distributors - Add Product'

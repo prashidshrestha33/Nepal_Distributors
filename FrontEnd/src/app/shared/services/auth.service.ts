@@ -168,8 +168,6 @@ export class AuthService {
    * @param rememberMe If true, remember user for future sessions
    */
   login(email: string, password: string,oTP: string, rememberMe: boolean = false): Observable<any> {
-    
-debugger;
     const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
     return this.http.post<any>(`${this.api}/api/auth/login`, { email,oTP, password }, { headers })
       .pipe(

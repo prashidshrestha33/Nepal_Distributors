@@ -1,11 +1,14 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { forkJoin } from 'rxjs';
 import { ApproveProductComponent } from '../approve/approve-product.component';
 import { PaginationComponent } from '../../Pagination/app-pagination.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule, FormGroup } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { ProductService } from '../../../../services/management/management.service';
-import type { Product } from '../../../../services/management/management.service';
+import type { Product as ProductBase } from '../../../../services/management/management.service';
+
+type Product = ProductBase & { selected?: boolean };
 import { Category } from '../../../../services/management/management.service';
 import { CategoryService } from '../../../../services/management/management.service';
 import { Users } from '../../../../services/management/management.service';
@@ -35,6 +38,13 @@ export class ProductsComponent implements OnInit {
   dropdownLabels: string[] = [];
   loadingStates: boolean[] = [];
   selectedAtLevel: (number | null)[] = [];
+  selectedFile!: File;
+  jobId?: string;
+  error?: string;
+  
+// Bulk selection flag
+allSelected = false;
+canBulkApprove = false;
   
   
   // Pagination properties
@@ -81,7 +91,7 @@ export class ProductsComponent implements OnInit {
   }
 
 editProduct(product: Product) {
-  if (product && product.id) this.router.navigate(['/products/edit', product.id]);
+  if (product && product.id) this.router.navigate(['/management/products/edit', product.id]);
 }
 
   removeProduct(product: Product) {
@@ -93,6 +103,77 @@ editProduct(product: Product) {
     };
     this.showApproveModal = true;
   }
+    // Step 1: bind selected file
+onFileSelected(event: any) {
+  this.selectedFile = event.target.files[0];
+  if (this.selectedFile) {
+    this.importCsv(); // automatically trigger upload
+  }
+}
+
+    // Step 2: call API
+  importCsv() {
+    debugger;
+    if (!this.selectedFile) return;
+
+    this.loading = true;
+    this.error = undefined;
+
+    this.productService.CSVImporter(this.selectedFile).subscribe({
+      next: res => {
+        this.jobId = res.jobId; // API returns jobId
+        this.loading = false;
+      },
+      error: err => {
+        this.error = err.error?.error || 'CSV import failed';
+        this.loading = false;
+      }
+    });
+  }
+
+updateBulkButtonState() {
+  this.canBulkApprove = this.filteredProducts.some(p => p.selected);
+  this.allSelected = this.filteredProducts.every(p => p.selected);
+}
+
+toggleSelectAll(event: any) {
+  const checked = event.target.checked;
+  this.filteredProducts.forEach(p => (p.selected = checked));
+  this.updateBulkButtonState();
+}
+
+// Bulk approve function
+bulkApprove() {
+  const selectedProducts = this.filteredProducts.filter(p => p.selected);
+  if (selectedProducts.length === 0) return;
+
+  const requests = selectedProducts.map(p => {
+    const payload = { action: 'Approved', remarks: 'Bulk approved' };
+    return this.productService.bulkApproveProduct(p.id, payload);
+  });
+
+  this.loading = true;
+
+  // Execute all API calls
+  forkJoin(requests).subscribe({
+    next: res => {
+      // Update local product statuses
+      selectedProducts.forEach(p => {
+        p.status = 'Approved';
+        p.selected = false; // uncheck after approve
+      });
+      this.canBulkApprove = false;
+      this.allSelected = false;
+      this.loading = false;
+    },
+    error: err => {
+      console.error('Bulk approve failed', err);
+      this.loading = false;
+    }
+  });
+}
+
+
 
 approveProduct(product: Product) {
   // Open modal with product details
@@ -104,6 +185,10 @@ approveProduct(product: Product) {
   this.approveStatus = product.status || 'Pending';
   this.showApproveModal = true;
 }
+  // ...existing code...
+  goToEditProduct(id: number) {
+    this.router.navigate(['/management/products/edit', id]);
+  }
 
 onApproveSave(event: { status: string; reason?: string }) {
   if (!this.approveProductData) return;
@@ -121,11 +206,9 @@ onApproveSave(event: { status: string; reason?: string }) {
       }
       this.filteredProducts = [...this.products];
       this.showApproveModal = false;
-      alert(`Product "${this.approveProductData?.name}" status updated to ${event.status}.`);
     },
     error: (err: unknown) => {
       console.error('Error updating product status:', err);
-      alert('Failed to update product status.');
     }
   });
 }

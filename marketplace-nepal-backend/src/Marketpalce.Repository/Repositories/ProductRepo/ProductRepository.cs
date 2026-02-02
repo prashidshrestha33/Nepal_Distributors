@@ -1,14 +1,10 @@
 ﻿using Dapper;
 using Marketplace.Model.Models;
-using System.Collections.Generic;
 using System.Data;
-using System.Threading.Tasks;
-
 
 namespace Marketpalce.Repository.Repositories.ProductRepo
 {
     public class ProductRepository : IProductRepository
-
     {
         private readonly IDbConnection _db;
         public ProductRepository(IDbConnection db)
@@ -18,7 +14,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
 
         public async Task<IEnumerable<ProductModel>> GetAllAsync()
         {
-                var sql = @"SELECT
+            var sql = @"SELECT
     id                  AS Id,
     sku                 AS Sku,
     name                AS Name,
@@ -40,9 +36,8 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
     created_at          AS CreatedAt
 FROM [NepalDistributers].[dbo].[Products]
 ";
-                return await _db.QueryAsync<ProductModel>(sql);
-
-            }
+            return await _db.QueryAsync<ProductModel>(sql);
+        }
         public async Task<List<CategoryDto>> GetAllCategoryAsync()
         {
             const string sql = @"
@@ -81,10 +76,31 @@ FROM [NepalDistributers].[dbo].[Products]
             return rootCategories;
         }
 
-
         public async Task<ProductModel> GetByIdAsync(int id)
         {
-            var sql = "SELECT * FROM [NepalDistributers].[dbo].[products] WHERE id = @Id";
+            var sql = @"SELECT
+    id                  AS Id,
+    sku                 AS Sku,
+    name                AS Name,
+    description         AS Description,
+    short_description   AS ShortDescription,
+    category_id         AS CategoryId,
+    company_id          AS CompanyId,
+    rate                AS Rate,
+    brand_id            AS BrandId,
+    manufacturer_id     AS ManufacturerId,
+    hs_code             AS HsCode,
+    status              AS Status,
+    is_featured         AS IsFeatured,
+    seo_title           AS SeoTitle,
+    seo_description     AS SeoDescription,
+    attributes          AS Attributes,
+    ImageName           AS ImageName,
+    created_by          AS CreatedBy,
+    created_at          AS CreatedAt
+FROM [NepalDistributers].[dbo].[Products]
+    WHERE id = @Id";
+
             return await _db.QuerySingleOrDefaultAsync<ProductModel>(sql, new { Id = id });
         }
 
@@ -104,14 +120,41 @@ FROM [NepalDistributers].[dbo].[Products]
         ";
                 return await _db.ExecuteScalarAsync<int>(sql, product);
             }
-
+            
         public async Task<bool> UpdateAsync(ProductModel product)
         {
-            var sql = @"
-            UPDATE [NepalDistributers].[dbo].[products]
-            SET sku=@Sku, name=@Name, description=@Description, short_description=@ShortDescription, category_id=@CategoryId, subcategory_id=@SubCategoryId, subsubcategory_id=@SubSubCategoryId, brand_id=@BrandId, manufacturer_id=@ManufacturerId, rate=@Rate, hs_code=@HsCode, status=@Status, is_featured=@IsFeatured, seo_title=@SeoTitle, seo_description=@SeoDescription, attributes=@Attributes, Image_name=@ImageName, updated_at=@UpdatedAt
-            WHERE id=@Id";
-            return (await _db.ExecuteAsync(sql, product)) > 0;
+            // Ensure SKU/SEO fields are generated before performing the single UPDATE on the shared connection.
+            await GenerateSkuAndSeoAsync(product);
+
+            var parameters = new DynamicParameters();
+            var setClauses = new List<string>();
+
+            if (!string.IsNullOrEmpty(product.Sku)) { setClauses.Add("sku=@Sku"); parameters.Add("@Sku", product.Sku); }
+            if (!string.IsNullOrEmpty(product.Name)) { setClauses.Add("name=@Name"); parameters.Add("@Name", product.Name); }
+            if (!string.IsNullOrEmpty(product.Description)) { setClauses.Add("description=@Description"); parameters.Add("@Description", product.Description); }
+            if (product.CategoryId > 0) { setClauses.Add("category_id=@CategoryId"); parameters.Add("@CategoryId", product.CategoryId); }
+            if (product.BrandId > 0) { setClauses.Add("brand_id=@BrandId"); parameters.Add("@BrandId", product.BrandId); }
+            if (product.ManufacturerId > 0) { setClauses.Add("manufacturer_id=@ManufacturerId"); parameters.Add("@ManufacturerId", product.ManufacturerId); }
+            if (product.Rate > 0) { setClauses.Add("rate=@Rate"); parameters.Add("@Rate", product.Rate); }
+            if (!string.IsNullOrEmpty(product.HsCode)) { setClauses.Add("hs_code=@HsCode"); parameters.Add("@HsCode", product.HsCode); }
+            if (!string.IsNullOrEmpty(product.Status)) { setClauses.Add("status=@Status"); parameters.Add("@Status", product.Status); }
+            if (product.IsFeatured.HasValue) { setClauses.Add("is_featured=@IsFeatured"); parameters.Add("@IsFeatured", product.IsFeatured); }
+            if (!string.IsNullOrEmpty(product.SeoTitle)) { setClauses.Add("seo_title=@SeoTitle"); parameters.Add("@SeoTitle", product.SeoTitle); }
+            if (!string.IsNullOrEmpty(product.SeoDescription)) { setClauses.Add("seo_description=@SeoDescription"); parameters.Add("@SeoDescription", product.SeoDescription); }
+            if (!string.IsNullOrEmpty(product.Attributes)) { setClauses.Add("attributes=@Attributes"); parameters.Add("@Attributes", product.Attributes); }
+            if (!string.IsNullOrEmpty(product.ImageName)) { setClauses.Add("ImageName=@ImageName"); parameters.Add("@ImageName", product.ImageName); }
+
+            parameters.Add("@UpdatedAt", DateTime.UtcNow);
+            setClauses.Add("updated_at=@UpdatedAt");
+
+            var sql = $@"
+        UPDATE [NepalDistributers].[dbo].[products]
+        SET {string.Join(", ", setClauses)}
+        WHERE id=@Id";
+
+            parameters.Add("@Id", product.Id);
+
+            return (await _db.ExecuteAsync(sql, parameters)) > 0;
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -294,6 +337,25 @@ FROM [NepalDistributers].[dbo].[Products]
             );
         }
 
-
+        // Add this private helper method to the ProductRepository class to resolve CS0103
+        private static Task GenerateSkuAndSeoAsync(ProductModel product)
+        {
+            // Example implementation: generate SKU and SEO fields if missing
+            if (string.IsNullOrWhiteSpace(product.Sku))
+            {
+                product.Sku = $"SKU-{product.Name?.Replace(" ", "-").ToUpperInvariant()}";
+            }
+            if (string.IsNullOrWhiteSpace(product.SeoTitle))
+            {
+                product.SeoTitle = product.Name;
+            }
+            if (string.IsNullOrWhiteSpace(product.SeoDescription))
+            {
+                product.SeoDescription = product.Description?.Length > 150
+                    ? product.Description.Substring(0, 150)
+                    : product.Description;
+            }
+            return Task.CompletedTask;
+        }
     }
 }
