@@ -184,7 +184,7 @@ export class ProductService {
 
   getProductById(id: number): Observable<Product> {
     return this.apiGateway.get<Product>(
-      `/api/Product/${id}`,
+      `/api/Product/Update/${id}`,
       { requiresAuth: true }
     );
   }

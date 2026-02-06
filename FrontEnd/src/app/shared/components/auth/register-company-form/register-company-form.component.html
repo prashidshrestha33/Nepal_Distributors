@@ -142,7 +142,7 @@
                 <option value="" class="text-gray-400">
                   {{ loadingCompanyTypes ? 'Loading company types...' : companyTypes.length === 0 ? 'No company types available' : 'Select company type' }}
                 </option>
-                <option *ngFor="let type of companyTypes" [value]="type.StaticData">
+                <option *ngFor="let type of companyTypes" [value]="type.staticValueKey">
                   {{type.staticValueKey}}
                 </option>
               </select>

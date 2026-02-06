@@ -1,68 +1,74 @@
-<div class="max-w-4xl mx-auto p-8 bg-white dark:bg-gray-900 rounded-lg shadow-lg mt-8 flex flex-col md:flex-row gap-8">
-  <!-- Product Image Gallery -->
-  <div class="flex flex-col items-center md:w-1/2 w-full">
-    <img *ngIf="product?.imageUrl; else noImg"
-         [src]="product?.imageUrl"
-         alt="Product Image"
-         class="w-64 h-64 object-cover rounded-lg border mb-4" />
-    <ng-template #noImg>
-      <div class="w-64 h-64 flex items-center justify-center bg-gray-200 text-gray-500 rounded-lg border">No Image</div>
-    </ng-template>
+<div *ngIf="!loading && product" class="product-wrapper max-w-6xl mx-auto p-6">
+  <!-- Product Card -->
+  <div class="product-card flex flex-col md:flex-row gap-8 bg-white rounded-xl shadow-lg p-6 min-h-[700px]">
+    
+    <!-- LEFT: Main Image -->
+    <div class="flex flex-col items-center md:w-1/2 w-full">
+      <div class="image-zoom mb-4">
+        <img [src]="selectedImage" [alt]="product?.name"
+             class="w-96 h-96 object-cover rounded-lg border shadow hover:scale-105 transition-transform duration-300" />
+      </div>
+    </div>
+
+    <!-- RIGHT: Info -->
+    <div class="info-section flex-1 flex flex-col gap-3">
+      <h1 class="text-4xl font-extrabold text-gray-900 mb-2">{{ product?.name }}</h1>
+
+      <!-- Price -->
+      <div class="flex flex-col mb-2">
+        <span class="text-2xl font-bold text-orange-600">Rs. {{ product?.rate }}</span>
+      </div>
+
+      <!-- Details -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-gray-700">
+        <div>
+          <span class="font-semibold">Status:</span>
+          <span [ngClass]="{
+            'bg-green-100 text-green-800 px-3 py-1 rounded-full': product?.status === 'Approved',
+            'bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full': product?.status !== 'Approved'
+          }" class="ml-2">
+            {{ product?.status || 'Pending' }}
+          </span>
+        </div>
+
+        <div>
+          <span class="font-semibold">Manufacturer:</span> {{ product?.manufacturerId }}
+        </div>
+
+        <!-- Category styled like Daraz -->
+        <div class="flex items-center gap-2">
+          <span class="font-semibold">Category:</span>
+          <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+            {{ getCategoryName(product?.categoryId) }}
+          </span>
+        </div>
+
+        <!-- Brand styled -->
+        <div class="flex items-center gap-2">
+          <span class="font-semibold">Brand:</span>
+          <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
+            {{ getBrandName(product?.brandId) }}
+          </span>
+        </div>
+      </div>
+
+      <div><span class="font-semibold">Created By:</span> {{ product?.createdBy }}</div>
+
+      <!-- Back Button -->
+      <button (click)="goBack()" 
+              class="mt-6 px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded shadow w-max transition">
+        ← Back
+      </button>
+    </div>
   </div>
-  <!-- Product Details -->
-  <div class="flex-1 flex flex-col gap-2">
-    <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">{{ product?.name }}</h2>
-    <div class="flex items-center gap-2 mb-2">
-      <span class="text-yellow-500 text-lg">&#9733;&#9733;&#9733;&#9733;&#9734;</span>
-      <span class="text-sm text-gray-500">(Demo Ratings)</span>
-    </div>
-    <div class="text-2xl font-bold text-orange-600 mb-2">Rs. {{ product?.rate }}</div>
-    <div class="mb-2" *ngIf="product as p">
-      <span class="line-through text-gray-400">Rs. {{ p.rate != null ? (p.rate * 2) : '' }}</span>
-      <span class="ml-2 text-green-600 font-semibold">-50%</span>
-    </div>
-    <div class="mb-2">
-      <span class="font-semibold">Category:</span> {{ product?.categoryName }}
-    </div>
-    <div class="mb-2">
-      <span class="font-semibold">Brand:</span> {{ product?.brandName }}
-    </div>
-    <div class="mb-2">
-      <span class="font-semibold">HS Code:</span> {{ product?.hsCode }}
-    </div>
-    <div class="mb-2">
-      <span class="font-semibold">Created By:</span> {{ product?.createdBy }}
-    </div>
-    <div class="mb-2">
-      <span class="font-semibold">Status:</span>
-      <span [ngClass]="{
-        'bg-green-100 text-green-800': product?.status === 'Active',
-        'bg-yellow-100 text-yellow-800': product?.status !== 'Active'
-      }" class="px-3 py-1 rounded-full ml-2">{{ product?.status || 'Pending' }}</span>
-    </div>
-    <div class="mb-2">
-      <span class="font-semibold">Description:</span> {{ product?.description }}
-    </div>
-    <div class="mb-2">
-      <span class="font-semibold">Short Description:</span> {{ product?.shortDescription }}
-    </div>
-    <div class="mb-2">
-      <span class="font-semibold">SEO Title:</span> {{ product?.seoTitle }}
-    </div>
-    <div class="mb-2">
-      <span class="font-semibold">SEO Description:</span> {{ product?.seoDescription }}
-    </div>
-    <div class="mb-2">
-      <span class="font-semibold">SKU:</span> {{ product?.sku }}
-    </div>
-    <div class="mb-2">
-      <span class="font-semibold">Manufacturer ID:</span> {{ product?.manufacturerId }}
-    </div>
-    <div class="mb-2">
-      <span class="font-semibold">Is Featured:</span> {{ product?.isFeatured ? 'Yes' : 'No' }}
-    </div>
-    <div class="mb-2">
-      <span class="font-semibold">Updated At:</span> {{ product?.updatedAt | date:'medium' }}
-    </div>
+
+  <!-- Separate Description Card -->
+  <div class="description-card bg-white rounded-xl shadow-md p-6 mt-6">
+    <h2 class="text-2xl font-bold text-gray-900 mb-3">Product Description</h2>
+    <p class="text-gray-700 leading-relaxed">
+      {{ product?.description || 'No description available.' }}
+    </p>
   </div>
 </div>
+
+<div *ngIf="loading" class="loading text-center text-lg text-gray-500">Loading...</div>

@@ -81,6 +81,15 @@ namespace Marketplace.Api.Controllers
             if (item == null) return NotFound();
             return Ok(item);
         }
+
+        [HttpGet("Update/{id:int}")]
+        public async Task<IActionResult> GetProductById(int id)
+        {
+            var item = await repositorysitory.GetByIdAsync(id);
+            if (item == null) return NotFound();
+            return Ok(item);
+        }
+
         [HttpGet("GetCatagory/{id}")]
         public async Task<ActionResult<ProductModel>> GetCatagory(int id)
         {
@@ -139,7 +148,7 @@ namespace Marketplace.Api.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put(int id, [FromForm] ProductModels dto)
+        public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductModels dto)
         {
                 var product = await repositorysitory.GetByIdAsync(id);
                 if (product == null) return NotFound();
@@ -161,6 +170,7 @@ namespace Marketplace.Api.Controllers
                 product.Sku = dto.Sku; product.Name = dto.Name;
                 product.Description = dto.Description; // etc.
                 product.UpdatedAt = DateTime.UtcNow;
+                product.Id = id;
 
                 await repositorysitory.UpdateAsync(product);
                 return NoContent();
