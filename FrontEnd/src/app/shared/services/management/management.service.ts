@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiGatewayService } from '../api-gateway.service';
@@ -24,8 +24,6 @@ export interface Product {
   description: string;
   shortDescription?: string;
   categoryId: number;
-  subCategoryId?: number;
-  subSubCategoryId: number;
   brandId: number;
   manufacturerId: number;
   rate: number;
@@ -81,7 +79,7 @@ export interface Quotation {
 
 export interface StaticValue { 
   catalogId?: number;
-  staticId?:  number;
+  staticId:  number;
   staticValueKey: string;
   staticData?: string;
   displayOrder:  string;
@@ -209,6 +207,19 @@ ApprovedProductById(id: number, payload: ApproveProduct): Observable<Product> {
       }
     );
   }
+  updateProduct(id:  number, product: Product, image?: File): Observable<Product> {
+    const formData = this.buildProductFormData(product, image);
+    debugger;
+    return this.apiGateway.put<Product>(
+      `/api/Product/${id}`,
+      formData,
+      { 
+        requiresAuth: true,
+        headers: {}
+      }
+    );
+  }
+
 
   private buildProductFormData(product: Product, imageFile?: File): FormData { 
   const formData = new FormData();
@@ -217,8 +228,6 @@ ApprovedProductById(id: number, payload: ApproveProduct): Observable<Product> {
   formData.append('Description', product.description ?? '');
   formData.append('ShortDescription', (product.shortDescription ?? 0).toString());
   formData.append('CategoryId', (product.categoryId ?? 0).toString());
-  formData.append('SubCategoryId', (product.subCategoryId ?? 0).toString());
-  formData.append('SubSubCategoryId', (product.subSubCategoryId ?? 0).toString());
   formData.append('BrandId', (product.brandId ?? 0).toString());
   formData.append('ManufacturerId', (product.manufacturerId ?? 0).toString());
   formData.append('Rate', (product.rate ?? 0).toString());
@@ -240,18 +249,7 @@ ApprovedProductById(id: number, payload: ApproveProduct): Observable<Product> {
   return formData;
 }
 
-  updateProduct(id:  number, product: Product, image?: File): Observable<ApproveProduct> {
-    const formData = this.buildProductFormData(product, image);
-    return this.apiGateway.put<ApproveProduct>(
-      `/api/Product/${id}`,
-      formData,
-      { 
-        requiresAuth: true,
-        headers: {}
-      }
-    );
-  }
-
+  
     approveProduct(id:  number, product: Product): Observable<Product> {
     const formData = this.buildProductFormData(product);
     return this.apiGateway.put<Product>(
@@ -509,3 +507,4 @@ getUser(id: number): Observable<Users[]> {
     );
   }
 }
+

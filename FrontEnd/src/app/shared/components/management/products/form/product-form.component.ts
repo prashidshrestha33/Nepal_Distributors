@@ -8,6 +8,7 @@ import { StaticValue } from '../../../../services/management/management.service'
 import { StaticValueService } from '../../../../services/management/management.service';
 import { CategoryService } from '../../../../services/management/management.service';
 import { Category } from '../../../../services/management/management.service';
+import { environment } from '../../../../../../environments/environment';
 
 
 @Component({
@@ -18,7 +19,7 @@ import { Category } from '../../../../services/management/management.service';
 })
 export class ProductFormComponent implements OnInit {
 
-  snackbar = {
+    snackbar = {
     show: false,
     message: '',
     success: true
@@ -141,11 +142,11 @@ export class ProductFormComponent implements OnInit {
         isFeatured: product.isFeatured ?? true,
         imageName: product.imageName ?? '',
         createdBy: product.createdBy ?? ''
-      });
-
-      if (product.imageName) {
-        this.imagePreview = product.imageUrl ?? null;
-      }
+      });  
+      if (product?.imageName) {
+  const imageUrl = this.getImageUrl(product.imageName);
+  this.imagePreview = imageUrl;
+}
 
       this.loading = false;
     },
@@ -154,9 +155,12 @@ export class ProductFormComponent implements OnInit {
       this.error = 'Failed to load product';
     }
   });
-}
+}  
+ getImageUrl(imageName?: string): string {
+    if (!imageName) return 'assets/images/no-image.png';
+    return `${environment.apiBaseUrl}/api/CompanyFile/${imageName}`;
+  }
 
-  
   getCategoryName(id: number): string | null {
     const findCat = (cats: Category[]): string | null => {
       for (const cat of cats) {
@@ -312,8 +316,6 @@ onProductImageChange(event: any) {
 removeImage() {
   this.productImage = undefined;
   this.imagePreview = null;
-  event?.stopPropagation();
-  this.imagePreview = null;
 
   // Clear file input (removes filename)
   if (this.fileInput?.nativeElement) {
@@ -332,21 +334,11 @@ onSubmit() {
 
   const raw = this.form.getRawValue();
 
-  let sku = raw.sku;
-  if (!this.editMode) {
-    const categoryName = this.getCategoryName(raw.categoryId) || '';
-    sku = `SUK-${categoryName}-${raw.name}`.replace(/\s+/g, '').toLowerCase();
-  }
-
   const product: Product = {
     ...raw,
-    sku,
-    seoTitle: raw.name,
-    seoDescription: raw.description?.substring(0, 200),
     isFeatured: true
   };
 
-  console.log('SUBMIT PRODUCT:', product);
 
   this.loading = true;
 

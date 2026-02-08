@@ -3,3 +3,6 @@
 :host {
   display: block;
 }
+.align-end{
+  justify-content: end;
+}

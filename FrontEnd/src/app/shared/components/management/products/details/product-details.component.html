@@ -5,7 +5,7 @@
     <!-- LEFT: Main Image -->
     <div class="flex flex-col items-center md:w-1/2 w-full">
       <div class="image-zoom mb-4">
-        <img [src]="selectedImage" [alt]="product?.name"
+        <img [src]="product.imageUrl" [alt]="product?.imageName"
              class="w-96 h-96 object-cover rounded-lg border shadow hover:scale-105 transition-transform duration-300" />
       </div>
     </div>
@@ -30,11 +30,11 @@
             {{ product?.status || 'Pending' }}
           </span>
         </div>
-
+<br/>
         <div>
           <span class="font-semibold">Manufacturer:</span> {{ product?.manufacturerId }}
         </div>
-
+<br/>
         <!-- Category styled like Daraz -->
         <div class="flex items-center gap-2">
           <span class="font-semibold">Category:</span>
@@ -42,16 +42,16 @@
             {{ getCategoryName(product?.categoryId) }}
           </span>
         </div>
-
+<br/>
         <!-- Brand styled -->
         <div class="flex items-center gap-2">
           <span class="font-semibold">Brand:</span>
           <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
-            {{ getBrandName(product?.brandId) }}
+            {{ getBrandName(product.brandId) }}
           </span>
         </div>
       </div>
-
+<br/>
       <div><span class="font-semibold">Created By:</span> {{ product?.createdBy }}</div>
 
       <!-- Back Button -->
