@@ -7,29 +7,25 @@ import { FormsModule, FormGroup } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { ProductService } from '../../../../services/management/management.service';
 import type { Product as ProductBase } from '../../../../services/management/management.service';
-
-type Product = ProductBase & { selected?: boolean };
-import { Category } from '../../../../services/management/management.service';
-import { CategoryService } from '../../../../services/management/management.service';
-import { Users } from '../../../../services/management/management.service';
+import { Category, CategoryService, Users, StaticValueCatalog, StaticValueService, StaticValue } from '../../../../services/management/management.service';
 import { environment } from '../../../../../../environments/environment';
 
+type Product = ProductBase & { selected?: boolean };
 
 @Component({
   selector: 'app-products',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, ApproveProductComponent, PaginationComponent],
   templateUrl: './products.component.html',
-  styleUrl: './products.component.css'
+  styleUrls: ['./products.component.css']
 })
 export class ProductsComponent implements OnInit {
   products: Product[] = [];
   filteredProducts: Product[] = [];
-  // Modal state
   showApproveModal = false;
   approveProductData: (Product & { categoryName?: string; brandName?: string }) | null = null;
   approveStatus: string = 'Pending';
-  users:Users[] = [];
+  users: Users[] = [];
   searchTerm = '';
   loading = false;
   form!: FormGroup;
@@ -41,87 +37,195 @@ export class ProductsComponent implements OnInit {
   selectedFile!: File;
   jobId?: string;
   error?: string;
-  
-// Bulk selection flag
-allSelected = false;
-canBulkApprove = false;
-  
-  
-  // Pagination properties
+  staticValueCatalogs: StaticValueCatalog[] = [];
+  staticValues: StaticValue[] = [];
+  brandMap = new Map<number, string>();
+
+  // Bulk selection flags
+  allSelected = false;
+  canBulkApprove = false;
+
+  // Pagination
   currentPage = 1;
   pageSize = 20;
   totalCount = 0;
   totalPages = 0;
-  
-  // Expose Math to template
+
   Math = Math;
 
   constructor(
-    private productService: ProductService, 
+    private productService: ProductService,
     private router: Router,
     private categoryService: CategoryService,
-    private cdr: ChangeDetectorRef) {}
+    private cdr: ChangeDetectorRef,
+    private staticValueService: StaticValueService
+  ) {}
+
   ngOnInit() {
     this.loadProducts();
     this.loadCategoryTree();
-    this.getImageUrl();
-  }
-    loadCategoryTree() {
-      this.categoryService.getTreeCategories().subscribe({
-        next: (tree: Category[]) => {
-          
-          this.treeCategories = tree;
-          this.cascadingDropdowns[0] = tree;
-          this.dropdownLabels[0] = 'Parent Category';
-          this.loadingStates[0] = false;
-          this.cdr.markForCheck();
-        },
-        error: (err) => {
-          console.error('Move form - Error loading category tree:', err);
-          this.cdr.markForCheck();
-        }
-      });
-    }
-    
-  // View product details
-  viewProduct(product: Product) {
-    if (product && product.id) {
-      this.router.navigate(['/products', product.id]);
-    }
+    this.loadBrandStaticValues();
   }
 
-editProduct(product: Product) {
-  if (product && product.id) this.router.navigate(['/management/products/edit', product.id]);
+  // ----------------------
+  // Load products & pagination
+  // ----------------------
+  loadProducts() {
+    this.loading = true;
+    this.productService.getProducts(this.currentPage, this.pageSize).subscribe({
+      next: (response: any) => {
+        this.products = response.result.map((p: Product) => ({
+          ...p,
+          imageUrl: this.getImageUrl(p.imageName)
+        }));
+        this.filteredProducts = [...this.products];
+        this.totalCount = this.products.length;
+        this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+        this.loading = false;
+      },
+      error: err => {
+        console.error('Error loading products:', err);
+        this.loading = false;
+      }
+    });
+  }
+  // Get brand name by brandId safely
+getBrandName(brandId?: number | null): string {
+  if (!brandId) return 'N/A';
+  return this.brandMap.get(Number(brandId)) ?? 'N/A';
 }
 
-  removeProduct(product: Product) {
-    // Open the same modal, but you can handle remove logic in the modal
+  onPageChange(newPage: number) {
+    this.currentPage = newPage;
+    this.loadProducts();
+  }
+
+  onPageSizeChange(newSize: number) {
+    this.pageSize = newSize;
+    this.currentPage = 1;
+    this.loadProducts();
+  }
+
+  // ----------------------
+  // Category tree helpers
+  // ----------------------
+  loadCategoryTree() {
+    this.categoryService.getTreeCategories().subscribe({
+      next: (tree: Category[]) => {
+        this.treeCategories = tree;
+        this.cascadingDropdowns[0] = tree;
+        this.dropdownLabels[0] = 'Parent Category';
+        this.loadingStates[0] = false;
+        this.cdr.markForCheck();
+      },
+      error: err => {
+        console.error('Error loading category tree:', err);
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  getCategoryName(id: number | null | undefined): string {
+    if (!id || id === 0) return 'N/A';
+    const findCat = (cats: Category[]): string | null => {
+      for (const cat of cats) {
+        if (cat.id === id) return cat.name;
+        if (cat.children) {
+          const found = findCat(cat.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    return findCat(this.treeCategories) || 'N/A';
+  }
+
+  // ----------------------
+  // Brand static values
+  // ----------------------
+// Load all brand static values once
+loadBrandStaticValues(): void {
+  this.staticValueService.getStaticValuesCatagory().subscribe({
+    next: catalogs => {
+      const brandCatalog = catalogs.find(c => c.catalogName === 'Brand');
+      if (!brandCatalog) return;
+debugger;
+      // Fetch brand values
+      this.staticValueService.getStaticValues(brandCatalog.catalogId).subscribe({
+        next: values => {
+          this.brandMap.clear();
+
+          // Ensure key is number and value is string
+          values.forEach(v => {
+            debugger;
+            const id = Number(v.staticId); // Convert to number, safe for BIGINT
+            this.brandMap.set(id, v.staticValueKey.toString()); // staticValueKey is the name
+          });
+
+          console.log('Brand map loaded:', this.brandMap);
+        },
+        error: err => console.error('Error loading brand values', err)
+      });
+    },
+    error: err => console.error('Error loading static value catalog', err)
+  });
+}
+
+  // ----------------------
+  // Approve / remove product
+  // ----------------------
+  approveProduct(product: Product) {
     this.approveProductData = {
       ...product,
       categoryName: this.getCategoryName(product.categoryId),
       brandName: this.getBrandName(product.brandId)
     };
+    this.approveStatus = product.status || 'Pending';
     this.showApproveModal = true;
   }
-    // Step 1: bind selected file
-onFileSelected(event: any) {
-  this.selectedFile = event.target.files[0];
-  if (this.selectedFile) {
-    this.importCsv(); // automatically trigger upload
+
+  removeProduct(product: Product) {
+    // Just open modal like approve
+    this.approveProduct(product);
   }
-}
 
-    // Step 2: call API
+  onApproveSave(event: { status: string; reason?: string }) {
+    if (!this.approveProductData) return;
+    const payload = {
+      id: this.approveProductData.id,
+      action: event.status,
+      remarks: event.reason || ''
+    };
+    this.productService.ApprovedProductById(this.approveProductData.id, payload).subscribe({
+      next: (updatedProduct: Product) => {
+        const idx = this.products.findIndex(p => p.id === updatedProduct.id);
+        if (idx > -1) this.products[idx].status = updatedProduct.status;
+        this.filteredProducts = [...this.products];
+        this.showApproveModal = false;
+      },
+      error: err => console.error('Error updating product status:', err)
+    });
+  }
+
+  onApproveCancel() {
+    this.showApproveModal = false;
+  }
+
+  // ----------------------
+  // File upload
+  // ----------------------
+  onFileSelected(event: any) {
+    this.selectedFile = event.target.files[0];
+    if (this.selectedFile) this.importCsv();
+  }
+
   importCsv() {
-    debugger;
     if (!this.selectedFile) return;
-
     this.loading = true;
     this.error = undefined;
-
     this.productService.CSVImporter(this.selectedFile).subscribe({
       next: res => {
-        this.jobId = res.jobId; // API returns jobId
+        this.jobId = res.jobId;
         this.loading = false;
       },
       error: err => {
@@ -131,166 +235,74 @@ onFileSelected(event: any) {
     });
   }
 
-updateBulkButtonState() {
-  this.canBulkApprove = this.filteredProducts.some(p => p.selected);
-  this.allSelected = this.filteredProducts.every(p => p.selected);
-}
-
-toggleSelectAll(event: any) {
-  const checked = event.target.checked;
-  this.filteredProducts.forEach(p => (p.selected = checked));
-  this.updateBulkButtonState();
-}
-
-// Bulk approve function
-bulkApprove() {
-  const selectedProducts = this.filteredProducts.filter(p => p.selected);
-  if (selectedProducts.length === 0) return;
-
-  const requests = selectedProducts.map(p => {
-    const payload = { action: 'Approved', remarks: 'Bulk approved' };
-    return this.productService.bulkApproveProduct(p.id, payload);
-  });
-
-  this.loading = true;
-
-  // Execute all API calls
-  forkJoin(requests).subscribe({
-    next: res => {
-      // Update local product statuses
-      selectedProducts.forEach(p => {
-        p.status = 'Approved';
-        p.selected = false; // uncheck after approve
-      });
-      this.canBulkApprove = false;
-      this.allSelected = false;
-      this.loading = false;
-    },
-    error: err => {
-      console.error('Bulk approve failed', err);
-      this.loading = false;
-    }
-  });
-}
-
-
-
-approveProduct(product: Product) {
-  // Open modal with product details
-  this.approveProductData = {
-    ...product,
-    categoryName: this.getCategoryName(product.categoryId),
-    brandName: this.getBrandName(product.brandId)
-  };
-  this.approveStatus = product.status || 'Pending';
-  this.showApproveModal = true;
-}
-  // ...existing code...
-  goToEditProduct(id: number) {
-    this.router.navigate(['/management/products/edit', id]);
+  // ----------------------
+  // Bulk selection
+  // ----------------------
+  updateBulkButtonState() {
+    this.canBulkApprove = this.filteredProducts.some(p => p.selected);
+    this.allSelected = this.filteredProducts.every(p => p.selected);
   }
 
-onApproveSave(event: { status: string; reason?: string }) {
-  if (!this.approveProductData) return;
-  const payload = {
-    id: this.approveProductData.id,
-    action: event.status,
-    remarks: event.reason || ''
-  };
-  this.productService.ApprovedProductById(this.approveProductData.id, payload).subscribe({
-    next: (updatedProduct: Product) => {
-      // Update local table
-      const idx = this.products.findIndex(p => p.id === updatedProduct.id);
-      if (idx > -1) {
-        this.products[idx].status = updatedProduct.status;
-      }
-      this.filteredProducts = [...this.products];
-      this.showApproveModal = false;
-    },
-    error: (err: unknown) => {
-      console.error('Error updating product status:', err);
-    }
-  });
-}
-
-onApproveCancel() {
-  this.showApproveModal = false;
-}
-  loadProducts() {
-  this.loading = true;
-
-  this.productService.getProducts(this.currentPage, this.pageSize).subscribe({
-    next: (response: any) => {
-      // Map products and add imageUrl
-      this.products = response.result.map((p: Product) => ({
-        ...p,
-        imageUrl: this.getImageUrl(p.imageName) // map imageUrl from imageName
-      }));
-
-      this.filteredProducts = [...this.products];
-
-      // Set pagination
-      this.totalCount = this.products.length;
-      this.totalPages = Math.ceil(this.totalCount / this.pageSize);
-
-      this.loading = false;
-    },
-    error: (err) => {
-      console.error('Error loading products:', err);
-      this.loading = false;
-    }
-  });
-}
-
-  // Helper to get category name by ID
-  getCategoryName(id: number | null | undefined): string {
-  if (!id || id === 0) return 'N/A';
-  const findCat = (cats: Category[]): string | null => {
-    for (const cat of cats) {
-      if (cat.id === id) return cat.name;
-      if (cat.children) {
-        const found = findCat(cat.children);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
-  return findCat(this.treeCategories) || 'N/A';
-}
-
-getBrandName(id: number | null | undefined): string {
-  if (!id) return 'N/A';
-  const brand = this.treeCategories.flatMap(c => c.children || []).find(b => b.id === id);
-  return brand ? brand.name : `Brand-${id}`;
-}
-
-  onSearch() {
-    this.filteredProducts = this.products
-      .filter(p => p.name.toLowerCase().includes(this.searchTerm.toLowerCase()));
+  toggleSelectAll(event: any) {
+    const checked = event.target.checked;
+    this.filteredProducts.forEach(p => (p.selected = checked));
+    this.updateBulkButtonState();
   }
 
+  bulkApprove() {
+    const selectedProducts = this.filteredProducts.filter(p => p.selected);
+    if (!selectedProducts.length) return;
+
+    const requests = selectedProducts.map(p => {
+      const payload = { action: 'Approved', remarks: 'Bulk approved' };
+      return this.productService.bulkApproveProduct(p.id, payload);
+    });
+
+    this.loading = true;
+    forkJoin(requests).subscribe({
+      next: () => {
+        selectedProducts.forEach(p => {
+          p.status = 'Approved';
+          p.selected = false;
+        });
+        this.canBulkApprove = false;
+        this.allSelected = false;
+        this.loading = false;
+      },
+      error: err => {
+        console.error('Bulk approve failed', err);
+        this.loading = false;
+      }
+    });
+  }
+
+  // ----------------------
+  // Helpers
+  // ----------------------
   getImageUrl(imageName?: string): string {
-    if (!imageName || typeof imageName !== 'string' || !imageName.trim()) {
-      // Return a placeholder image if imageName is missing
-      return 'assets/images/no-image.png';
-    }
-    // Remove leading slashes if present
-    const cleanName = imageName.replace(/^\/+/, '');
-    return `${environment.apiBaseUrl}/api/CompanyFile/${cleanName}`;
+    if (!imageName?.trim()) return 'assets/images/no-image.png';
+    return `${environment.apiBaseUrl}/api/CompanyFile/${imageName.replace(/^\/+/, '')}`;
   }
 
   isFeatured(product: Product): boolean {
     return product.isFeatured === true;
   }
-  //Pagination
-  onPageChange(newPage: number) {
-  this.currentPage = newPage;
-  this.loadProducts();
-}
 
-onPageSizeChange(newSize: number) {
-  this.pageSize = newSize;
-  this.currentPage = 1;
-  this.loadProducts();
-}
+  onSearch() {
+    this.filteredProducts = this.products.filter(p =>
+      p.name.toLowerCase().includes(this.searchTerm.toLowerCase())
+    );
+  }
+
+  editProduct(product: Product) {
+    if (product?.id) this.router.navigate(['/management/products/edit', product.id]);
+  }
+
+  viewProduct(product: Product) {
+    if (product?.id) this.router.navigate(['/products', product.id]);
+  }
+
+  goToEditProduct(id: number) {
+    this.router.navigate(['/management/products/edit', id]);
+  }
 }

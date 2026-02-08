@@ -123,8 +123,13 @@ export const routes: Routes = [
             title: 'Nepal Distributors - Products Management'
           },
           {
+            path: 'products/details/:id',
+            loadComponent: () => import('./shared/components/management/products/details/product-details.component').then(m => m.ProductDetailsComponent),
+            title: 'Nepal Distributors - Product Details'
+          },
+          {
             path: 'products/edit/:id',
-            loadComponent: () => import('./shared/components/management/products/edit/product-edit.component').then(m => m.ProductEditComponent),
+            component: ProductFormComponent,
             title: 'Nepal Distributors - Edit Product'
           },
           {
@@ -194,6 +199,11 @@ export const routes: Routes = [
         path: 'categories/add',
         component: CategoryFormComponent,
         title: 'Nepal Distributors - Add Category'
+      },
+      {
+        path: 'products/details/:id',
+        loadComponent: () => import('./shared/components/management/products/details/product-details.component').then(m => m.ProductDetailsComponent),
+        title: 'Nepal Distributors - Product Details'
       },
       {
         path: 'products',

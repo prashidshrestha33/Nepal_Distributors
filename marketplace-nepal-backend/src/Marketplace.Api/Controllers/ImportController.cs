@@ -192,9 +192,8 @@ namespace Marketplace.Api.Controllers
                   : null,
                 Sku = dict.GetValueOrDefault("sku"),
                 Name = name,
-                Description = dict.GetValueOrDefault("description"),
+                Description = dict.GetValueOrDefault("Description"),
                 ShortDescription = dict.GetValueOrDefault("short_description"),
-                // category may come as ID or name; try numeric first, else lookup by name (case-insensitive)
                 CategoryId = 0,
                 BrandId = 0,
                 ManufacturerId = dict.GetValueOrDefault("manufacturer_id") != null
@@ -205,13 +204,10 @@ namespace Marketplace.Api.Controllers
                 Status = dict.GetValueOrDefault("status") ?? "pending_approval",
                 IsFeatured = ParseBoolean(dict.GetValueOrDefault("is_featured")),
                 SeoTitle = name, // product name
-                SeoDescription = GenerateSeoDescription(dict.GetValueOrDefault("description")), // intelligent trim
+                SeoDescription = GenerateSeoDescription(dict.GetValueOrDefault("description")),
                 Attributes = dict.GetValueOrDefault("attributes"),
                 ImageName = dict.GetValueOrDefault("ImageName"),
                 CreatedBy = createdBy,
-                ProductAdded = dict.GetValueOrDefault("product_added") != null
-                    ? int.Parse(dict.GetValueOrDefault("product_added"))
-                    : null,
                 CreatedAt = dict.GetValueOrDefault("created_at") != null
                   ? DateTime.Parse(dict.GetValueOrDefault("created_at"))
                   : DateTime.UtcNow,

@@ -7,7 +7,7 @@ import { FormsModule } from '@angular/forms';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-  <div class="w-full bg-white dark:bg-gray-900 shadow-inner p-4 flex flex-col md:flex-row items-center justify-between gap-4 border-t mt-2 sticky bottom-0 z-10">
+  <div class="w-full bg-white dark:bg-gray-900 shadow-inner p-4 flex flex-col md:flex-row items-center justify-between gap-4 border-t mt-2 sticky bottom-0 z-10 justify-content: flex-end">
     <!-- Page size selector -->
     <div class="flex items-center gap-2">
       <span class="text-gray-600 dark:text-gray-400 text-sm">Show:</span>

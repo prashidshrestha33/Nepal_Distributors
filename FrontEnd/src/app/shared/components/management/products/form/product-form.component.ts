@@ -2,23 +2,24 @@ import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef, Input } fr
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Product, ProductService, StaticValueCatalog } from '../../../../services/management/management.service';
 import { StaticValue } from '../../../../services/management/management.service';
 import { StaticValueService } from '../../../../services/management/management.service';
 import { CategoryService } from '../../../../services/management/management.service';
 import { Category } from '../../../../services/management/management.service';
+import { environment } from '../../../../../../environments/environment';
+
 
 @Component({
   selector: 'app-product-form',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './product-form.component.html',
-  styleUrl: './product-form.component.css'
 })
 export class ProductFormComponent implements OnInit {
 
-  snackbar = {
+    snackbar = {
     show: false,
     message: '',
     success: true
@@ -40,8 +41,6 @@ export class ProductFormComponent implements OnInit {
   filteredItems: StaticValue[] = [];
   searchTerm = '';
   catalogId: number | null = null;
-  form!: FormGroup;
-  loading = false;
   error: string | null = null;
   staticItem: StaticValueCatalog[] = [];
   staticFilteredItems: StaticValueCatalog[] = [];
@@ -57,7 +56,9 @@ export class ProductFormComponent implements OnInit {
   imagePreview: string | ArrayBuffer | null = null;
   @ViewChild('fileInput', { static: false })
   fileInput!: ElementRef<HTMLInputElement>;
-
+  showCategoryMenu = false;
+  form!: FormGroup;
+  loading: boolean = false;
   
   constructor(
     private fb: FormBuilder,
@@ -66,14 +67,18 @@ export class ProductFormComponent implements OnInit {
     private http: HttpClient,
     private service: StaticValueService,
     private categoryService: CategoryService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute
   ) {
     this.form = this.fb.group({
+      id: [null],
       sku: [''],
       name: ['', Validators.required],
       description: ['', Validators.required],
       shortDescription: [''],
       categoryId: ['', Validators.required],
+      companyId: [null],
+      credit: [null],
       subCategoryId: [0],
       subSubCategoryId: [0],
       brandId: ['', Validators.required],
@@ -85,40 +90,77 @@ export class ProductFormComponent implements OnInit {
       seoTitle: [''],
       seoDescription: [''],
       attributes: [''],
+      imageName: [''],
       createdBy: [''],
       productImage: [''],
     });
   }
 
   ngOnInit(): void {
-    this.getAllCatalog();
-    this.loadCategoryTree();
-    if (this.editMode && this.productId) {
-      this.loadProductForEdit(this.productId);
-    }
-  }
-
-  loadProductForEdit(id: number) {
-    this.loading = true;
-    this.productService.getProductById(id).subscribe({
-      next: (product: Product) => {
-        this.form.patchValue(product);
-        // If product has imageUrl, set preview
-        if (product.imageUrl) {
-          this.imagePreview = product.imageUrl;
+    this.route.paramMap.subscribe(params => {
+      const id = params.get('id');
+      this.productId = id ? +id : undefined;
+      this.editMode = !!this.productId;
+      Promise.all([
+        new Promise<void>((resolve) => {
+          this.getAllCatalog();
+          setTimeout(resolve, 300);
+        }),
+        new Promise<void>((resolve) => {
+          this.loadCategoryTree();
+          setTimeout(resolve, 300);
+        })
+      ]).then(() => {
+        if (this.editMode && this.productId) {
+          this.loadProductForEdit(this.productId);
         }
-        this.loading = false;
-      },
-      error: (err) => {
-        this.error = 'Failed to load product.';
-        this.loading = false;
-      }
+      });
     });
   }
 
-  // Category Functions
-  showCategoryMenu = false;
-  
+  loadProductForEdit(id: number) {
+  this.loading = true;
+
+  this.productService.getProductById(id).subscribe({
+    next: (res: any) => {
+      const product = res.result;
+
+      this.form.patchValue({
+        id: product.id,
+        sku: product.sku ?? '',
+        name: product.name ?? '',
+        description: product.description ?? '',
+        shortDescription: product.shortDescription ?? '',
+        categoryId: product.categoryId,
+        companyId: product.companyId,
+        credit: product.credit,
+        brandId: product.brandId,
+        manufacturerId: product.manufacturerId,
+        rate: product.rate,
+        hsCode: product.hsCode ?? '',
+        status: product.status ?? '',
+        isFeatured: product.isFeatured ?? true,
+        imageName: product.imageName ?? '',
+        createdBy: product.createdBy ?? ''
+      });  
+      if (product?.imageName) {
+  const imageUrl = this.getImageUrl(product.imageName);
+  this.imagePreview = imageUrl;
+}
+
+      this.loading = false;
+    },
+    error: () => {
+      this.loading = false;
+      this.error = 'Failed to load product';
+    }
+  });
+}  
+ getImageUrl(imageName?: string): string {
+    if (!imageName) return 'assets/images/no-image.png';
+    return `${environment.apiBaseUrl}/api/CompanyFile/${imageName}`;
+  }
+
   getCategoryName(id: number): string | null {
     const findCat = (cats: Category[]): string | null => {
       for (const cat of cats) {
@@ -156,17 +198,6 @@ export class ProductFormComponent implements OnInit {
   selectBrand(brand: any) {
     this.form.get('brandId')?.setValue(brand.staticId);
     this.showBrandMenu = false;
-  }
-
-  // SKU Generation
-  private updateSku() {
-    const categoryId = this.form.get('categoryId')?.value;
-    const name = this.form.get('name')?.value || '';
-    const selectedCategory = this.staticFilteredItems.find(cat => cat.catalogId === categoryId);
-    if (selectedCategory && name) {
-      const sku = `${selectedCategory.catalogName}-${name}-${Math.floor(1000 + Math.random() * 9000)}`;
-      this.form.get('sku')?.setValue(sku, { emitEvent: false });
-    }
   }
 
   // Clear Functions
@@ -217,7 +248,6 @@ export class ProductFormComponent implements OnInit {
     });
   }
 
-  // Recursively flatten categories for dropdown
   flattenCategories(categories: Category[], depth: number = 1): Category[] {
     let result: Category[] = [];
     for (const cat of categories) {
@@ -229,7 +259,6 @@ export class ProductFormComponent implements OnInit {
     return result;
   }
 
-  // Load Catalog
   getAllCatalog(): void {
     this.loading = true;
     this.error = null;
@@ -252,9 +281,6 @@ export class ProductFormComponent implements OnInit {
         }
 
         this.loading = false;
-
-        // Call updateSku after staticFilteredItems is set
-        this.updateSku();
       },
       error: () => {
         this.loading = false;
@@ -281,8 +307,6 @@ onProductImageChange(event: any) {
   }
 
   this.productImage = file;
-
-  // Create preview
   const reader = new FileReader();
   reader.onload = () => {
     this.imagePreview = reader.result;
@@ -302,71 +326,45 @@ removeImage() {
   this.form.get('productImage')?.setValue(null);
 }
 
-
-  // Submit Form
-  onSubmit() {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    // Auto-generate SKU as SUK-categoryname-productname
-    const categoryName = this.getCategoryName(this.form.value.categoryId) || '';
-    const productName = this.form.value.name || '';
-    const sku = `SUK-${categoryName}-${productName}`.replace(/\s+/g, '').toLowerCase();
-
-    // Generate SEO description: first 200 chars, end at last sentence if possible
-    let desc = this.form.value.description || '';
-    let shortDesc = desc.slice(0, 200);
-    const lastSentenceEnd = Math.max(shortDesc.lastIndexOf('.'), shortDesc.lastIndexOf('!'), shortDesc.lastIndexOf('?'));
-    if (lastSentenceEnd > 0) {
-      shortDesc = shortDesc.slice(0, lastSentenceEnd + 1);
-    }
-
-    const product: Product = {
-      ...this.form.value,
-      sku,
-      isFeatured: true,
-      seoTitle: productName, // Bind SEO title as product name
-      seoDescription: shortDesc // SEO description: first 200 chars, end at sentence
-    };
-
-    this.loading = true;
-    this.error = null;
-
-    if (this.editMode && this.productId) {
-      // Update product
-      this.productService.updateProduct(this.productId, product, this.productImage).subscribe({
-        next: () => {
-          this.loading = false;
-          this.showSnackbar('Product updated successfully!', true);
-          setTimeout(() => this.router.navigate(['/management/products']), 1000);
-        },
-        error: error => {
-          this.loading = false;
-          this.error = error?.error?.message || 'Failed to update product';
-          this.showSnackbar(this.error || 'Failed to update product', false);
-          console.error(error);
-        }
-      });
-    } else {
-      // Create product
-      this.productService.createProduct(product, this.productImage).subscribe({
-        next: () => {
-          this.loading = false;
-          this.showSnackbar('Product added successfully!', true);
-          setTimeout(() => this.router.navigate(['/management/products']), 1000);
-        },
-        error: error => {
-          this.loading = false;
-          this.error = error?.error?.message || 'Failed to create product';
-          this.showSnackbar(this.error || 'Failed to create product', false);
-          console.error(error);
-        }
-      });
-    }
+onSubmit() {
+  if (this.form.invalid) {
+    this.form.markAllAsTouched();
+    return;
   }
 
+  const raw = this.form.getRawValue();
+
+  const product: Product = {
+    ...raw,
+    isFeatured: true
+  };
+
+
+  this.loading = true;
+
+  let req$: import('rxjs').Observable<any>;
+  if (this.editMode && this.productId) {
+    req$ = this.productService.updateProduct(this.productId, product, this.productImage);
+  } else {
+    req$ = this.productService.createProduct(product, this.productImage);
+  }
+
+  req$.subscribe({
+    next: () => {
+      this.loading = false;
+      this.showSnackbar(
+        this.editMode ? 'Product updated successfully!' : 'Product added successfully!',
+        true
+      );
+      this.router.navigate(['/management/products']);
+    },
+    error: (err: any) => {
+      this.loading = false;
+      this.showSnackbar('Operation failed', false);
+      console.error(err);
+    }
+  });
+}
   goBack() {
     this.router.navigate(['/management/products']);
   }
@@ -376,5 +374,30 @@ removeImage() {
     const field = this.form.get(fieldName);
     return !!(field && field.invalid && (field.dirty || field.touched));
   }
+  onDragOver(event: DragEvent) {
+  event.preventDefault();
+}
+
+onDragLeave(event: DragEvent) {
+  event.preventDefault();
+}
+
+onDrop(event: DragEvent) {
+  event.preventDefault();
+
+  const file = event.dataTransfer?.files[0];
+  if (file) {
+    this.previewFile(file);
+  }
+}
+previewFile(file: File) {
+  if (!file.type.startsWith('image/')) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    this.imagePreview = reader.result as string;
+  };
+  reader.readAsDataURL(file);
+}
 }
 

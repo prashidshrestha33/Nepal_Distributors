@@ -7,7 +7,7 @@ namespace Marketplace.Api.Controllers
     [Route("api/[controller]")]
     public class CompanyFileController : ControllerBase
     {
-        private readonly string basePath = Path.Combine(Directory.GetCurrentDirectory(), "ComponeyDetails");
+        private readonly string basePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
 
         [HttpGet("{fileName}")]
         [AllowAnonymous]
