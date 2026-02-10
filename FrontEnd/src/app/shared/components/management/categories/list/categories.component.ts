@@ -44,8 +44,6 @@ export class CategoriesComponent implements OnInit {
     this.loading = true;
     this.service.getCategories().subscribe({
       next: (data: Category[]) => {
-        console.log('✓ Categories loaded from API:', data);
-        console.log('✓ Categories count:', data.length);
         
         // Flatten tree structure for table display
         this.items = this.flattenCategoryTree(data);

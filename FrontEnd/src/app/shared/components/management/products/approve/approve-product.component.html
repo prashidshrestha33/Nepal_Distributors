@@ -1,3 +1,13 @@
+
+<!-- Snackbar Notification -->
+<div *ngIf="snackbar.show"
+     [ngStyle]="{
+       'background-color': snackbar.success ? 'rgba(16, 185, 129, 0.85)' : 'rgba(220, 38, 38, 0.85)'
+     }"
+     class="fixed top-6 right-6 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-semibold transition-all duration-300 animate-fade-in">
+  {{ snackbar.message }}
+</div>
+
 <div class="approve-modal-container p-4 w-full max-w-7xl mx-auto bg-white dark:bg-gray-900 rounded-lg shadow-lg">
 
   <!-- Header -->

@@ -20,7 +20,7 @@ namespace Marketplace.Model.Models
         public int BrandId { get; set; }
         public int ManufacturerId { get; set; }
         public decimal Rate { get; set; }
-        public string HsCode { get; set; }
+        public string? HsCode { get; set; }
         public string? Status { get; set; }
         public bool? IsFeatured { get; set; } = true;
         public string? SeoTitle { get; set; }
@@ -28,7 +28,6 @@ namespace Marketplace.Model.Models
         public string? Attributes { get; set; }
         public string? ImageName { get; set; }
         public string? CreatedBy { get; set; }
-        public int? ProductAdded { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public DateTime? ApproveFg { get; set; }

@@ -1,8 +1,18 @@
+
+<!-- Snackbar Notification -->
+<div *ngIf="snackbar.show"
+     [ngStyle]="{
+       'background-color': snackbar.success ? 'rgba(16, 185, 129, 0.85)' : 'rgba(220, 38, 38, 0.85)'
+     }"
+     class="fixed top-6 right-6 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-semibold transition-all duration-300 animate-fade-in">
+  {{ snackbar.message }}
+</div>
+
 <div class="min-h-screen bg-gray-100 dark:bg-gray-800 flex items-center justify-center p-6">
   <div class="w-full max-w-3xl bg-gray-50 dark:bg-gray-900 shadow-xl rounded-2xl border border-gray-200 dark:border-gray-700 p-8 space-y-8">
 
     <h2 class="text-3xl font-extrabold text-gray-800 dark:text-white text-center">
-      Add New Product
+      {{ editMode ? 'Update Product' : 'Add Product' }}
     </h2>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
@@ -10,7 +20,7 @@
       <!-- Product Name -->
       <div class="space-y-1">
         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-          Product Name <span class="text-red-500">*</span>
+          Name <span class="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -19,38 +29,98 @@
           class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <span *ngIf="isFieldInvalid('name')" class="text-red-500 text-xs">
-          Product name is required.
+          Name is required.
         </span>
       </div>
 
       <!-- Product Details -->
       <div class="space-y-1">
         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-          Product Details
+          Details
         </label>
         <textarea
           formControlName="description"
           rows="3"
-          placeholder="Enter product details"
+          placeholder="Enter product description"
           class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
         ></textarea>
       </div>
+<!-- Product Image Upload -->
+<div class="space-y-1">
+  <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+     Image
+  </label>
 
-      <!-- Product Image Upload -->
-      <div class="space-y-1">
-        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">Product Image</label>
-        <input
-          type="file"
-          (change)="onProductImageChange($event)"
-          class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+  <!-- Upload Box -->
+  <div
+    class="relative flex items-center justify-center h-44 w-full
+           border-2 border-dashed rounded-xl cursor-pointer
+           transition-all duration-200
+           bg-gray-50 dark:bg-gray-800
+           border-gray-300 dark:border-gray-600
+           hover:border-blue-500 hover:bg-blue-50/40"
+    (click)="fileInput.click()"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)"
+  >
+
+    <!-- Image Preview -->
+    <ng-container *ngIf="imagePreview; else uploadPlaceholder">
+      <img
+        [src]="imagePreview"
+        class="absolute inset-0 h-full w-full object-cover rounded-xl"
+      />
+
+      <!-- Remove Button -->
+      <button
+        type="button"
+        (click)="removeImage()"
+        class="absolute top-2 right-2 bg-black/60 text-white
+               rounded-full h-7 w-7 flex items-center justify-center
+               hover:bg-black"
+      >
+        ✕
+      </button>
+    </ng-container>
+
+    <!-- Placeholder -->
+    <ng-template #uploadPlaceholder>
+      <div class="text-center pointer-events-none">
+        <!-- Cloud Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="mx-auto h-10 w-10 text-blue-500 mb-2"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6
+                   a5 5 0 011 9.9M12 12v6m0 0l-3-3m3 3l3-3" />
+        </svg>
+
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          <span class="font-medium text-blue-600">Click to upload</span>
+          or drag and drop
+        </p>
+        <p class="text-xs text-gray-400 mt-1">
+          PNG, JPG up to 5MB
+        </p>
       </div>
+    </ng-template>
 
+    <!-- Hidden File Input -->
+    <input
+      #fileInput
+      type="file"
+      accept="image/*"
+      class="hidden"
+      (change)="onProductImageChange($event)"
+    />
+  </div>
+</div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Product Rate -->
         <div class="space-y-1">
             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Product Rate <span class="text-red-500">*</span>
+               Rate <span class="text-red-500">*</span>
             </label>
             <input
               type="number"
@@ -63,19 +133,19 @@
               class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 no-spinner"
             />
             <span *ngIf="isFieldInvalid('rate')" class="text-red-500 text-xs">
-              Product rate is required.
+             Rate is required.
             </span>
           </div>
 
         <!-- HS Code -->
         <div class="space-y-1">
           <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">HS Code</label>
-          <input
+           <input
             type="text"
             formControlName="hsCode"
             placeholder="HS Code"
             class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+           />
         </div>
       </div>
 
@@ -135,6 +205,7 @@
             >
               {{ getBrandName(form.get('brandId')?.value) || 'Select Brand' }}
             </button>
+            <!--Clear Brand -->
             <button
               *ngIf="form.get('brandId')?.value"
               type="button"
@@ -168,7 +239,7 @@
         <!-- Manufacturer -->
         <div class="space-y-1">
            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-             Manufacturer
+             Manufacture
            </label>
            <input
              type="number"
@@ -184,38 +255,20 @@
              Manufacturer is required.
            </span>
         </div>
-
-
-        <!-- SEO Title -->
-        <div class="space-y-1">
-          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">SEO Friendly Page Title</label>
-          <input
-            type="text"
-            formControlName="seoTitle"
-            placeholder="SEO title"
-            class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
       </div>
-
-      <!-- SEO Description -->
-      <div class="space-y-1">
-        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">SEO Description</label>
-        <textarea
-          formControlName="seoDescription"
-          rows="2"
-          placeholder="SEO description"
-          class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        ></textarea>
-      </div>
-
       <!-- Error -->
       <div *ngIf="error" class="text-red-600 font-medium text-sm p-3 bg-red-50 border border-red-300 rounded-lg">
         {{ error }}
-      </div>
-
+      </div>      
       <!-- Buttons -->
       <div class="flex gap-4 justify-end">
+        <button
+          type="button"
+          (click)="goBack()"
+          class="bg-gray-500 hover:bg-gray-600 text-white font-bold px-6 py-2 rounded-lg shadow-md transition"
+        >
+          Cancel
+        </button>
         <button
           type="submit"
           [disabled]="form.invalid || loading"
@@ -226,15 +279,7 @@
                  disabled:cursor-not-allowed
                  disabled:hover:bg-gray-400"
         >
-          {{ loading ? 'Saving...' : 'Save Product' }}
-        </button>
-
-        <button
-          type="button"
-          (click)="goBack()"
-          class="bg-gray-500 hover:bg-gray-600 text-white font-bold px-6 py-2 rounded-lg shadow-md transition"
-        >
-          Cancel
+          {{ loading ? (editMode ? 'Updating...' : 'Saving...') : (editMode ? 'Update Product' : 'Save Product') }}
         </button>
       </div>
     </form>

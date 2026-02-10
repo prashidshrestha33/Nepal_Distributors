@@ -139,7 +139,6 @@ export class SignupFormComponent implements OnInit {
    const sSocialUser = localStorage.getItem('socialUser');
 let socialUser: SocialUser | null = null;
 let isSocialSignup = false;
-debugger;
 if (sSocialUser) {
   try {
     socialUser = JSON.parse(sSocialUser) as SocialUser;
@@ -163,7 +162,6 @@ if (sSocialUser) {
       });
       }
       else{
-        debugger;
         // ✅ Create form for social signup
       this.signupForm = this.formBuilder.group({
         firstName: ['', [Validators.required]],
@@ -229,7 +227,6 @@ if (sSocialUser) {
   }
 } 
 else if(!sSocialUser && this.returnUrl){
-  debugger;
  this.signupForm = this.formBuilder.group({
     firstName: ['', [Validators.required]],
     phoneNo: [''],
@@ -570,7 +567,6 @@ if (decryptedData && decryptedData.CompanyEmail) {
   }
 
    verifyOtp(otp: string) {
-    debugger;
         const formValues = this.signupForm.value;
      
        this.authService.ValidateRegisterOPT(formValues.email,otp).subscribe({

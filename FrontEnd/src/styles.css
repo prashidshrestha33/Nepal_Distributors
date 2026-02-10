@@ -133,3 +133,6 @@
 
 /* FullCalendar, Flatpickr, Swiper, Leaflet, etc. */
 /* Keep all existing third-party overrides here */
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
