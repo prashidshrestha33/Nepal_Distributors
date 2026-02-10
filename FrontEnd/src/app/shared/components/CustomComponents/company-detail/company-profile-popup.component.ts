@@ -5,7 +5,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { UiService } from '../../../../ui.service';
 import { CompanyService, company } from '../../../services/management/company.service';
 import { SafeHtmlPipe } from '../../../../shared/pipe/safe-html.pipe';
-
+import { environment } from '../../../../../environments/environment';
 @Component({
   selector: 'app-company-profile-popup',
   standalone: true,
@@ -76,6 +76,11 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
     }
 
     setTimeout(() => this.initLeaflet(), 0);
+  }
+  openImage(fileName?: string): void {
+    if (!fileName) return;
+    const src = this.getFileUrl(fileName);
+    this.ui.openImage(fileName);
   }
 
   private async initLeaflet() {
@@ -155,56 +160,59 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
 
   cancelEdit() { this.editMode = false; this.loadCompany(); }
 
+  // --------------------- UPDATED SAVE METHOD ---------------------
   save() {
     debugger;
     if (!this.company) return;
 
-    if (this.newLatLng) {
-      const { lng, lat } = this.newLatLng;
-      this.company.googleMapLocation = `POINT(${lng} ${lat})`;
-    }
+    const formData = new FormData();
+
+    formData.append('Company.Name', this.company.name ?? '');
+    formData.append('Company.companyId', this.companyId.toString());
+    formData.append('Company.CompanyType', this.company.companyType ?? '');
+    formData.append('Company.CompamyPerson', this.company.contactPerson ?? '');
+    formData.append('Company.MobilePhone', this.company.mobilePhone ?? '');
+    formData.append('Company.LandLinePhone', this.company.landlinePhone ?? '');
+    formData.append('Company.Address', this.company.location ?? '');
+    formData.append('Company.GoogleMapLocation', this.newLatLng ? `POINT(${this.newLatLng.lng} ${this.newLatLng.lat})` : '');
+  
 
     if (this.selectedFile) {
-      this.uploading = true;
-      this.companyService.uploadDocument(this.selectedFile, this.company!.id!).subscribe({
-        next: res => {
-          this.company!.registrationDocument = res.fileName;
-          this.selectedFile = undefined;
-          this.uploading = false;
-          this.finalSave();
-        },
-        error: () => { this.uploading = false; this.ui.showStatus('File upload failed', 'error'); }
-      });
-    } else {
-      this.finalSave();
+        formData.append('Company.RegistrationDocument', this.company.registrationDocument ?? '');
+      formData.append('CompanyDocument', this.selectedFile);
     }
-  }
 
-  private finalSave() {
-    if (!this.company) return;
-    this.companyService.update(this.company).subscribe({
-      next: () => { this.ui.showStatus('Company updated successfully', 'success'); this.editMode = false; this.loadCompany(); },
-      error: () => this.ui.showStatus('Update failed', 'error')
+    this.uploading = true;
+
+    this.companyService.updateCompany(this.companyId, formData).subscribe({
+      next: (res: any) => {
+        this.uploading = false;
+        this.ui.showStatus('Company updated successfully', 'success');
+        this.editMode = false;
+        this.loadCompany();
+        this.selectedFile = undefined;
+      },
+      error: (err) => {
+        this.uploading = false;
+        console.error(err);
+        this.ui.showStatus('Update failed', 'error');
+      }
     });
   }
+  // ----------------------------------------------------------------
 
   selectFile(event: any) {
     if (event.target.files && event.target.files.length > 0) {
       this.selectedFile = event.target.files[0];
 
       if (this.selectedFile) {
-        this.uploading = true;
-        this.companyService.uploadDocument(this.selectedFile, this.company!.id!).subscribe({
-          next: res => {
-            if (res && res.fileName) {
-              this.company!.registrationDocument = res.fileName;
-              if (this.isImage(res.fileName)) this.filePreview = this.getFileUrl(res.fileName);
-              else this.filePreview = undefined;
-            }
-            this.uploading = false;
-          },
-          error: () => { this.uploading = false; this.ui.showStatus('File upload failed', 'error'); }
-        });
+        if (this.isImage(this.selectedFile.name)) {
+          const reader = new FileReader();
+          reader.onload = (e: any) => this.filePreview = e.target.result;
+          reader.readAsDataURL(this.selectedFile);
+        } else {
+          this.filePreview = undefined;
+        }
       }
     }
   }
@@ -213,14 +221,12 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
 
   isImage(file?: string) { return !!file && /\.(jpg|jpeg|png|gif)$/i.test(file); }
   isPDF(file?: string) { return !!file && /\.pdf$/i.test(file); }
-  getFileUrl(file?: string) { return file ? `/uploads/${file}` : ''; }
-// Open registration document in a new tab (image or PDF)
-openImage(file?: string) {
-  if (!file) return;
-  const url = this.getFileUrl(file);
-  window.open(url, '_blank');
-}
 
+  getFileUrl(fileName?: string): string {
+    if (!fileName) return '';
+    fileName = fileName.replace(/^\/+/, '');
+    return `${environment.apiBaseUrl}/api/CompanyFile/\?fileName=${fileName}&path=ComponeyDetails`;
+  }
   getGoogleMapUrl(point?: string): SafeResourceUrl | null {
     if (!point) return null;
     const match = point.match(/POINT\s*\(\s*([\d.-]+)\s+([\d.-]+)\s*\)/i);

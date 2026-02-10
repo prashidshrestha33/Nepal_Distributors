@@ -133,3 +133,7 @@
     padding: 16px;
   }
 }
+.bg-white.w-full.max-w-4xl.rounded-xl.shadow-lg.p-6.relative {
+    height: -webkit-fill-available;
+    overflow: auto;
+}

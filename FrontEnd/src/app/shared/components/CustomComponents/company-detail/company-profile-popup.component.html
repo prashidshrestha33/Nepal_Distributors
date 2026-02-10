@@ -41,7 +41,7 @@
       <!-- Name -->
       <div>
         <label class="block font-medium text-gray-700">Name:</label>
-        <div *ngIf="!editMode" class="text-gray-900">{{ company.name }}</div>
+        <div *ngIf="!editMode" class="text-gray-900">{{ company?.name }}</div>
         <input
           *ngIf="editMode"
           [(ngModel)]="company.name"
@@ -52,7 +52,7 @@
       <!-- Contact Person -->
       <div>
         <label class="block font-medium text-gray-700">Contact Person:</label>
-        <div *ngIf="!editMode" class="text-gray-900">{{ company.contactPerson }}</div>
+        <div *ngIf="!editMode" class="text-gray-900">{{ company?.contactPerson }}</div>
         <input
           *ngIf="editMode"
           [(ngModel)]="company.contactPerson"
@@ -63,7 +63,7 @@
       <!-- Mobile Phone -->
       <div>
         <label class="block font-medium text-gray-700">Mobile Phone:</label>
-        <div *ngIf="!editMode" class="text-gray-900">{{ company.mobilePhone }}</div>
+        <div *ngIf="!editMode" class="text-gray-900">{{ company?.mobilePhone }}</div>
         <input
           *ngIf="editMode"
           [(ngModel)]="company.mobilePhone"
@@ -74,7 +74,7 @@
       <!-- Landline Phone -->
       <div>
         <label class="block font-medium text-gray-700">Landline Phone:</label>
-        <div *ngIf="!editMode" class="text-gray-900">{{ company.landlinePhone }}</div>
+        <div *ngIf="!editMode" class="text-gray-900">{{ company?.landlinePhone }}</div>
         <input
           *ngIf="editMode"
           [(ngModel)]="company.landlinePhone"
@@ -85,14 +85,13 @@
       <!-- Company Type -->
       <div>
         <label class="block font-medium text-gray-700">Company Type:</label>
-        <div class="text-gray-900">{{ company.companyType }}</div>
-       
+        <div class="text-gray-900">{{ company?.companyType }}</div>
       </div>
 
       <!-- Location -->
       <div>
         <label class="block font-medium text-gray-700">Location:</label>
-        <div *ngIf="!editMode" class="text-gray-900">{{ company.location }}</div>
+        <div *ngIf="!editMode" class="text-gray-900">{{ company?.location }}</div>
         <input
           *ngIf="editMode"
           [(ngModel)]="company.location"
@@ -100,48 +99,58 @@
         />
       </div>
 
- <!-- Google Map -->
-<div class="col-span-1 md:col-span-2">
-  <label class="block font-medium text-gray-700 mb-2">
-    Google Map Location: {{ company.googleMapLocation }}
-  </label>
+      <!-- Google Map -->
+      <div class="col-span-1 md:col-span-2">
+        <label class="block font-medium text-gray-700 mb-2">Google Map Location:</label>
 
-  <!-- Leaflet map in edit mode -->
-  <div
-    #companyMapDiv
-    *ngIf="editMode"
-    class="w-full h-64 rounded-lg border"
-  ></div>
+        <!-- Leaflet map in edit mode -->
+        <div
+          #companyMapDiv
+          *ngIf="editMode"
+          class="w-full h-64 rounded-lg border"
+        ></div>
 
-  <!-- Fallback iframe in view mode -->
-  <iframe
-    *ngIf="!editMode && getGoogleMapUrl(company.googleMapLocation) as mapUrl"
-    [src]="mapUrl"
-    class="w-full h-48 rounded-lg border"
-    loading="lazy">
-  </iframe>
+        <!-- Fallback iframe in view mode -->
+        <iframe
+          *ngIf="!editMode && getGoogleMapUrl(company?.googleMapLocation) as mapUrl"
+          [src]="mapUrl"
+          class="w-full h-48 rounded-lg border"
+          loading="lazy">
+        </iframe>
 
-  <span *ngIf="!company.googleMapLocation && !editMode" class="text-gray-500">
-    No map available
-  </span>
-</div>
+        <span *ngIf="!company?.googleMapLocation && !editMode" class="text-gray-500">
+          No map available
+        </span>
+      </div>
 
       <!-- Registration Document -->
-      <div class="col-span-1 md:col-span-2">
+      <div *ngIf="editMode" class="col-span-1 md:col-span-2">
         <label class="block font-medium text-gray-700 mb-2">Registration Document:</label>
 
-        <ng-container *ngIf="company.registrationDocument; else noDoc">
+        <!-- Hidden file input -->
+        <input
+          type="file"
+          #fileInput
+          class="hidden"
+          (change)="selectFile($event)"
+          accept=".jpg,.jpeg,.png,.pdf,.xlsx"
+        />
+
+        <ng-container *ngIf="company?.registrationDocument; else noDoc">
           <img
-            *ngIf="isImage(company.registrationDocument)"
-            [src]="getFileUrl(company.registrationDocument)"
+            *ngIf="isImage(company?.registrationDocument)"
+            [src]="getFileUrl(company?.registrationDocument)"
             class="max-w-xs max-h-40 rounded-lg border cursor-pointer"
-            (click)="openImage(company.registrationDocument)"
+            (click)="fileInput.click()"
+            title="Click to replace file"
           />
           <a
-            *ngIf="isPDF(company.registrationDocument)"
-            [href]="getFileUrl(company.registrationDocument)"
+            *ngIf="isPDF(company?.registrationDocument)"
+            [href]="getFileUrl(company?.registrationDocument)"
             target="_blank"
-            class="text-blue-500 hover:underline"
+            class="text-blue-500 hover:underline cursor-pointer"
+            (click)="fileInput.click(); $event.preventDefault()"
+            title="Click to replace file"
           >
             View PDF
           </a>
@@ -150,8 +159,39 @@
         <ng-template #noDoc>
           <span class="text-gray-500">No document available</span>
         </ng-template>
-      </div>
 
+        <!-- Preview newly selected file -->
+        <div *ngIf="selectedFile" class="mt-2">
+          <span class="text-gray-500">Selected File: {{ selectedFile.name }}</span>
+          <img *ngIf="isImage(selectedFile.name)" [src]="filePreview" class="max-w-xs max-h-40 rounded-lg border mt-1" />
+        </div>
+      </div>
+  <div *ngIf="!editMode" class="col-span-1 md:col-span-2">
+        <label class="block font-medium text-gray-700 mb-2">Registration Document:</label>
+
+        <ng-container *ngIf="company?.registrationDocument; else noDoc">
+          <img
+            *ngIf="isImage(company?.registrationDocument)"
+            [src]="getFileUrl(company?.registrationDocument)"
+              (click)="openImage(company.registrationDocument)"
+            class="max-w-xs max-h-40 rounded-lg border cursor-pointer"
+          />
+          <a
+            *ngIf="isPDF(company?.registrationDocument)"
+            [href]="getFileUrl(company?.registrationDocument)"
+            target="_blank"
+            class="text-blue-500 hover:underline cursor-pointer"
+            title="Click to replace file"
+          >
+            View PDF
+          </a>
+        </ng-container>
+
+        <ng-template #noDoc>
+          <span class="text-gray-500">No document available</span>
+        </ng-template>
+
+      </div>
     </div>
 
     <!-- Save / Cancel -->

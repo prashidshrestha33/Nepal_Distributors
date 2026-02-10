@@ -19,5 +19,7 @@ namespace Marketpalce.Repository.Repositories.ComponyRepo
         Task<CompanyDetailDto?> GetCompanyDetailAsync(long companyId);
         Task<bool> UpdateCompanyFieldAsync(UpdateCompanyFieldRequest request);
         Task<bool> UpdateAsync(UpdateCompanyFieldRequest request);
+
+        Task<long> UpdateCompanyAsync(Company company);
     }
 }

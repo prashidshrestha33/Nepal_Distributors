@@ -9,6 +9,7 @@ using Marketplace.Api.Services.FacebookToken;
 using Marketplace.Api.Services.GoogleTokenVerifier;
 using Marketplace.Api.Services.Hassing;
 using Marketplace.Api.Services.Helper;
+using Marketplace.Helpers;
 using Marketplace.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -276,6 +277,11 @@ namespace Marketplace.Api.Controllers
                 if ((companyId == null && req.Company != null) || companyId == 0)
                 {
                     var compReq = req.Company;
+                    GeoPoints? geo = null;
+                    if ( !string.IsNullOrEmpty(compReq.GoogleMapLocation))
+                    {
+                        geo = GeoHelper.ParseGeoPoint(compReq.GoogleMapLocation);
+                    }
                     var company = new Company
                     {
                         Name = compReq.Name?.Trim() ?? string.Empty,
@@ -286,11 +292,12 @@ namespace Marketplace.Api.Controllers
                         LandlinePhone = compReq.LandLinePhone,
                         UserType = compReq.UserType,
                         Location = compReq.Address,
-                        GoogleMapLocation = compReq.GoogleMapLocation,
+                        GoogleMapLocationpoint = geo,
                         Status = "pending",
                         ApproveFg = "n",
                         Credits = 5
                     };
+
                     if (!string.IsNullOrEmpty(savedFileUrl))
                     {
                         company.RegistrationDocument = savedFileUrl;

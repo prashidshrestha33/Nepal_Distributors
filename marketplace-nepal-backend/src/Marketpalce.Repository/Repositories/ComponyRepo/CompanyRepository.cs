@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using Marketplace.Models;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Data;
 using System.Transactions;
 
@@ -34,7 +35,9 @@ namespace Marketpalce.Repository.Repositories.ComponyRepo
                     Tier = company.Tier,
                     Location = company.Location,
                     // Pass WKT string for geography column
-                    GoogleMapLocation = "POINT(85.3240 27.7172)",
+                    GoogleMapLocation = company.GoogleMapLocationpoint != null
+                        ? $"POINT({company.GoogleMapLocationpoint.Lng} {company.GoogleMapLocationpoint.Lat})"
+                        : null,
                     ApproveDt = company.ApproveDt
                 }, transaction: transaction);
 
@@ -269,5 +272,66 @@ OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
         {
             throw new NotImplementedException();
         }
+
+        public async Task<long> UpdateCompanyAsync(Company company)
+        {
+            try
+            {
+                const string sql = @"
+UPDATE dbo.companies
+SET
+    name = ISNULL(@Name, name),
+    contact_person = ISNULL(@ContactPerson, contact_person),
+    mobile_phone = ISNULL(@MobilePhone, mobile_phone),
+    landline_phone = ISNULL(@LandlinePhone, landline_phone),
+    registration_document = ISNULL(@RegistrationDocument, registration_document),
+    company_type = ISNULL(@CompanyType, company_type),
+    status = ISNULL(@Status, status),
+    credits = ISNULL(@Credits, credits),
+    tier = ISNULL(@Tier, tier),
+    location = ISNULL(@Location, location),
+    google_map_location = CASE 
+        WHEN @GoogleMapLocation IS NOT NULL THEN geography::STGeomFromText(@GoogleMapLocation, 4326) 
+        ELSE google_map_location 
+    END,
+    updated_at = SYSUTCDATETIME(),
+    approve_dt = ISNULL(@ApproveDt, approve_dt),
+    approve_ts = SYSUTCDATETIME()
+WHERE id = @CompanyId;
+";
+
+                // Generate WKT string safely
+                string googleMapWKT = null;
+                if (company.GoogleMapLocationpoint != null)
+                {
+                    googleMapWKT = $"POINT({company.GoogleMapLocationpoint.Lng.ToString(System.Globalization.CultureInfo.InvariantCulture)} {company.GoogleMapLocationpoint.Lat.ToString(System.Globalization.CultureInfo.InvariantCulture)})";
+                }
+
+                return await _db.ExecuteAsync(sql, new
+                {
+                    Name = company.Name,
+                    CompanyId = company.Componeyid,
+                    ContactPerson = company.ContactPerson,
+                    MobilePhone = company.MobilePhone,
+                    LandlinePhone = company.LandlinePhone,
+                    RegistrationDocument = company.RegistrationDocument,
+                    CompanyType = company.CompanyType,
+                    Status = company.Status ?? "active",
+                    UserType = company.UserType,
+                    Credits = company.Credits,
+                    Tier = company.Tier,
+                    Location = company.Location,
+                    GoogleMapLocation = googleMapWKT, // <-- properly formatted
+                    ApproveDt = company.ApproveDt
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating company: {ex.Message}");
+                throw;
+            }
+        }
+
+
     }
 }

@@ -163,17 +163,14 @@ uploadDocument(
 
   /* ===================== UPDATE ===================== */
 
-  updateCompany(id: number, Company: company): Observable<company> {
-    return this.http.put<company>(`${this.apiUrl}/api/Companies/approve`, Company);
-  }
+  updateCompany(companyId: number, data: FormData) {
+   return this.apiGateway.post<FormData>(
+    `${environment.apiBaseUrl}/api/Companies/update`,
+    data,
+    { requiresAuth: true } // pass auth if needed
+  );
+}
 
-  /** ✅ Popup-friendly update */
-  update(Company: company): Observable<company> {
-    if (!Company.id) {
-      throw new Error('Company ID is required for update');
-    }
-    return this.updateCompany(Company.id, Company);
-  }
 
   /* ===================== DELETE ===================== */
 

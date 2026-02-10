@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Security.Cryptography;
 
 namespace Marketplace.Models
 {
     public class Company
     {
         public int Id { get; set; }
+        public string Componeyid { get; set; }
         public string Name { get; set; }
         public string ContactPerson { get; set; }
         public string MobilePhone { get; set; }
@@ -17,6 +19,8 @@ namespace Marketplace.Models
         public string Tier { get; set; }
         public string Location { get; set; }
         public string GoogleMapLocation { get; set; }
+        public GeoPoints? GoogleMapLocationpoint { get; set; }
+
         public DateTimeOffset? CreatedAt { get; set; }
         public DateTimeOffset? UpdatedAt { get; set; }
         public DateTimeOffset? ApproveDt { get; set; }
@@ -24,6 +28,14 @@ namespace Marketplace.Models
         public string ApproveFg { get; set; }
         public string RejectComment { get; set; }
     }
+    public class GeoPoints
+    {
+        public double Lat { get; set; }
+        public double Lng { get; set; }
+
+        public override string ToString() => $"POINT({Lng} {Lat})"; // WKT format for SQL
+    }
+
     public class UpdateCompanyFieldRequest
     {
         public long CompanyId { get; set; }

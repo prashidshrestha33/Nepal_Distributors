@@ -7,12 +7,16 @@ namespace Marketplace.Api.Controllers
     [Route("api/[controller]")]
     public class CompanyFileController : ControllerBase
     {
-        private readonly string basePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
 
-        [HttpGet("{fileName}")]
+        [HttpGet]
         [AllowAnonymous]
-        public IActionResult GetFile(string fileName)
+        public IActionResult GetFile([FromQuery] string fileName, [FromQuery] string path = null)
         {
+         string basePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
+            if (!string.IsNullOrEmpty(path))
+            {
+                basePath = Path.Combine(Directory.GetCurrentDirectory(), path);
+            }
             var fullPath = Path.Combine(basePath, fileName);
 
             if (!System.IO.File.Exists(fullPath))
