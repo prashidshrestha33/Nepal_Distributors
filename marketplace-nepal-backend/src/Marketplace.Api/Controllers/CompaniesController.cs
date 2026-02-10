@@ -145,6 +145,68 @@ namespace Marketplace.Api.Controllers
             }
         }
 
+        [HttpGet("{id}/detail")]
+        public async Task<IActionResult> GetCompanyDetail(int id)
+        {
+            var result = await _companies.GetCompanyDetailAsync(id);
+            if (result == null)
+                return NotFound();
+
+            return Ok(result);
+        }
+
+        [HttpPost("update-field")]
+        public async Task<IActionResult> UpdateCompanyField([FromBody] UpdateCompanyFieldRequest request)
+        {
+            var success = await _companies.UpdateCompanyFieldAsync(request);
+            if (!success)
+                return BadRequest("Update failed");
+
+            return Ok(new { success = true });
+        }
+        [HttpPost("upload-document")]
+        [RequestSizeLimit(20_000_000)] // optional, 20 MB max
+        public async Task<IActionResult> UploadDocument([FromForm] IFormFile file, [FromForm] long companyId, [FromForm] string fieldName)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { success = false, message = "No file provided." });
+
+            if (companyId <= 0)
+                return BadRequest(new { success = false, message = "Invalid company ID." });
+
+            // Allowed extensions
+            var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".xlsx" };
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!allowedExtensions.Contains(ext))
+                return BadRequest(new { success = false, message = "Invalid file type." });
+
+            // Save file
+            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "ComponeyDetails");
+            if (!Directory.Exists(uploadsPath)) Directory.CreateDirectory(uploadsPath);
+
+            var uniqueFileName = $"{Guid.NewGuid()}{ext}";
+            var filePath = Path.Combine(uploadsPath, uniqueFileName);
+
+            await using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            // Update the field in the database
+            var request = new UpdateCompanyFieldRequest
+            {
+                CompanyId = companyId,
+                FieldName = fieldName,
+                Value = uniqueFileName
+            };
+
+            var success = await _companies.UpdateCompanyFieldAsync(request);
+
+            if (!success)
+                return StatusCode(500, new { success = false, message = "Failed to update company." });
+
+            return Ok(new { success = true, message = "File uploaded successfully.", fileName = uniqueFileName });
+        }
 
     }
 }

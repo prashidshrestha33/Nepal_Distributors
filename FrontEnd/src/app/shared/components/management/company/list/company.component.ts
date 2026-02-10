@@ -8,6 +8,7 @@ import { LightboxModule, Lightbox } from 'ngx-lightbox';
 import { SafeHtmlPipe } from '../../../../pipe/safe-html.pipe';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { UiService } from '../../../../../../app/ui.service';
+
 @Component({
   selector: 'app-company',
   standalone: true,
@@ -146,7 +147,8 @@ flattenCategories(categories: Category[], depth = 0): Category[] {
   }
     openRegisterUser(id: number) {
         this.showApproveModal2 = true;
-        this.selectedCompanyId=id;
+        this.openCompanyProfile(id);
+        //this.selectedCompanyId=id;
   }
   getStaticValuesrole(){
   debugger;
@@ -269,5 +271,10 @@ RegisterNewUserLink() {
         this.error = 'Failed to delete Company. Please try again.';
       }
     });
+  }
+    openCompanyProfile(companyId: number): void {
+       debugger;
+    this.ui.openCompanyProfile(companyId);
+   
   }
 }

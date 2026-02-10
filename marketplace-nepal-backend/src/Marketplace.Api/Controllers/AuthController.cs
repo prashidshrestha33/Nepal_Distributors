@@ -288,7 +288,7 @@ namespace Marketplace.Api.Controllers
                         Location = compReq.Address,
                         GoogleMapLocation = compReq.GoogleMapLocation,
                         Status = "pending",
-                        ApproveTs = "n",
+                        ApproveFg = "n",
                         Credits = 5
                     };
                     if (!string.IsNullOrEmpty(savedFileUrl))

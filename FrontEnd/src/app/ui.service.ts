@@ -21,11 +21,17 @@ export class UiService {
   private _showOtp = new BehaviorSubject<boolean>(false);
   readonly showOtp$: Observable<boolean> = this._showOtp.asObservable();
 
+  openOtp(): void { this._showOtp.next(true); }
+  closeOtp(): void { this._showOtp.next(false); }
+
   // ------------------
   // Image Viewer
   // ------------------
   private _showImage = new BehaviorSubject<ImageViewerState | null>(null);
   readonly showImage$: Observable<ImageViewerState | null> = this._showImage.asObservable();
+
+  openImage(url: string): void { this._showImage.next({ url }); }
+  closeImage(): void { this._showImage.next(null); }
 
   // ------------------
   // Status Popup
@@ -33,23 +39,22 @@ export class UiService {
   private _showStatus = new BehaviorSubject<StatusPopupState | null>(null);
   readonly showStatus$: Observable<StatusPopupState | null> = this._showStatus.asObservable();
 
-  // ------------------
-  // OTP methods
-  // ------------------
-  openOtp(): void {this._showOtp.next(true); }
-  closeOtp(): void { this._showOtp.next(false); }
-
-  // ------------------
-  // Image Viewer methods
-  // ------------------
-  openImage(url: string): void { this._showImage.next({ url }); }
-  closeImage(): void { this._showImage.next(null); }
-
-  // ------------------
-  // Status Popup methods
-  // ------------------
   showStatus(message: string, type: 'success' | 'error'): void {
     this._showStatus.next({ message, type });
   }
   closeStatus(): void { this._showStatus.next(null); }
+
+  // ------------------
+  // Company Profile Popup
+  // ------------------
+  private _showCompanyProfile = new BehaviorSubject<number | null>(null);
+  readonly showCompanyProfile$: Observable<number | null> = this._showCompanyProfile.asObservable();
+
+  openCompanyProfile(companyId: number): void {
+    this._showCompanyProfile.next(companyId);
+  }
+
+  closeCompanyProfile(): void {
+    this._showCompanyProfile.next(null);
+  }
 }

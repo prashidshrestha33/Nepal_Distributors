@@ -338,10 +338,7 @@ if (decryptedData && decryptedData.CompanyEmail) {
     const { firstName, phoneNo, email, password, confirmPassword,provider,id,token } = this.signupForm.value;
     
     // Verify passwords match (extra safety check)
-    if (password !== confirmPassword) {
-      this.errorMessage = 'Passwords do not match';
-      return;
-    }
+   
     
     // Save user data to FormDataService before submission
     this.formDataService.saveUserData({

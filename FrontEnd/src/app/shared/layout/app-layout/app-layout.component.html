@@ -20,6 +20,11 @@
   [state]="status"
   (close)="ui.closeStatus()">
 </app-status-popup>
+<app-company-profile-popup
+  *ngIf="ui.showCompanyProfile$ | async as companyId"
+  [companyId]="companyId"
+  (close)="ui.closeCompanyProfile()"
+></app-company-profile-popup>
 
   <!-- Main Content Area -->
   <div

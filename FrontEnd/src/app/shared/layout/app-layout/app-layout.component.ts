@@ -13,6 +13,7 @@ import { AppHeaderComponent } from '../app-header/app-header.component';
 import { OtpPopupComponent } from '../../components/CustomComponents/otp-popup/otp-popup.component';
 import { ImageViewerComponent } from '../../components/CustomComponents/image-viewer/image-viewer.component';
 import { StatusPopupComponent } from '../../components/CustomComponents/status-popup/status-popup.component';
+import { CompanyProfilePopupComponent } from '../../components/CustomComponents/company-detail/company-profile-popup.component';
 
 // Global UI service
 import { UiService, StatusPopupState } from '../../../ui.service';
@@ -28,7 +29,8 @@ import { UiService, StatusPopupState } from '../../../ui.service';
     BackdropComponent,
     OtpPopupComponent,
     ImageViewerComponent,
-    StatusPopupComponent
+    StatusPopupComponent,
+    CompanyProfilePopupComponent
   ],
   templateUrl: './app-layout.component.html',
   styleUrls: ['./app-layout.component.css']
@@ -42,6 +44,7 @@ export class AppLayoutComponent {
   showOtp$: Observable<boolean>;
   showImage$: Observable<{ url: string } | null>;
   showStatus$: Observable<StatusPopupState | null>;
+  showCompanyProfile$: Observable<number | null>; // 👈 use UiService observable
 
   constructor(
     public sidebarService: SidebarService,
@@ -52,10 +55,11 @@ export class AppLayoutComponent {
     this.isHovered$ = this.sidebarService.isHovered$;
     this.isMobileOpen$ = this.sidebarService.isMobileOpen$;
 
-    // Initialize popup observables
+    // Popup observables
     this.showOtp$ = this.ui.showOtp$;
     this.showImage$ = this.ui.showImage$;
     this.showStatus$ = this.ui.showStatus$;
+    this.showCompanyProfile$ = this.ui.showCompanyProfile$; // 👈 subscribe to service
   }
 
   get containerClasses(): string[] {
@@ -69,7 +73,9 @@ export class AppLayoutComponent {
     ];
   }
 
-  // Helper methods to open popups
+  // --------------------------
+  // Popup helper methods
+  // --------------------------
   openOtp(): void {
     this.ui.openOtp();
   }
@@ -80,5 +86,9 @@ export class AppLayoutComponent {
 
   showStatus(message: string, type: 'success' | 'error'): void {
     this.ui.showStatus(message, type);
+  }
+
+  closeCompanyProfile(): void {
+    this.ui.closeCompanyProfile();
   }
 }

@@ -39,12 +39,13 @@ namespace Marketplace.Api.Services.Company
 
             var urlEncoded = Uri.EscapeDataString(encryptedData);
 
-            var registrationLink = _config["AppSettings:FrontendBaseUrl"]+$"/RegisterUser?token={urlEncoded}";
+            var registrationLink = _config["AppSettings:FrontendBaseUrl"]+$"/signup?token={urlEncoded}";
 
             var html = $@"
         <h3>Complete Your Registration</h3>
         <p>Please click the button below to complete company registration.</p>
         <a href='{registrationLink}'
+  target=""_blank""
            style='padding:10px 15px;background:#465fff;color:#fff;
            text-decoration:none;border-radius:5px'>
            Complete Registration
