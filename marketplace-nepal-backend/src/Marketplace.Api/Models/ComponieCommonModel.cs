@@ -2,6 +2,12 @@
 
 namespace Marketplace.Api.Models
 {
+    public class ComponieUpdateCommonModel
+    {
+        public CompanyCreateRequestCommonModel Company { get; set; }
+        public IFormFile? CompanyDocument { get; set; }
+    }
+
     public class ComponieCommonModel
     {
         public RegisterRequestCommonModel Register {get; set; }
@@ -29,11 +35,28 @@ namespace Marketplace.Api.Models
     public class CompanyCreateRequestCommonModel
     {
         public string? Name { get; set; }
+        public string? CompanyId { get; set; }
         public string? CompamyPerson { get; set; }
         public string? MobilePhone { get; set; }
         public string? LandLinePhone { get; set; }
         public string? CompanyType { get; set; }
         public string? Address { get; set; }
         public string? GoogleMapLocation { get; set; }
+        public string? RegistrationDocument { get; set; }
     }
+    public class CompanyDetailDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string ContactPerson { get; set; }
+        public string MobilePhone { get; set; }
+        public string LandlinePhone { get; set; }
+        public string CompanyType { get; set; }
+        public string Tier { get; set; }
+        public string Location { get; set; }
+        public string GoogleMapLocation { get; set; }
+        public string Status { get; set; }
+        public int Credits { get; set; }
+    }
+
 }

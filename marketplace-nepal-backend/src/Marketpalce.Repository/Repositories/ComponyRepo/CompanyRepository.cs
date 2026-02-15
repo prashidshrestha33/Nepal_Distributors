@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using Marketplace.Models;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Data;
 using System.Transactions;
 
@@ -34,7 +35,9 @@ namespace Marketpalce.Repository.Repositories.ComponyRepo
                     Tier = company.Tier,
                     Location = company.Location,
                     // Pass WKT string for geography column
-                    GoogleMapLocation = "POINT(85.3240 27.7172)",
+                    GoogleMapLocation = company.GoogleMapLocationpoint != null
+                        ? $"POINT({company.GoogleMapLocationpoint.Lng} {company.GoogleMapLocationpoint.Lat})"
+                        : null,
                     ApproveDt = company.ApproveDt
                 }, transaction: transaction);
 
@@ -75,14 +78,21 @@ WHERE id = @Id;";
 
         public async Task<IEnumerable<Company>> ListAsync(int page = 1, int pageSize = 50)
         {
-            const string sql = @"SELECT id AS Id, name AS Name,Contact_Person as ContactPerson,Mobile_Phone as MobilePhone,Landline_Phone as LandlinePhone,
+            try
+            {
+                const string sql = @"SELECT id AS Id, name AS Name,Contact_Person as ContactPerson,Mobile_Phone as MobilePhone,Landline_Phone as LandlinePhone,
         company_type AS CompanyType, registration_document AS RegistrationDocument,user_type as UserType,Credits,
        location AS Location, status AS status, created_at AS CreatedAt, updated_at AS UpdatedAt
 FROM dbo.companies
 ORDER BY id 
 OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
 
-            return await _db.QueryAsync<Company>(sql, new { Skip = (page - 1) * pageSize, Take = pageSize });
+                return await _db.QueryAsync<Company>(sql, new { Skip = (page - 1) * pageSize, Take = pageSize });
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
         }
         public async Task<bool> ApprovecompaniesAsync(long companieId, string approvedBy, string details, IDbTransaction? transaction = null)
         {
@@ -196,7 +206,131 @@ OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
             }
         }
 
+        public async Task<CompanyDetailDto?> GetCompanyDetailAsync(long companyId)
+        {
+            const string sql = @"
+    SELECT 
+        id AS Id,
+        name AS Name,
+        contact_person AS ContactPerson,
+        mobile_phone AS MobilePhone,
+        landline_phone AS LandlinePhone,
+        company_type AS CompanyType,
+        status AS Status,
+        user_type AS UserType,
+        credits AS Credits,
+        tier AS Tier,
+        location AS Location,
+        CAST(google_map_location AS NVARCHAR(MAX)) AS GoogleMapLocation
+    FROM dbo.companies
+    WHERE id = @CompanyId;";
 
+            return await _db.QueryFirstOrDefaultAsync<CompanyDetailDto>(
+                sql,
+                new { CompanyId = companyId }
+            );
+        }
+        public async Task<bool> UpdateCompanyFieldAsync(UpdateCompanyFieldRequest request)
+        {
+            string sql = request.FieldName switch
+            {
+                "Name" => "UPDATE dbo.companies SET name = @Value, updated_at = SYSUTCDATETIME() WHERE id = @Id",
+                "ContactPerson" => "UPDATE dbo.companies SET contact_person = @Value, updated_at = SYSUTCDATETIME() WHERE id = @Id",
+                "MobilePhone" => "UPDATE dbo.companies SET mobile_phone = @Value, updated_at = SYSUTCDATETIME() WHERE id = @Id",
+                "LandlinePhone" => "UPDATE dbo.companies SET landline_phone = @Value, updated_at = SYSUTCDATETIME() WHERE id = @Id",
+                "Tier" => "UPDATE dbo.companies SET tier = @Value, updated_at = SYSUTCDATETIME() WHERE id = @Id",
+                "Location" => "UPDATE dbo.companies SET location = @Value, updated_at = SYSUTCDATETIME() WHERE id = @Id",
+                "Status" => "UPDATE dbo.companies SET status = @Value, updated_at = SYSUTCDATETIME() WHERE id = @Id",
+                _ => null
+            };
+
+            if (sql == null)
+                return false;
+
+            var rows = await _db.ExecuteAsync(sql, new
+            {
+                Value = request.FieldValue,
+                Id = request.CompanyId
+            });
+
+            if (rows > 0)
+            {
+                await UserLogRepository.LogUserActionAsync(
+                    _db,
+                    request.CompanyId,
+                    "update-company-field",
+                    $"{request.FieldName} updated",
+                    request.UpdatedBy
+                );
+                return true;
+            }
+
+            return false;
+        }
+
+        public Task<bool> UpdateAsync(UpdateCompanyFieldRequest request)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<long> UpdateCompanyAsync(Company company)
+        {
+            try
+            {
+                const string sql = @"
+UPDATE dbo.companies
+SET
+    name = ISNULL(@Name, name),
+    contact_person = ISNULL(@ContactPerson, contact_person),
+    mobile_phone = ISNULL(@MobilePhone, mobile_phone),
+    landline_phone = ISNULL(@LandlinePhone, landline_phone),
+    registration_document = ISNULL(@RegistrationDocument, registration_document),
+    company_type = ISNULL(@CompanyType, company_type),
+    status = ISNULL(@Status, status),
+    credits = ISNULL(@Credits, credits),
+    tier = ISNULL(@Tier, tier),
+    location = ISNULL(@Location, location),
+    google_map_location = CASE 
+        WHEN @GoogleMapLocation IS NOT NULL THEN geography::STGeomFromText(@GoogleMapLocation, 4326) 
+        ELSE google_map_location 
+    END,
+    updated_at = SYSUTCDATETIME(),
+    approve_dt = ISNULL(@ApproveDt, approve_dt),
+    approve_ts = SYSUTCDATETIME()
+WHERE id = @CompanyId;
+";
+
+                // Generate WKT string safely
+                string googleMapWKT = null;
+                if (company.GoogleMapLocationpoint != null)
+                {
+                    googleMapWKT = $"POINT({company.GoogleMapLocationpoint.Lng.ToString(System.Globalization.CultureInfo.InvariantCulture)} {company.GoogleMapLocationpoint.Lat.ToString(System.Globalization.CultureInfo.InvariantCulture)})";
+                }
+
+                return await _db.ExecuteAsync(sql, new
+                {
+                    Name = company.Name,
+                    CompanyId = company.Componeyid,
+                    ContactPerson = company.ContactPerson,
+                    MobilePhone = company.MobilePhone,
+                    LandlinePhone = company.LandlinePhone,
+                    RegistrationDocument = company.RegistrationDocument,
+                    CompanyType = company.CompanyType,
+                    Status = company.Status ?? "active",
+                    UserType = company.UserType,
+                    Credits = company.Credits,
+                    Tier = company.Tier,
+                    Location = company.Location,
+                    GoogleMapLocation = googleMapWKT, // <-- properly formatted
+                    ApproveDt = company.ApproveDt
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating company: {ex.Message}");
+                throw;
+            }
+        }
 
 
     }

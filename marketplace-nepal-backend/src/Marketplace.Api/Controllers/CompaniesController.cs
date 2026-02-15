@@ -3,15 +3,20 @@ using Marketplace.Api.Models;
 using Marketplace.Api.Services.Company;
 using Marketplace.Api.Services.EmailService;
 using Marketplace.Api.Services.Helper;
+using Marketplace.Helpers;
 using Marketplace.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.Win32;
+using System.Data;
+using System.Net.Mail;
 
 namespace Marketplace.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] 
+    [Authorize(Roles = "sadmin")]
     public class CompaniesController : ControllerBase
     {
         private readonly ICompanyRepository _companies;
@@ -44,25 +49,6 @@ namespace Marketplace.Api.Controllers
         }
 
 
-
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CompanyCreateRequest req)
-        {
-            if (req == null || string.IsNullOrWhiteSpace(req.Name))
-                return BadRequest(new { error = "Company name is required." });
-
-            var company = new Company
-            {
-                Name = req.Name.Trim(),
-                CompanyType = req.CompanyType,
-                RegistrationDocument = req.RegistrationDocument,
-                //Address = req.Address,
-                GoogleMapLocation = req.GoogleMapLocation
-            };
-
-            var id = await _companies.CreateAsync(company);
-            return CreatedAtAction(nameof(GetById), new { id }, new CompanyCreatedResponse(id));
-        }
 
         /// <summary>
         /// Get company by id. Any authenticated user can view.
@@ -144,6 +130,90 @@ namespace Marketplace.Api.Controllers
             }
         }
 
+        [HttpGet("{id}/detail")]
+        public async Task<IActionResult> GetCompanyDetail(int id)
+        {
+            var result = await _companies.GetCompanyDetailAsync(id);
+            if (result == null)
+                return NotFound();
 
+            return Ok(result);
+        }
+        [HttpPost("update")]
+        [Consumes("multipart/form-data")]
+        [RequestSizeLimit(20_000_000)]
+        public async Task<IActionResult> UpdateCompany([FromForm] ComponieUpdateCommonModel model)
+        {
+            if (model?.Company == null)
+                return BadRequest(new { error = "Company data is required." });
+
+            try
+            {
+                // 📎 Handle document upload
+                if (model.CompanyDocument != null && model.CompanyDocument.Length > 0)
+                {
+                    const long MaxFileBytes = 10 * 1024 * 1024;
+                    if (model.CompanyDocument.Length > MaxFileBytes)
+                        return BadRequest(new { error = "File too large." });
+
+                    var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".xlsx" };
+                    var ext = Path.GetExtension(model.CompanyDocument.FileName).ToLowerInvariant();
+
+                    if (!allowedExtensions.Contains(ext))
+                        return BadRequest(new { error = "Invalid file type." });
+
+                    var uniqueFileName = $"{Guid.NewGuid()}{ext}";
+                    var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "ComponeyDetails");
+
+                    if (!Directory.Exists(uploadPath))
+                        Directory.CreateDirectory(uploadPath);
+
+                    var filePath = Path.Combine(uploadPath, uniqueFileName);
+                    using var fs = new FileStream(filePath, FileMode.Create);
+                    await model.CompanyDocument.CopyToAsync(fs);
+
+                    model.Company.RegistrationDocument = uniqueFileName;
+                }
+                GeoPoints? geo = null;
+                if (!string.IsNullOrEmpty(model.Company.GoogleMapLocation))
+                {
+                    geo = GeoHelper.ParseGeoPoint(model.Company.GoogleMapLocation);
+                }
+
+                var company = new Company
+                {
+                    Componeyid = model.Company.CompanyId,
+                    Name = model.Company.Name?.Trim() ?? string.Empty,
+                    ContactPerson = model.Company.CompamyPerson,
+                    RegistrationDocument = model.Company.RegistrationDocument,
+                    MobilePhone = model.Company.MobilePhone,
+                    LandlinePhone = model.Company.LandLinePhone,
+                    Location = model.Company.Address,
+                    GoogleMapLocationpoint = geo,
+                    Status = "updated",
+                    ApproveFg = "n"
+                };
+                var updated = await _companies.UpdateCompanyAsync(company);
+                    if (updated <= 0)
+                        return NotFound(new { error = "Company not found." });
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Company information saved successfully.",
+                    updated
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Company save failed.",
+                    details = ex.Message
+                });
+            }
+        }
     }
+
 }

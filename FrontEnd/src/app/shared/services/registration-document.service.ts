@@ -18,11 +18,11 @@ export class RegistrationDocumentService {
   getDocumentContent(): string {
     return `
       <div class="registration-document-content">
-        <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Registration Guidelines</h3>
+        <h3 class="text-lg font-semibold mb-4 text-gray-800 ">Registration Guidelines</h3>
         
-        <div class="space-y-4 text-sm text-gray-700 dark:text-gray-300">
+        <div class="space-y-4 text-sm text-gray-700 ">
           <section>
-            <h4 class="font-semibold mb-2 text-gray-800 dark:text-white">1. Company Information</h4>
+            <h4 class="font-semibold mb-2 text-gray-800 ">1. Company Information</h4>
             <p>Please ensure that all company information provided is accurate and up-to-date. This information will be used to identify your company in our system.</p>
             <ul class="list-disc list-inside mt-2 space-y-1 ml-2">
               <li>Company name should match your official registration documents</li>
@@ -32,7 +32,7 @@ export class RegistrationDocumentService {
           </section>
 
           <section>
-            <h4 class="font-semibold mb-2 text-gray-800 dark:text-white">2. Documentation Requirements</h4>
+            <h4 class="font-semibold mb-2 text-gray-800 ">2. Documentation Requirements</h4>
             <p>You must provide a valid registration document from your company. Accepted formats include:</p>
             <ul class="list-disc list-inside mt-2 space-y-1 ml-2">
               <li>Certificate of Registration</li>
@@ -43,12 +43,12 @@ export class RegistrationDocumentService {
           </section>
 
           <section>
-            <h4 class="font-semibold mb-2 text-gray-800 dark:text-white">3. Location Information</h4>
+            <h4 class="font-semibold mb-2 text-gray-800 ">3. Location Information</h4>
             <p>The Google Map location must accurately represent your company's operational address. This helps our system locate and verify your business.</p>
           </section>
 
           <section>
-            <h4 class="font-semibold mb-2 text-gray-800 dark:text-white">4. Terms & Conditions</h4>
+            <h4 class="font-semibold mb-2 text-gray-800 ">4. Terms & Conditions</h4>
             <p>By registering your company with Nepal Distributors, you agree to:</p>
             <ul class="list-disc list-inside mt-2 space-y-1 ml-2">
               <li>Provide accurate and truthful information</li>
@@ -59,17 +59,17 @@ export class RegistrationDocumentService {
           </section>
 
           <section>
-            <h4 class="font-semibold mb-2 text-gray-800 dark:text-white">5. Data Privacy</h4>
+            <h4 class="font-semibold mb-2 text-gray-800 ">5. Data Privacy</h4>
             <p>Your company information will be stored securely and used only for operational purposes. We are committed to protecting your data in accordance with applicable privacy laws.</p>
           </section>
 
           <section>
-            <h4 class="font-semibold mb-2 text-gray-800 dark:text-white">6. Verification Process</h4>
+            <h4 class="font-semibold mb-2 text-gray-800 ">6. Verification Process</h4>
             <p>After submission, our team will verify your company information. This process typically takes 1-3 business days. You will be notified via email once verification is complete.</p>
           </section>
 
           <section>
-            <h4 class="font-semibold mb-2 text-gray-800 dark:text-white">7. Support & Assistance</h4>
+            <h4 class="font-semibold mb-2 text-gray-800 ">7. Support & Assistance</h4>
             <p>If you have any questions or need assistance during the registration process, please contact our support team at support@nepaldistributors.com</p>
           </section>
         </div>

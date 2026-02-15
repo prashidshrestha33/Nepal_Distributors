@@ -35,6 +35,7 @@ namespace Marketplace.Api.Services.Hassing
             var claims = new List<Claim>
             {
                 new Claim("company_id", user.CompanyId?.ToString() ?? string.Empty),
+                new Claim("Userid", user.Id.ToString() ?? string.Empty),
                 new Claim("company_Name", user.CompanyName?.ToString() ?? string.Empty),
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
@@ -45,7 +46,7 @@ namespace Marketplace.Api.Services.Hassing
             {
                 var roles = user.Role.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var r in roles)
-                    claims.Add(new Claim("role", r.Trim()));
+                    claims.Add(new Claim(ClaimTypes.Role, r.Trim()));
             }
 
             var creds = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)), SecurityAlgorithms.HmacSha256);

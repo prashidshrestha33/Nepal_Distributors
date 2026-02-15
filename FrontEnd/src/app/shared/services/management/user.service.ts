@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../auth.service';
-
+import { ApiGatewayService } from '../api-gateway.service';
 export interface User {
   id?: number;
   username?: string;
@@ -23,22 +23,16 @@ export interface User {
 export class UserService {
   private apiUrl = `${environment.apiBaseUrl}/api/Users`;
 
-  constructor(private http: HttpClient, private authService: AuthService) {}
+  constructor(private http: HttpClient, private authService: AuthService,
+    private apiGateway: ApiGatewayService) {}
 
-  getUsers(): Observable<User[]> {
-    const token = this.authService.getToken();
+  getUsers(componeyid: number): Observable<User[]> {
     
     let request$: Observable<any>;
-    
-    if (token) {
-      const headers = new HttpHeaders({
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      });
-      request$ = this.http.get<any>(this.apiUrl, { headers });
-    } else {
-      request$ = this.http.get<any>(this.apiUrl);
-    }
+      request$ =this.apiGateway.getWithResult<User>(`${environment.apiBaseUrl}/api/Users/GetAll/${componeyid}`,
+      { requiresAuth: true }
+    );
+    debugger;
     
     // Handle both array response and object response with data property
     return request$.pipe(
@@ -78,16 +72,9 @@ export class UserService {
     );
   }
 
-  getUserById(id: number): Observable<User> {
-    return this.http.get<User>(`${this.apiUrl}/${id}`);
-  }
 
   createUser(user: User): Observable<User> {
     return this.http.post<User>(this.apiUrl, user);
-  }
-
-  updateUser(id: number, user: User): Observable<User> {
-    return this.http.put<User>(`${this.apiUrl}/${id}`, user);
   }
 
   deleteUser(id: number): Observable<void> {
@@ -114,5 +101,22 @@ export class UserService {
 
   rejectUser(id: number): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/${id}/reject`, {});
+  }
+    getById(id: number): Observable<User> {
+      return this.getUserById(id);
+    }
+  
+    updateuser(data: any) {
+  return this.apiGateway.post(
+    `${environment.apiBaseUrl}/api/Users/EditUser`,
+    data, // JSON payload
+    { requiresAuth: true }
+  );
+}
+
+  getUserById(id: number): Observable<User> {
+    return this.apiGateway.getWithResult<User>(`${environment.apiBaseUrl}/api/Users/${id}`,
+      { requiresAuth: true }
+    );
   }
 }

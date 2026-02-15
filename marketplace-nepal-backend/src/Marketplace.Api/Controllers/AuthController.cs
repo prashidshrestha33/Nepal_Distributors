@@ -9,6 +9,7 @@ using Marketplace.Api.Services.FacebookToken;
 using Marketplace.Api.Services.GoogleTokenVerifier;
 using Marketplace.Api.Services.Hassing;
 using Marketplace.Api.Services.Helper;
+using Marketplace.Helpers;
 using Marketplace.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -107,7 +108,12 @@ namespace Marketplace.Api.Controllers
         {
             string otp = Generate6DigitAlphaNumeric().ToString();
             await _users.UpdateOtpTokem(otp, email);
-            string? htmlTemplate = await MailHelper.GetOtpTemplateAsync(_staticValueRepo, otp);
+            var placeholders = new Dictionary<string, string>
+            {
+                { "#OPTRANVAL#", otp }
+            };
+
+            string? htmlTemplate = await MailHelper.GetTemplateAsync(_staticValueRepo, "OPTTemplate", placeholders);
             await _emailService.SendAsync(
                 email,
                 "Login Password",
@@ -160,7 +166,14 @@ namespace Marketplace.Api.Controllers
             var encryptedData = EncryptionHelper.Encrypt(otp);
             var urlEncoded = Uri.EscapeDataString(encryptedData);
             var registrationLink = _config["AppSettings:FrontendBaseUrl"] + $"/ForgetPassword?token={urlEncoded}";
-            string? htmlTemplate = await MailHelper.GetOtpTemplateAsync(_staticValueRepo, otp);
+
+            var placeholders = new Dictionary<string, string>
+            {
+                { "#CNAME#", existing.CompanyName},
+                { "#OPTRANVAL#", otp }
+            };
+
+            string? htmlTemplate = await MailHelper.GetTemplateAsync(_staticValueRepo, "OPTTemplate", placeholders);
             await _emailService.SendAsync(
                 email,
                 "Login Password",
@@ -276,6 +289,11 @@ namespace Marketplace.Api.Controllers
                 if ((companyId == null && req.Company != null) || companyId == 0)
                 {
                     var compReq = req.Company;
+                    GeoPoints? geo = null;
+                    if ( !string.IsNullOrEmpty(compReq.GoogleMapLocation))
+                    {
+                        geo = GeoHelper.ParseGeoPoint(compReq.GoogleMapLocation);
+                    }
                     var company = new Company
                     {
                         Name = compReq.Name?.Trim() ?? string.Empty,
@@ -286,11 +304,12 @@ namespace Marketplace.Api.Controllers
                         LandlinePhone = compReq.LandLinePhone,
                         UserType = compReq.UserType,
                         Location = compReq.Address,
-                        GoogleMapLocation = compReq.GoogleMapLocation,
+                        GoogleMapLocationpoint = geo,
                         Status = "pending",
-                        ApproveTs = "n",
+                        ApproveFg = "n",
                         Credits = 5
                     };
+
                     if (!string.IsNullOrEmpty(savedFileUrl))
                     {
                         company.RegistrationDocument = savedFileUrl;
@@ -506,6 +525,12 @@ namespace Marketplace.Api.Controllers
 
             var registrationLink = _config["AppSettings:FrontendBaseUrl"] + $"/ForgetPassword?token={urlEncoded}";
 
+            var placeholders = new Dictionary<string, string>
+            {
+                { "#registrationLink#", registrationLink }
+            };
+
+            string? htmlTemplate = await MailHelper.GetTemplateAsync(_staticValueRepo, "OPTTemplate", placeholders);
             var html = $@"
         <h3>orget Password</h3>
         <p>Please click the button below to complete company registration.</p>

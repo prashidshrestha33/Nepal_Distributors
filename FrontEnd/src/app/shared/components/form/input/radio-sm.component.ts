@@ -7,7 +7,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
   template: `
     <label
       [attr.for]="id"
-      [ngClass]="'flex cursor-pointer select-none items-center text-sm text-gray-500 dark:text-gray-400 ' + className"
+      [ngClass]="'flex cursor-pointer select-none items-center text-sm text-gray-500  ' + className"
     >
       <span class="relative">
         <!-- Hidden Input -->
@@ -26,7 +26,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
             'mr-2 flex h-4 w-4 items-center justify-center rounded-full border ' +
             (checked
               ? 'border-brand-500 bg-brand-500'
-              : 'bg-transparent border-gray-300 dark:border-gray-700')
+              : 'bg-transparent border-gray-300 ')
           "
         >
           <!-- Inner Dot -->

@@ -192,7 +192,7 @@ export class SigninFormComponent implements OnInit {
 
   private handleError(error:  any) {
     if (error?.status === 401 || error?.status === 400) {
-      this.errorMessage = 'Invalid username or password';
+      this.errorMessage = 'Invalid OTP';
     } else if (error?.status === 403) {
       this.errorMessage = 'Access forbidden';
     } else if (error?.status === 0) {

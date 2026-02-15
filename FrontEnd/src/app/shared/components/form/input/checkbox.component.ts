@@ -13,7 +13,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
     <input
       [id]="id"
       type="checkbox"
-      class="w-5 h-5 appearance-none cursor-pointer dark:border-gray-700 border border-gray-300 checked:border-transparent rounded-md checked:bg-brand-500 disabled:opacity-60"
+      class="w-5 h-5 appearance-none cursor-pointer  border border-gray-300 checked:border-transparent rounded-md checked:bg-brand-500 disabled:opacity-60"
       [ngClass]="className"
       [checked]="checked"
       (change)="onChange($event)"
@@ -62,7 +62,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
   </div>
   @if (label) {
   <span
-    class="text-sm font-medium text-gray-800 dark:text-gray-200"
+    class="text-sm font-medium text-gray-800 "
     >
       {{ label }}
   </span>
