@@ -149,7 +149,6 @@ loadBrandStaticValues(): void {
     next: catalogs => {
       const brandCatalog = catalogs.find(c => c.catalogName === 'Brand');
       if (!brandCatalog) return;
-debugger;
       // Fetch brand values
       this.staticValueService.getStaticValues(brandCatalog.catalogId).subscribe({
         next: values => {
@@ -157,12 +156,9 @@ debugger;
 
           // Ensure key is number and value is string
           values.forEach(v => {
-            debugger;
             const id = Number(v.staticId); // Convert to number, safe for BIGINT
             this.brandMap.set(id, v.staticValueKey.toString()); // staticValueKey is the name
           });
-
-          console.log('Brand map loaded:', this.brandMap);
         },
         error: err => console.error('Error loading brand values', err)
       });

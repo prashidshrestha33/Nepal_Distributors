@@ -87,15 +87,11 @@ export class CategoryMoveFormComponent implements OnInit {
   loadCategoryTree() {
     this.categoryService.getTreeCategories().subscribe({
       next: (tree: Category[]) => {
-        console.log('✓ Move form - Category tree loaded:', tree);
-        console.log('✓ Move form - Tree length:', tree.length);
         
         this.treeCategories = tree;
         this.cascadingDropdowns[0] = tree;
         this.dropdownLabels[0] = 'Parent Category';
         this.loadingStates[0] = false;
-        
-        console.log('✓ Move form - Dropdown 0 options:', this.cascadingDropdowns[0]);
         this.cdr.markForCheck();
       },
       error: (err) => {
@@ -161,7 +157,6 @@ export class CategoryMoveFormComponent implements OnInit {
   shouldShowLevel(level: number): boolean {
     if (level === 0) {
       const hasData = this.cascadingDropdowns[0] && this.cascadingDropdowns[0].length > 0;
-      console.log(`Move form - shouldShowLevel(0): ${hasData}, data: ${this.cascadingDropdowns[0]?.length || 0} items`);
       return hasData;
     }
     

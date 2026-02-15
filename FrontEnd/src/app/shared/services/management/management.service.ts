@@ -209,8 +209,7 @@ ApprovedProductById(id: number, payload: ApproveProduct): Observable<Product> {
   }
   updateProduct(id:  number, product: Product, image?: File): Observable<Product> {
     const formData = this.buildProductFormData(product, image);
-    debugger;
-    return this.apiGateway.put<Product>(
+    return this.apiGateway.post<Product>(
       `/api/Product/${id}`,
       formData,
       { 
