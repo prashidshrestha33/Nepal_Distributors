@@ -18,6 +18,7 @@ using Microsoft.OpenApi.Models;
 using System;
 using System.Data;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -77,7 +78,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
         ValidateLifetime = true,
-        RoleClaimType = "role"
+        RoleClaimType = ClaimTypes.Role,
     };
 });
 

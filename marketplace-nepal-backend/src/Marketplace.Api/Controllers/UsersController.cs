@@ -45,8 +45,33 @@ namespace Marketplace.Api.Controllers
             _hasher = hasher ?? throw new ArgumentNullException(nameof(hasher));
             _db = db ?? throw new ArgumentNullException(nameof(db));
         }
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<MarketplaceUser>>> GetAllUser() => Ok(await _users.GetAllUserAsync());
+        [HttpGet("GetAll/{id:long}")]
+        public async Task<ActionResult<IEnumerable<MarketplaceUser>>> GetAllUser(long id)
+        {
+            try
+            {
+                // Fetch all users related to the given id (e.g., company id)
+                var users = await _users.GetAllid(id);
+
+                // Always return an array (even if empty)
+                return Ok(users ?? new List<MarketplaceUser>());
+            }
+            catch (Exception ex)
+            {
+                // Return 500 if something goes wrong
+                return StatusCode(500, new { error = "Failed to fetch users", details = ex.Message });
+            }
+        }
+        [HttpGet("{id:long}")]
+        public async Task<IActionResult> GetById(long id)
+        {
+
+            string? customClaim = HttpContext.User.GetClaimValue("MyCustomClaim");
+            
+            var c = await _users.GetByIdAsync(id);
+            if (c == null) return NotFound();
+            return Ok(c);
+        }
 
         [HttpPost("CreateUser")]
         public async Task<IActionResult> Register([FromBody] MarketplaceUser req)
@@ -106,7 +131,7 @@ namespace Marketplace.Api.Controllers
                 return StatusCode(500, new { error = "Registration failed", details = ex.Message });
             }
         }
-        [HttpPut("EditUser/{id}")]
+        [HttpPost("EditUser")]
         public async Task<IActionResult> EditUser([FromBody] MarketplaceUser req)
         {
             if (req == null) return BadRequest(new { error = "Request body required." });
@@ -129,16 +154,12 @@ namespace Marketplace.Api.Controllers
             if (user == null)
                 return NotFound(new { error = "User not found." });
 
-            // Prevent duplicate email
-            var existing = await _users.GetByEmailAsync(email);
-            if (existing != null && existing.Id != req.Id)
-                return Conflict(new { error = "Email exists." });
-
             if (_db.State != ConnectionState.Open) _db.Open();
             using var tx = _db.BeginTransaction();
             try
             {
                 // Update only editable properties
+                user.Id = req.Id;
                 user.Email = email;
                 user.FullName = req.FullName ?? user.FullName;
                 user.Phone = req.Phone ?? user.Phone;

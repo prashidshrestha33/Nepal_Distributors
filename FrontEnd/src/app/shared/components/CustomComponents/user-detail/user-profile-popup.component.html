@@ -1,0 +1,125 @@
+<div
+  class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+  *ngIf="user"
+>
+  <div class="bg-white w-full max-w-2xl rounded-xl shadow-lg p-6 relative">
+
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-semibold">User Profile</h2>
+
+      <div class="flex gap-2">
+        <!-- Edit Button -->
+        <button
+          *ngIf="!editMode"
+          (click)="editMode = true"
+          class="text-blue-600 hover:text-blue-800 px-3 py-1 border rounded"
+        >
+          Edit
+        </button>
+
+        <!-- Close Button -->
+        <button
+          (click)="closePopup()"
+          class="text-gray-500 hover:text-gray-700 px-3 py-1 border rounded"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="text-center py-10">
+      Loading...
+    </div>
+
+    <!-- User Details -->
+    <div *ngIf="!loading" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <!-- Full Name -->
+      <div>
+        <label class="block font-medium text-gray-700">Full Name:</label>
+        <div *ngIf="!editMode">{{ user?.fullName || user?.full_name }}</div>
+        <input
+          *ngIf="editMode"
+          [(ngModel)]="user.fullName"
+          class="w-full border rounded px-3 py-2"
+        />
+      </div>
+      <!-- Email -->
+      <div>
+        <label class="block font-medium text-gray-700">Email:</label>
+        <div *ngIf="!editMode">{{ user?.email }}</div>
+        <input
+          *ngIf="editMode"
+          [(ngModel)]="user.email"
+          class="w-full border rounded px-3 py-2"
+        />
+      </div>
+
+
+      <!-- Phone -->
+      <div>
+        <label class="block font-medium text-gray-700">Phone:</label>
+        <div *ngIf="!editMode">{{ user?.phone }}</div>
+        <input
+          *ngIf="editMode"
+          [(ngModel)]="user.phone"
+          class="w-full border rounded px-3 py-2"
+        />
+      </div>
+
+      <!-- Status -->
+      <div>
+        <label class="block font-medium text-gray-700">Status:</label>
+
+        <div *ngIf="!editMode">
+          <span
+            [ngClass]="{
+              'text-green-600': user?.status === 'active',
+              'text-red-600': user?.status === 'inactive',
+              'text-yellow-600': user?.status === 'pending'
+            }"
+          >
+            {{ user?.status }}
+          </span>
+        </div>
+
+        <select
+          *ngIf="editMode"
+          [(ngModel)]="user.status"
+          class="w-full border rounded px-3 py-2"
+        >
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="pending">Pending</option>
+        </select>
+      </div>
+
+      <!-- Created At -->
+      <div>
+        <label class="block font-medium text-gray-700">Created At:</label>
+        <div>{{ user?.createdAt || user?.created_at | date:'medium' }}</div>
+      </div>
+
+    </div>
+
+    <!-- Save / Cancel -->
+    <div *ngIf="editMode" class="flex justify-end mt-6 gap-2">
+      <button
+        (click)="cancelEdit()"
+        class="px-4 py-2 border rounded hover:bg-gray-100"
+      >
+        Cancel
+      </button>
+
+      <button
+        (click)="save()"
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        Save
+      </button>
+    </div>
+
+  </div>
+</div>

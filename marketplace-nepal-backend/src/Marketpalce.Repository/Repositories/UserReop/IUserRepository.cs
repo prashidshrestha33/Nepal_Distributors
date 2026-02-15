@@ -20,7 +20,7 @@ namespace Marketpalce.Repository.Repositories.UserReop
         Task LinkFacebookIdAsync(long id, string facebookId);
         Task<MarketplaceUser?> GetuserByid(string userid);
 
-        Task<MarketplaceUser?> GetAllid(string companyid);
+        Task<List<MarketplaceUser>> GetAllid(long companyid);
         Task<IEnumerable<MarketplaceUser>> GetAllUserAsync();
 
         Task<MarketplaceUser?> GetByIdAsync(long id);

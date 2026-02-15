@@ -7,10 +7,10 @@ import { FormsModule } from '@angular/forms';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-  <div class="w-full bg-white dark:bg-gray-900 shadow-inner p-4 flex flex-col md:flex-row items-center justify-between gap-4 border-t mt-2 sticky bottom-0 z-10 justify-content: flex-end">
+  <div class="w-full bg-white shadow-inner p-4 flex flex-col md:flex-row items-center justify-between gap-4 border-t mt-2 sticky bottom-0 z-10 justify-content: flex-end">
     <!-- Page size selector -->
     <div class="flex items-center gap-2">
-      <span class="text-gray-600 dark:text-gray-400 text-sm">Show:</span>
+      <span class="text-gray-600  text-sm">Show:</span>
       <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange($event)" class="border rounded px-2 py-1 text-sm">
         <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }}</option>
       </select>
@@ -25,7 +25,7 @@ import { FormsModule } from '@angular/forms';
       <button *ngFor="let page of getVisiblePageNumbers()" (click)="goToPage(page)"
               [ngClass]="{
                 'bg-blue-500 text-white': page === currentPage,
-                'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300': page !== currentPage
+                'bg-white text-gray-700 ': page !== currentPage
               }"
               class="px-3 py-1 border rounded text-sm transition-colors">
         {{ page }}
@@ -37,7 +37,7 @@ import { FormsModule } from '@angular/forms';
     </div>
 
     <!-- Page info -->
-    <div class="text-sm text-gray-600 dark:text-gray-400">
+    <div class="text-sm text-gray-600 ">
       Page {{ currentPage }} of {{ totalPages }}
     </div>
   </div>

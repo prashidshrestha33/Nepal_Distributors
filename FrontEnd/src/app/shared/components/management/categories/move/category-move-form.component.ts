@@ -13,13 +13,13 @@ import type { Category } from '../../../../services/management/management.servic
       <!-- Dynamic Cascading Dropdowns -->
       <ng-container *ngFor="let level of [0,1,2,3,4,5,6,7,8,9]; let i = index">
         <div *ngIf="shouldShowLevel(i)" class="animate-in fade-in">
-          <label class="block text-sm text-gray-600 dark:text-gray-400 mb-2">
+          <label class="block text-sm text-gray-600  mb-2">
             {{ dropdownLabels[i] || 'Select Category' }}
           </label>
           <select
             [value]="selectedAtLevel[i] || ''"
             (change)="onSelectChange(i, $event)"
-            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+            class="w-full px-4 py-2 border border-gray-300  rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 "
             [disabled]="loadingStates[i]">
             <option [value]="">
               {{ loadingStates[i] ? 'Loading...' : i === 0 ? 'No Parent' : 'Select category (optional)' }}
@@ -32,7 +32,7 @@ import type { Category } from '../../../../services/management/management.servic
       </ng-container>
 
       <!-- Error Message -->
-      <div *ngIf="error" class="p-3 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 rounded-lg text-sm">
+      <div *ngIf="error" class="p-3 bg-red-100  border border-red-400 dark:border-red-700 text-red-700  rounded-lg text-sm">
         {{ error }}
       </div>
 
@@ -47,7 +47,7 @@ import type { Category } from '../../../../services/management/management.servic
         <button
           type="button"
           (click)="onCancel()"
-          class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg transition dark:bg-gray-600 dark:hover:bg-gray-700">
+          class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg transition">
           Cancel
         </button>
       </div>

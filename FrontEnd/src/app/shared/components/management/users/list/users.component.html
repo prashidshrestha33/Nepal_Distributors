@@ -1,19 +1,19 @@
 <div class="space-y-6">
   <div class="flex justify-between items-center">
-    <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Users Management</h1>
+    <h1 class="text-2xl font-bold text-gray-800 ">Users Management</h1>
     <a href="/management/users/add" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg dark:bg-blue-600 dark:hover:bg-blue-700 transition">
       + Add New User
     </a>
   </div>
 
   <!-- Search Bar -->
-  <div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4">
+  <div class="bg-white rounded-lg shadow p-4">
     <input 
       type="text" 
       placeholder="Search by name, email, or phone..." 
       [(ngModel)]="searchTerm"
       (keyup)="onSearch()"
-      class="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white">
+      class="w-full px-4 py-2 border border-gray-300  rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ">
   </div>
 
   <!-- Loading State -->
@@ -22,38 +22,38 @@
   </div>
 
   <!-- Error State -->
-  <div *ngIf="error" class="bg-red-50 dark:bg-red-900 p-4 rounded-lg text-red-700 dark:text-red-200">
+  <div *ngIf="error" class="bg-red-50  p-4 rounded-lg text-red-700 ">
     {{ error }}
   </div>
 
   <!-- Users Table -->
-  <div class="bg-white dark:bg-gray-900 rounded-lg shadow overflow-hidden">
+  <div class="bg-white rounded-lg shadow overflow-hidden">
     <table class="w-full">
-      <thead class="bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <thead class="bg-gray-100 border-b border-gray-200 ">
         <tr>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Name</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Email</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Phone</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Status</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Created</th>
-          <th class="px-6 py-3 text-center text-sm font-semibold text-gray-900 dark:text-white">Actions</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900 ">Name</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900 ">Email</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900 ">Phone</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900 ">Status</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900 ">Created</th>
+          <th class="px-6 py-3 text-center text-sm font-semibold text-gray-900 ">Actions</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let user of filteredUsers" class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
-          <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">{{ user.fullName }}</td>
-          <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ user.email }}</td>
-          <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ user.phone || '-' }}</td>
+        <tr *ngFor="let user of filteredUsers" class="border-b border-gray-200  hover:bg-gray-50">
+          <td class="px-6 py-4 text-sm text-gray-900 ">{{ user.fullName }}</td>
+          <td class="px-6 py-4 text-sm text-gray-600 ">{{ user.email }}</td>
+          <td class="px-6 py-4 text-sm text-gray-600 ">{{ user.phone || '-' }}</td>
           <td class="px-6 py-4">
             <span [ngClass]="{
               'bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200': user.status === 'active',
-              'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200': user.status === 'inactive',
+              'bg-gray-200 text-gray-800 ': user.status === 'inactive',
               'bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200': user.status === 'pending'
             }" class="inline-block px-3 py-1 rounded-full text-xs font-semibold">
               {{ user.status | titlecase }}
             </span>
           </td>
-          <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+          <td class="px-6 py-4 text-sm text-gray-600 ">
             {{ user.createdAt | date: 'MMM dd, yyyy' }}
           </td>
           <td class="px-6 py-4 text-center">
@@ -68,7 +68,7 @@
           </td>
         </tr>
         <tr *ngIf="!loading && filteredUsers.length === 0">
-          <td colspan="6" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+          <td colspan="6" class="px-6 py-8 text-center text-gray-500 ">
             No users found. Try adjusting your search.
           </td>
         </tr>
@@ -77,8 +77,8 @@
   </div>
 
   <!-- Pagination Info -->
-  <div *ngIf="!loading && users.length > 0" class="flex justify-between items-center bg-white dark:bg-gray-900 rounded-lg shadow p-4">
-    <span class="text-sm text-gray-600 dark:text-gray-400">
+  <div *ngIf="!loading && users.length > 0" class="flex justify-between items-center bg-white rounded-lg shadow p-4">
+    <span class="text-sm text-gray-600 ">
       Showing {{ filteredUsers.length }} of {{ users.length }} users
     </span>
   </div>

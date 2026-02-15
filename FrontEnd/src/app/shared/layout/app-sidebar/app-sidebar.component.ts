@@ -32,27 +32,65 @@ export class AppSidebarComponent {
       path: "/",
     },
     {
-      icon: `<svg width="2em" height="2em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M3.25 4.5C3.25 3.25736 4.25736 2.25 5.5 2.25H18.5C19.7426 2.25 20.75 3.25736 20.75 4.5V19.5C20.75 20.7426 19.7426 21.75 18.5 21.75H5.5C4.25736 21.75 3.25 20.7426 3.25 19.5V4.5ZM5.5 3.75C5.08579 3.75 4.75 4.08579 4.75 4.5V7.5H19.25V4.5C19.25 4.08579 18.9142 3.75 18.5 3.75H5.5ZM4.75 9V19.5C4.75 19.9142 5.08579 20.25 5.5 20.25H18.5C18.9142 20.25 19.25 19.9142 19.25 19.5V9H4.75ZM6.5 11.25C6.5 10.8358 6.83579 10.5 7.25 10.5H16.75C17.1642 10.5 17.5 10.8358 17.5 11.25C17.5 11.6642 17.1642 12 16.75 12H7.25C6.83579 12 6.5 11.6642 6.5 11.25ZM7.25 13.5C6.83579 13.5 6.5 13.8358 6.5 14.25C6.5 14.6642 6.83579 15 7.25 15H16.75C17.1642 15 17.5 14.6642 17.5 14.25C17.5 13.8358 17.1642 13.5 16.75 13.5H7.25Z" fill="currentColor"></path></svg>`,
-      name: "Management",
-      subItems: [
-        { name: "Users", path: "/management/users" },
-        { name: "Company", path: "/management/company" },
-        { name: "Static Values", path: "/management/static-values" },
-        { name: "Product", path: "/management/products" }
-      ],
+      icon: `<svg width="2em" height="2em" viewBox="0 0 24 24" fill="none">
+  <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.5"/>
+  <path d="M4 20C4 16.6863 7.58172 14 12 14C16.4183 14 20 16.6863 20 20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+</svg>
+`,
+      name: "Users",
+       path: "/management/users"
     },
-  ];
-  // Others nav items
-  othersItems: NavItem[] = [
     {
-      icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M14 2.75C14 2.33579 14.3358 2 14.75 2C15.1642 2 15.5 2.33579 15.5 2.75V5.73291L17.75 5.73291H19C19.4142 5.73291 19.75 6.0687 19.75 6.48291C19.75 6.89712 19.4142 7.23291 19 7.23291H18.5L18.5 12.2329C18.5 15.5691 15.9866 18.3183 12.75 18.6901V21.25C12.75 21.6642 12.4142 22 12 22C11.5858 22 11.25 21.6642 11.25 21.25V18.6901C8.01342 18.3183 5.5 15.5691 5.5 12.2329L5.5 7.23291H5C4.58579 7.23291 4.25 6.89712 4.25 6.48291C4.25 6.0687 4.58579 5.73291 5 5.73291L6.25 5.73291L8.5 5.73291L8.5 2.75C8.5 2.33579 8.83579 2 9.25 2C9.66421 2 10 2.33579 10 2.75L10 5.73291L14 5.73291V2.75ZM7 7.23291L7 12.2329C7 14.9943 9.23858 17.2329 12 17.2329C14.7614 17.2329 17 14.9943 17 12.2329L17 7.23291L7 7.23291Z" fill="currentColor"></path></svg>`,
-      name: "Authentication",
-      subItems: [
-        { name: "Sign In", path: "/signin", pro: false },
-        { name: "Sign Up", path: "/register-company", pro: false },
-      ],
+      icon: `<svg width="2em" height="2em" viewBox="0 0 24 24" fill="none">
+  <path d="M3 21H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M5 21V6.5C5 5.67157 5.67157 5 6.5 5H10V21" stroke="currentColor" stroke-width="1.5"/>
+  <path d="M10 21V3.5C10 2.67157 10.6716 2 11.5 2H17.5C18.3284 2 19 2.67157 19 3.5V21" stroke="currentColor" stroke-width="1.5"/>
+  <path d="M7 8H8M7 11H8M7 14H8M13 6H16M13 9H16M13 12H16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+</svg>`,
+      name: "Company",
+      path: "/management/company"
     },
+    {
+      icon: `<svg width="2em" height="2em" viewBox="0 0 24 24" fill="none">
+  <path d="M3 7L12 2L21 7L12 12L3 7Z" stroke="currentColor" stroke-width="1.5"/>
+  <path d="M3 7V17L12 22L21 17V7" stroke="currentColor" stroke-width="1.5"/>
+  <path d="M12 12V22" stroke="currentColor" stroke-width="1.5"/>
+</svg>
+`,
+      name: "Product ",
+      path: "/management/products" 
+    },
+    {
+      icon: `<svg width="2em" height="2em" viewBox="0 0 24 24" fill="none">
+  <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+  <rect x=
+
+`,
+      name: "Product Catagory",
+      path: "/management/categories" 
+    },
+    {
+      icon: `<svg width="2em" height="2em" viewBox="0 0 24 24" fill="none">
+  <path d="M10.325 4.317C10.751 2.561 13.249 2.561 13.675 4.317C13.916 5.309 15.055 5.835 15.96 5.374C17.568 4.544 19.456 6.432 18.626 8.04C18.165 8.945 18.691 10.084 19.683 10.325C21.439 10.751 21.439 13.249 19.683 13.675C18.691 13.916 18.165 15.055 18.626 15.96C19.456 17.568 17.568 19.456 15.96 18.626C15.055 18.165 13.916 18.691 13.675 19.683C13.249 21.439 10.751 21.439 10.325 19.683C10.084 18.691 8.945 18.165 8.04 18.626C6.432 19.456 4.544 17.568 5.374 15.96C5.835 15.055 5.309 13.916 4.317 13.675C2.561 13.249 2.561 10.751 4.317 10.325C5.309 10.084 5.835 8.945 5.374 8.04C4.544 6.432 6.432 4.544 8.04 5.374C8.945 5.835 10.084 5.309 10.325 4.317Z" stroke="currentColor" stroke-width="1.5"/>
+  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/>
+</svg>
+`,
+      name: "Setting",
+      path: "/management/static-values" 
+    }
   ];
+//  /  Others nav items
+   othersItems: NavItem[] = [
+     {
+       icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M14 2.75C14 2.33579 14.3358 2 14.75 2C15.1642 2 15.5 2.33579 15.5 2.75V5.73291L17.75 5.73291H19C19.4142 5.73291 19.75 6.0687 19.75 6.48291C19.75 6.89712 19.4142 7.23291 19 7.23291H18.5L18.5 12.2329C18.5 15.5691 15.9866 18.3183 12.75 18.6901V21.25C12.75 21.6642 12.4142 22 12 22C11.5858 22 11.25 21.6642 11.25 21.25V18.6901C8.01342 18.3183 5.5 15.5691 5.5 12.2329L5.5 7.23291H5C4.58579 7.23291 4.25 6.89712 4.25 6.48291C4.25 6.0687 4.58579 5.73291 5 5.73291L6.25 5.73291L8.5 5.73291L8.5 2.75C8.5 2.33579 8.83579 2 9.25 2C9.66421 2 10 2.33579 10 2.75L10 5.73291L14 5.73291V2.75ZM7 7.23291L7 12.2329C7 14.9943 9.23858 17.2329 12 17.2329C14.7614 17.2329 17 14.9943 17 12.2329L17 7.23291L7 7.23291Z" fill="currentColor"></path></svg>`,
+       name: "Authentication",
+       subItems: [
+         { name: "Sign In", path: "/signin", pro: false },
+         { name: "Sign Up", path: "/register-company", pro: false },
+       ],
+   },
+   ];
 
   openSubmenu: string | null | number = null;
   subMenuHeights: { [key: string]: number } = {};

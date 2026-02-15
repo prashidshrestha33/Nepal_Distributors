@@ -10,7 +10,7 @@ namespace Marketpalce.Repository.Repositories.StaticValueReop
     public interface IStaticValueRepository
     {
         Task<bool> CreateAsync(StaticValue model);
-        Task<IEnumerable<StaticValue>> GetAsync(StaticValueFilter model);
+        Task<IEnumerable<StaticValue>> GetAsync(StaticValueFilter model, List<string> roles = null);
         Task<StaticValue?> GetSingleAsync(StaticValueFilter model);
         Task<bool> UpdateAsync(StaticValue model);
         Task<bool> DeleteAsync(string key);

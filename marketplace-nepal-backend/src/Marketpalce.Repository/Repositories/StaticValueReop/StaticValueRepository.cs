@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Marketpalce.Repository.Repositories.StaticValueReop
 {
-  
+
     public class StaticValueRepository : IStaticValueRepository
     {
         private readonly IDbConnection _db;
@@ -65,28 +65,33 @@ namespace Marketpalce.Repository.Repositories.StaticValueReop
 
 
         // Read single
-        public async Task<IEnumerable<StaticValue>> GetAsync(StaticValueFilter model)
+        public async Task<IEnumerable<StaticValue>> GetAsync(StaticValueFilter model, List<string> roles = null)
         {
-            
-                string sql = "SELECT s.static_id as StaticId,s.Catalog_id as CatalogId, s.static_value AS StaticValueKey, s.static_data AS StaticData,s.display_order as " +
-                   "DisplayOrder, c.* FROM dbo.static_value s " +
-                   "left join  static_value_cataglog c on s.Catalog_id = c.Catalog_id where 1=1 ";
-                if (model.key != null)
-                {
-                    sql += "AND static_value = @staticValue ";
-                }
-                else if (model.catalogId != null && model.staticId != null)
-                {
-                    sql += "AND c.Catalog_id = @catalogId AND s.static_id =@staticId ";
 
-                }
-                else if (model.catalogkey != null && model.catalogkey != null)
-                {
-                    sql += " AND c.Catalog_Name =  @catalogkey ";
+            string sql = "SELECT s.static_id as StaticId,s.Catalog_id as CatalogId, s.static_value AS StaticValueKey, s.static_data AS StaticData,s.display_order as " +
+               "DisplayOrder, c.* FROM dbo.static_value s " +
+               "left join  static_value_cataglog c on s.Catalog_id = c.Catalog_id where 1=1 ";
+            if (model.key != null)
+            {
+                sql += "AND static_value = @staticValue ";
+            }
+            else if (model.catalogId != null && model.staticId != null)
+            {
+                sql += "AND c.Catalog_id = @catalogId AND s.static_id =@staticId ";
 
+            }
+            else if (model.catalogkey != null && model.catalogkey != null)
+            {
+                sql += " AND c.Catalog_Name =  @catalogkey ";
+
+                if (model.catalogkey == "roles" && roles.Contains("sadmin") || roles.Contains("ceditor"))
+                {
+                    sql += " AND display_order <> 0 ";
                 }
-                sql += ";";
-                return await _db.QueryAsync<StaticValue>(sql, model);
+
+            }
+            sql += " order by display_order;";
+            return await _db.QueryAsync<StaticValue>(sql, model);
         }
 
         // Update
@@ -105,9 +110,10 @@ namespace Marketpalce.Repository.Repositories.StaticValueReop
                 var rows = await _db.ExecuteAsync(sql, model);
                 return rows > 0;
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 return false;
-}
+            }
         }
 
         // Delete

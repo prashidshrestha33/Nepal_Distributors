@@ -1,0 +1,60 @@
+
+<div 
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 custompopupmodel1">
+    <h2 class="text-lg font-semibold text-gray-800  mb-4" >
+      Send Register Link
+    </h2>  
+<div class="custom model-body1">
+
+<div class="w-full">
+  <label class="block text-sm font-medium mb-1">Select Roles</label>
+
+<ng-select
+  [items]="StaticValue"
+  bindLabel="staticValueKey"   
+  bindValue="staticData"      
+  placeholder="Select Roles"
+  [(ngModel)]="selectedStaticValueId"
+  class="Selectorcustom w-full">
+
+  <ng-template ng-label-tmp let-item="item">
+    {{ item.staticValueKey  }}
+  </ng-template>
+
+  <ng-template ng-option-tmp let-item="item">
+    {{ item.staticValueKey}}
+  </ng-template>
+
+</ng-select>
+
+</div>
+<div class="w-full" >
+  <label class="block text-sm font-medium mb-1">
+    Email ID
+  </label>
+<input 
+      type="text" 
+      placeholder="Enter Register Email ID............." 
+    [(ngModel)]="RegisterEmailID"
+    name="RegisterEmailID" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+    />
+    
+  
+</div>
+</div>
+    <div class="flex justify-end gap-3">
+      <button
+        (click)="closePopup()"
+        class="px-4 py-2 rounded-lg border">
+        Cancel
+      </button> 
+ <button
+        (click)="RegisterNewUserLink()"
+        class="px-4 py-2 rounded-lg bg-green-500 text-white">
+        <span>Send Email</span>
+      </button>
+    
+    </div>
+  </div>
+</div>

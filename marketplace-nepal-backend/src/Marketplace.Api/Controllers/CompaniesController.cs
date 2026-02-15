@@ -16,7 +16,7 @@ namespace Marketplace.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] 
+    [Authorize(Roles = "sadmin")]
     public class CompaniesController : ControllerBase
     {
         private readonly ICompanyRepository _companies;

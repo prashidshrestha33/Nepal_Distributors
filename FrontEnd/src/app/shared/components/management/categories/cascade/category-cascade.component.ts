@@ -7,13 +7,13 @@ import type { Category } from '../../../../services/management/management.servic
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg p-3 min-w-max">
+    <div class="bg-white border border-gray-300  rounded-lg shadow-lg p-3 min-w-max">
       <div class="space-y-1 max-h-96 overflow-y-auto">
-        <div *ngIf="categories.length === 0" class="text-xs text-gray-500 dark:text-gray-400">No child categories</div>
+        <div *ngIf="categories.length === 0" class="text-xs text-gray-500 ">No child categories</div>
         
         <!-- Category Item with Cascade -->
         <div *ngFor="let cat of categories" class="relative group">
-          <div class="text-xs text-gray-700 dark:text-gray-200 p-2 hover:bg-blue-100 dark:hover:bg-blue-900 rounded cursor-default flex items-center justify-between">
+          <div class="text-xs text-gray-700  p-2 hover:bg-blue-100 dark:hover:bg-blue-900 rounded cursor-default flex items-center justify-between">
             <span>{{ cat.name }}</span>
             <span *ngIf="hasChildren(cat.id)" class="text-gray-400 ml-2">→</span>
           </div>

@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UserService } from '../../../../services/management/user.service';
@@ -16,18 +18,41 @@ export class UsersComponent implements OnInit {
   filteredUsers: User[] = [];
   searchTerm: string = '';
   loading = false;
+  catalogId: number | null = null;
   error: string | null = null;
 
-  constructor(private userService: UserService) {}
+  constructor(private userService: UserService,
+    private route: ActivatedRoute,
+    private router: Router) {}
 
   ngOnInit() {
-    this.loadUsers();
-  }
+     this.route.queryParams.subscribe(params => {
+      const id = params['companyId'];
+      const tokenString  = localStorage.getItem('userClaims') || sessionStorage.getItem('userClaims');
+  
+      if (id) {
+        this.catalogId = +id; 
+        this.loadUsers();
+      } 
+      else if(tokenString)
+      {
+             const token = JSON.parse(tokenString); 
+             this.catalogId = +token.company_id;
+             
+        this.loadUsers();
+             
+      }
+        else {
+     this.router.navigate(['/management/static-values-catalog']);
+      }
+  });
+}
 
   loadUsers() {
+    debugger;
     this.loading = true;
     console.log('Loading users...');
-    this.userService.getUsers().subscribe({
+    this.userService.getUsers(this.catalogId||0).subscribe({
       next: (data: User[]) => {
         console.log('Users loaded:', data);
         this.users = data;

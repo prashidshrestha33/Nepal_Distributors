@@ -9,6 +9,7 @@ import { SafeHtmlPipe } from '../../../../pipe/safe-html.pipe';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { UiService } from '../../../../../../app/ui.service';
 
+import { ActivatedRoute, Router } from '@angular/router';
 @Component({
   selector: 'app-company',
   standalone: true,
@@ -55,7 +56,11 @@ successMessage2: string = '';
     createdAt: undefined
   };
 
-  constructor(private ui: UiService,private CompanyService: CompanyService, private lightbox: Lightbox) {}
+  constructor(private ui: UiService,private CompanyService: CompanyService, private lightbox: Lightbox,
+    
+    private route: ActivatedRoute,
+    private router: Router
+  ) {}
 
   ngOnInit() {
     this.loadCompanys();
@@ -146,10 +151,14 @@ flattenCategories(categories: Category[], depth = 0): Category[] {
     });
   }
     openRegisterUser(id: number) {
-        this.showApproveModal2 = true;
-        this.openCompanyProfile(id);
-        //this.selectedCompanyId=id;
+      
+    this.ui.openUserProfile(id);
+    this.ui.openRegisterLink(id);
+      //   this.showApproveModal2 = true;
+      //  // this.openCompanyProfile(id);
+      //   this.selectedCompanyId=id;
   }
+   
   getStaticValuesrole(){
   debugger;
       this.CompanyService.getStaticValuesrole().subscribe({
@@ -200,31 +209,6 @@ openApprovestep1Modal(fg: string){
       }
     });
   }
-RegisterNewUserLink() {
-  const role = this.selectedStaticValueId;
-  const email = this.RegisterEmailID;
-  const companyId = this.selectedCompanyId;
-
-  if (!role || !email || !companyId) {
-    this.errorModal2 = "Please enter all required fields"; 
-    return;
-  }
-
-  this.CompanyService.sendRegisterLink(email, role, companyId.toString()).subscribe({
-    next: (response) => {
-      console.log('Registration link sent successfully:', response);
-      this.closeApproveModal2();
-      this.successMessage2 = 'Registration link sent successfully!';
-      this.successModal2 = true;
-
-      this.loadCompanys(); 
-    },
-    error: (err) => {
-      console.error('Failed to send registration link:', err);
-      this.errorModal2 = 'Failed to send registration link. Please try again.';
-    }
-  });
-}
   // ===================== LOAD & SEARCH =====================
   loadCompanys() {
     this.loading = true;
@@ -273,8 +257,10 @@ RegisterNewUserLink() {
     });
   }
     openCompanyProfile(companyId: number): void {
-       debugger;
-    this.ui.openCompanyProfile(companyId);
-   
+    this.ui.openUserProfile(companyId);
   }
+ openUsersList(companyId: number): void {
+  // Navigate to the user list page for the given company
+  this.router.navigate(['/users'], { queryParams: { companyId } });
+}
 }

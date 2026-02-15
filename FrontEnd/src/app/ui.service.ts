@@ -57,4 +57,32 @@ export class UiService {
   closeCompanyProfile(): void {
     this._showCompanyProfile.next(null);
   }
+  // ------------------
+  // User Profile Popup  ✅ ADDED PROPERLY
+  // ------------------
+  private _showUserProfile = new BehaviorSubject<number | null>(null);
+  readonly showUserProfile$: Observable<number | null> =
+    this._showUserProfile.asObservable();
+
+  openUserProfile(userId: number): void {
+    this._showUserProfile.next(userId);
+  }
+
+  closeUserProfile(): void {
+    this._showUserProfile.next(null);
+  }
+   // ------------------
+  // User Profile Popup  ✅ ADDED PROPERLY
+  // ------------------
+  private _showRegisterLink = new BehaviorSubject<number | null>(null);
+  readonly showRegisterLink$: Observable<number | null> =
+    this._showRegisterLink.asObservable();
+
+  openRegisterLink(companyId: number): void {
+    this._showRegisterLink.next(companyId);
+  }
+
+  closeRegisterLink(): void {
+    this._showRegisterLink.next(null);
+  }
 }

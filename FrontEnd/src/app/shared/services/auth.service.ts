@@ -66,23 +66,25 @@ export class AuthService {
    * @param token The authentication token
    * @param rememberMe If true, save to localStorage (persistent); if false, save to sessionStorage (session-only)
    */
-  saveToken(token?: string, rememberMe: boolean = false): void {
-    if (token) {
-      console.log('Saving token to', rememberMe ? 'localStorage' : 'sessionStorage');
-      if (rememberMe) {
-        localStorage.setItem('token', token);
-        sessionStorage.removeItem('token');
-        console.log('✓ Token saved to localStorage');
-      } else {
-        sessionStorage.setItem('token', token);
-        localStorage.removeItem('token');
-        console.log('✓ Token saved to sessionStorage');
-      }
-      // Verify token was saved
-      const savedToken = this.getToken();
-      console.log('Token verification - retrieved:', !!savedToken);
-    }
+ saveToken(token?: string, rememberMe: boolean = false): void {
+  if (token) {
+    const storage = rememberMe ? localStorage : sessionStorage;
+    storage.setItem('token', token);
+    if (rememberMe) sessionStorage.removeItem('token');
+    else localStorage.removeItem('token');
+
+    // --------------------------
+    // NEW: Decode JWT and store claims
+    // --------------------------
+    const claims = this.decodeToken(token);
+    if (claims) {
+      storage.setItem('userClaims', JSON.stringify(claims));
+       }
+
+    // Verify token
+    const savedToken = this.getToken();
   }
+}
 
   /**
    * Get token from localStorage or sessionStorage

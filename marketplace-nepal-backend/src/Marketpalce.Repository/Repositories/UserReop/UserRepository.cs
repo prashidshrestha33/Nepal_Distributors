@@ -105,15 +105,57 @@ VALUES (@CompanyId, @Email, @PasswordHash, @FullName, @Phone, @Role, @Status, @C
             FROM dbo.users WHERE id = @id";
             return await _db.QueryFirstOrDefaultAsync<MarketplaceUser>(sql, new { id = userid });
         }
-        public async Task<MarketplaceUser?> GetAllid(string companyid)
+        public async Task<List<MarketplaceUser>> GetAllid(long companyid)
         {
-            string sql = @"SELECT *
-            FROM dbo.users WHERE company_id = @companyid";
-            return await _db.QueryFirstOrDefaultAsync<MarketplaceUser>(sql, new { company_id = companyid });
+            string sql = @"
+        SELECT
+            id AS Id,
+            company_id AS CompanyId,
+            email AS Email,
+            password_hash AS PasswordHash,
+            full_name AS FullName,
+            phone AS Phone,
+            role AS Role,
+            status AS Status,
+            credits AS Credits,
+            tier AS Tier,
+            created_at AS CreatedAt,
+            updated_at AS UpdatedAt,
+            approve_dt AS ApproveDt,
+            approve_fg AS ApproveFG,
+            last_login_at AS LastLoginAt,
+            google_id AS GoogleId,
+            facebook_id AS FacebookId,
+            fmc_token AS FmcToken
+        FROM dbo.users
+        WHERE company_id = @companyid;
+    ";
+
+            return (await _db.QueryAsync<MarketplaceUser>(sql, new { companyid })).ToList();
         }
+
         public async Task<MarketplaceUser?> GetByIdAsync(long id)
         {
-            const string sql = "SELECT * FROM dbo.users WHERE id = @Id";
+            const string sql = "SELECT" +
+                " id AS Id," +
+                " company_id AS CompanyId," +
+                " email AS Email," +
+                " password_hash AS PasswordHash," +
+                " full_name AS FullName," +
+                " phone AS Phone, " +
+                " role AS Role," +
+                " status AS Status," +
+                " credits AS Credits," +
+                " tier AS Tier," +
+                " created_at AS CreatedAt," +
+                " updated_at AS UpdatedAt," +
+                " approve_dt AS ApproveDt," +
+                " approve_fg AS ApproveFG," +
+                " last_login_at AS LastLoginAt," +
+                " google_id AS GoogleId," +
+                " facebook_id AS FacebookId," +
+                " fmc_token AS FmcToken" +
+                " FROM [dbo].[users] WHERE id = @Id";
             return await _db.QuerySingleOrDefaultAsync<MarketplaceUser>(sql, new { Id = id });
         }
         public async Task<bool> UpdateUserAsync(MarketplaceUser user, IDbTransaction? transaction = null)
@@ -121,35 +163,23 @@ VALUES (@CompanyId, @Email, @PasswordHash, @FullName, @Phone, @Role, @Status, @C
             try
             {
                 const string sql = @"
-UPDATE dbo.users
-SET
-    company_id    = @CompanyId,
-    email         = @Email,
-    password_hash = @PasswordHash,
-    full_name     = @FullName,
-    phone         = @Phone,
-    role          = @Role,
-    tier          = @Tier,
-    google_id     = @GoogleId,
-    facebook_id   = @FacebookId,
-    updated_at    = SYSUTCDATETIME()
-WHERE
-    id = @Id;
-";
+                UPDATE dbo.users
+                SET
+                    email         = @Email,
+                    full_name     = @FullName,
+                    phone         = @Phone,
+                    role          = @Role,
+                    updated_at    = SYSUTCDATETIME()
+                WHERE
+                    id = @Id;
+                ";
 
                 var rowsAffected = await _db.ExecuteAsync(sql, new
                 {
-                    user.CompanyId,
                     user.Email,
-                    user.PasswordHash,
                     user.FullName,
                     user.Phone,
                     user.Role,
-                    user.Status,
-                    user.Credits,
-                    user.Tier,
-                    user.GoogleId,
-                    user.FacebookId,
                     user.Id
                 }, transaction: transaction);
 

@@ -25,7 +25,16 @@
   [companyId]="companyId"
   (close)="ui.closeCompanyProfile()"
 ></app-company-profile-popup>
-
+<app-user-profile-popup
+  *ngIf="showUserProfile$ | async as userId"
+  [userId]="userId"
+  (close)="closeUserProfile()">
+</app-user-profile-popup>
+<app-RegisterUserlink-popup
+  *ngIf="showRegisterLink$ | async as companyId"
+  [companyId]="companyId"
+  (close)="closeRegisterLink()">
+</app-RegisterUserlink-popup>
   <!-- Main Content Area -->
   <div
       class="flex-1 flex flex-col transition-all duration-300 ease-in-out"

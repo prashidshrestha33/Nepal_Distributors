@@ -14,6 +14,8 @@ import { OtpPopupComponent } from '../../components/CustomComponents/otp-popup/o
 import { ImageViewerComponent } from '../../components/CustomComponents/image-viewer/image-viewer.component';
 import { StatusPopupComponent } from '../../components/CustomComponents/status-popup/status-popup.component';
 import { CompanyProfilePopupComponent } from '../../components/CustomComponents/company-detail/company-profile-popup.component';
+import { UserProfilePopupComponent } from '../../components/CustomComponents/user-detail/user-profile-popup.component';
+import { RegisterUserlinkPopupComponent } from '../../components/CustomComponents/RegisterUserlink/RegisterUserlink-popup.component';
 
 // Global UI service
 import { UiService, StatusPopupState } from '../../../ui.service';
@@ -30,7 +32,9 @@ import { UiService, StatusPopupState } from '../../../ui.service';
     OtpPopupComponent,
     ImageViewerComponent,
     StatusPopupComponent,
-    CompanyProfilePopupComponent
+    CompanyProfilePopupComponent,
+    UserProfilePopupComponent,
+    RegisterUserlinkPopupComponent
   ],
   templateUrl: './app-layout.component.html',
   styleUrls: ['./app-layout.component.css']
@@ -44,8 +48,9 @@ export class AppLayoutComponent {
   showOtp$: Observable<boolean>;
   showImage$: Observable<{ url: string } | null>;
   showStatus$: Observable<StatusPopupState | null>;
-  showCompanyProfile$: Observable<number | null>; // 👈 use UiService observable
-
+  showCompanyProfile$: Observable<number | null>; 
+  showRegisterLink$: Observable<number | null>; 
+  showUserProfile$: Observable<number | null>;
   constructor(
     public sidebarService: SidebarService,
     public ui: UiService // inject global UI service
@@ -59,7 +64,11 @@ export class AppLayoutComponent {
     this.showOtp$ = this.ui.showOtp$;
     this.showImage$ = this.ui.showImage$;
     this.showStatus$ = this.ui.showStatus$;
-    this.showCompanyProfile$ = this.ui.showCompanyProfile$; // 👈 subscribe to service
+    this.showCompanyProfile$ = this.ui.showCompanyProfile$; 
+    this.showUserProfile$ = this.ui.showUserProfile$; 
+    this.showCompanyProfile$ = this.ui.showCompanyProfile$;
+    this.showUserProfile$ = this.ui.showUserProfile$; 
+    this.showRegisterLink$ = this.ui.showRegisterLink$; 
   }
 
   get containerClasses(): string[] {
@@ -88,7 +97,14 @@ export class AppLayoutComponent {
     this.ui.showStatus(message, type);
   }
 
-  closeCompanyProfile(): void {
+  closeUserProfile(): void {
+    this.ui.closeUserProfile();
+  }
+   closeCompanyProfile(): void {
     this.ui.closeCompanyProfile();
   }
+//componey user
+  closeRegisterLink(): void {
+  this.ui.closeRegisterLink();
+}
 }

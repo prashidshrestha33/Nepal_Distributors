@@ -40,6 +40,7 @@
     "crypto-js": "^4.2.0",
     "firebase": "^12.7.0",
     "flatpickr": "^4.6.13",
+    "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",
     "ng-apexcharts": "^2.0.0",
     "ng-otp-input": "^2.0.9",

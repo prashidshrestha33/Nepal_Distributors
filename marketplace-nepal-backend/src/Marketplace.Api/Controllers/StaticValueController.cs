@@ -4,6 +4,7 @@ using Marketplace.Api.Services.Helper;
 using Marketplace.Model.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using static Azure.Core.HttpHeader;
 
 namespace Marketplace.Api.Controllers
@@ -125,7 +126,12 @@ namespace Marketplace.Api.Controllers
                 catalogkey = catalogkey,
                 key = key
             };
-            var item = await _repo.GetAsync(filter);
+
+            var roles = HttpContext.User.Claims
+    .Where(c => c.Type == ClaimTypes.Role)
+    .Select(c => c.Value.ToLower())
+    .ToList();
+            var item = await _repo.GetAsync(filter, roles);
             if (item == null) return NotFound();
             return Ok(item);
         }

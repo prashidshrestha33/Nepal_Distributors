@@ -8,10 +8,10 @@
   {{ snackbar.message }}
 </div>
 
-<div class="approve-modal-container p-4 w-full max-w-7xl mx-auto bg-white dark:bg-gray-900 rounded-lg shadow-lg">
+<div class="approve-modal-container p-4 w-full max-w-7xl mx-auto bg-white rounded-lg shadow-lg">
 
   <!-- Header -->
-  <div class="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">
+  <div class="text-2xl font-semibold mb-4 text-gray-800 ">
     Approve Product
   </div>
 
@@ -31,9 +31,9 @@
   </div>
 
   <!-- Basic Info -->
-  <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
-    <div class="font-semibold mb-2 text-gray-800 dark:text-white">Basic Information</div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-700 dark:text-gray-300">
+  <div class="bg-gray-50 rounded-lg p-4 mb-4">
+    <div class="font-semibold mb-2 text-gray-800 ">Basic Information</div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-700 ">
       <div><span class="font-medium">SKU:</span> {{ product?.sku }}</div>
       <div><span class="font-medium">Name:</span> {{ product?.name }}</div>
       <div><span class="font-medium">Category:</span> {{ product?.categoryName }}</div>
@@ -44,8 +44,8 @@
   </div>
 
   <!-- Product Image -->
-  <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4 flex items-center gap-6">
-    <div class="font-semibold text-gray-800 dark:text-white">Product Image</div>
+  <div class="bg-gray-50 rounded-lg p-4 mb-4 flex items-center gap-6">
+    <div class="font-semibold text-gray-800 ">Product Image</div>
     <div class="relative group w-fit">
       <img *ngIf="product?.imageUrl; else noImg"
            [src]="product?.imageUrl"
@@ -82,10 +82,10 @@
   <div *ngIf="showReasonModal"
        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
 
-    <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg w-full max-w-2xl p-6">
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6">
 
       <!-- Modal Header -->
-      <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4"
+      <h2 class="text-lg font-semibold text-gray-800  mb-4"
           *ngIf="actionType === 'Approved'">
         Approve Product
       </h2>
