@@ -47,11 +47,9 @@ export class CategoriesComponent implements OnInit {
         
         // Flatten tree structure for table display
         this.items = this.flattenCategoryTree(data);
-        console.log('✓ Flattened categories count:', this.items.length);
         
         // Extract root categories (depth = 1)
         this.rootCategories = this.items.filter(cat => cat.depth === 1);
-        console.log('✓ Root categories (depth=1):', this.rootCategories);
         
         this.filteredItems = this.items;
         this.currentPage = 1;
@@ -59,7 +57,6 @@ export class CategoriesComponent implements OnInit {
         this.loading = false;
       },
       error: (err: any) => {
-        console.error('✗ Error loading categories:', err);
         this.loading = false;
       }
     });

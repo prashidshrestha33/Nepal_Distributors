@@ -292,9 +292,6 @@ export class AuthService {
   socialLogin(socialUser: SocialUser, rememberMe: boolean = false): Observable<any> {
   const endpoint = `${this.api}/api/auth/login`;
 
-
-  console.log('📤 Sending social login request:', {socialUser});
-
   return this.http.post(endpoint, socialUser).pipe(
     tap((response: any) => {
       const jwtToken = response?.result?.token || response?.token;

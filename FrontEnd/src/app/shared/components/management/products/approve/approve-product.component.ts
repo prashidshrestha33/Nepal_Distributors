@@ -11,97 +11,60 @@ import type { Product } from '../../../../services/management/management.service
   styleUrls: ['./approve-product.component.css']
 })
 export class ApproveProductComponent {
+
+  // =========================
+  // Snackbar for notifications
+  // =========================
   snackbar = {
     show: false,
     message: '',
     success: true
   };
 
-  showSnackbar(message: string, success: boolean = true) {
+  private snackbarTimeout?: any;
+
+  /** Show snackbar with success or error */
+  showSnackbar(message: string, success: boolean = true, duration: number = 5000) {
+    // Clear any existing timeout
+    if (this.snackbarTimeout) clearTimeout(this.snackbarTimeout);
+
     this.snackbar.message = message;
     this.snackbar.success = success;
     this.snackbar.show = true;
-    setTimeout(() => {
+
+    this.snackbarTimeout = setTimeout(() => {
       this.snackbar.show = false;
-    }, 5000);
+    }, duration);
   }
-  /** Product to approve or reject */
+
+  // =========================
+  // Inputs & Outputs
+  // =========================
   @Input() product: (Product & { categoryName?: string; brandName?: string }) | null = null;
 
-  /** Event emitted when product is approved or rejected */
+  /** Emits when product is approved or rejected */
   @Output() approve = new EventEmitter<{ status: 'Approved' | 'Rejected'; reason?: string }>();
 
-  /** Event emitted when modal is cancelled */
+  /** Emits when modal is cancelled */
   @Output() cancel = new EventEmitter<void>();
 
-  /** Modal visibility flags */
+  // =========================
+  // Modal state
+  // =========================
   showReasonModal = false;
-  showApproveModal = false;
-  showApproveModal1 = false;
+  actionType: 'Approved' | 'Rejected' | null = null; // Current action
+  reason = '';                   // Reason for rejection or optional note
+  isReject = false;              // Flag to indicate rejection
 
-  /** Whether the current action is rejection */
-  isReject = false;
+  // =========================
+  // Methods
+  // =========================
 
-  /** Current action type */
-  actionType: 'Approved' | 'Rejected' | null = null;
-
-  /** Reason for rejection or optional note for approval */
-  reason = '';
-
-  /** Approval dropdown selection (if needed) */
-  approvalType: string = '';
-
-  /** Selected company ID (optional, can remove if unused) */
-  selectedCompanyId: number | null = null;
-
-  /**
-   * Open the reason modal for approval or rejection
-   */
+  /** Open reason modal for approval or rejection */
   openReason(action: 'Approved' | 'Rejected') {
     this.actionType = action;
     this.reason = '';
     this.showReasonModal = true;
-  }
-
-  /**
-   * Open the approve/reject modal (step 1)
-   * @param fg 'a' for approve, anything else for reject
-   */
-  openApproveStep1Modal(fg: string) {
-    this.isReject = fg !== 'a';
-    this.showApproveModal = false;
-    this.showApproveModal1 = true;
-  }
-
-  /** Close approve/reject modal */
-  closeApproveModal() {
-    this.showApproveModal = false;
-    this.showApproveModal1 = false;
-    this.selectedCompanyId = null;
-    this.approvalType = '';
-    this.reason = '';
-  }
-
-  /** Confirm action from reason modal */
-  confirmAction(reason: string, actionType: 'Approved' | 'Rejected') {
-    if (actionType === 'Rejected' && !reason.trim()) {
-      this.showSnackbar('Reason is required for rejection.', false);
-      return;
-    }
-    // Simulate async approve/reject (replace with real API if needed)
-    // Show success or error snackbar based on action
-    if (actionType === 'Approved') {
-      this.showSnackbar('Product approved successfully!', true);
-    } else {
-      this.showSnackbar('Product rejected.', false);
-    }
-    setTimeout(() => {
-      this.approve.emit({
-        status: actionType,
-        reason: reason
-      });
-      this.closeReason();
-    }, 1000);
   }
 
   /** Close reason modal */
@@ -109,10 +72,32 @@ export class ApproveProductComponent {
     this.showReasonModal = false;
     this.actionType = null;
     this.reason = '';
-    this.approvalType = '';
   }
 
-  /** Emit cancel event */
+  /** Confirm approval or rejection action */
+  confirmAction(reason: string, actionType: 'Approved' | 'Rejected') {
+    if (actionType === 'Rejected' && !reason.trim()) {
+      this.showSnackbar('Reason is required for rejection.', false);
+      return;
+    }
+
+    // Show snackbar immediately
+    const msg = actionType === 'Approved'
+      ? 'Product approved successfully!'
+      : 'Product rejected.';
+    this.showSnackbar(msg, actionType === 'Approved');
+
+    // Emit event to parent component after a short delay to show snackbar
+    setTimeout(() => {
+      this.approve.emit({
+        status: actionType,
+        reason
+      });
+      this.closeReason();
+    }, 500);
+  }
+
+  /** Cancel modal */
   onCancel() {
     this.cancel.emit();
   }

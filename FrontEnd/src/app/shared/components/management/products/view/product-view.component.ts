@@ -45,8 +45,6 @@ export class ProductViewComponent implements OnInit {
   }
 }
 
-
-
 // Helper to resolve category path as array of names
 export function getCategoryPath(tree: Category[], categoryId: number): string[] {
   const path: string[] = [];
