@@ -9,3 +9,4 @@ input[type=number].no-spinner::-webkit-outer-spin-button {
 input[type=number].no-spinner {
   -moz-appearance: textfield;
 }
+

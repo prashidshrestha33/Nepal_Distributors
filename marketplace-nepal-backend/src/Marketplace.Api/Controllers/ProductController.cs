@@ -147,34 +147,66 @@ namespace Marketplace.Api.Controllers
             return CreatedAtAction(nameof(Get), new { id = product.Id }, product);
         }
 
-        [HttpPut("{id}")]
+        [HttpPost("{id}")]
         public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductModels dto)
         {
-                var product = await repositorysitory.GetByIdAsync(id);
-                if (product == null) return NotFound();
+            // Fetch the existing product from the repository
+            var product = await repositorysitory.GetByIdAsync(id);
+            if (product == null) return NotFound(); // If the product doesn't exist, return NotFound
 
-                if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+            // Process the new image if provided
+            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+            {
+                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
+                if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads); // Create directory if it doesn't exist
+
+                // Generate a new filename for the image
+                var imageFileName = $"{Guid.NewGuid()}_{dto.ImageFile.FileName}";
+                var filePath = Path.Combine(uploads, imageFileName);
+
+                // Save the file to the server
+                using (var stream = new FileStream(filePath, FileMode.Create))
                 {
-                    var uploads = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
-                    if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
-
-                    var imageFileName = $"{Guid.NewGuid()}_{dto.ImageFile.FileName}";
-                    var filePath = Path.Combine(uploads, imageFileName);
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                        await dto.ImageFile.CopyToAsync(stream);
-
-                    product.ImageName = imageFileName;
+                    await dto.ImageFile.CopyToAsync(stream);
                 }
 
-                // Update other fields
-                product.Sku = dto.Sku; product.Name = dto.Name;
-                product.Description = dto.Description; // etc.
-                product.UpdatedAt = DateTime.UtcNow;
-                product.Id = id;
-
-                await repositorysitory.UpdateAsync(product);
-                return NoContent();
+                // Update the ImageName property in the product object
+                product.ImageName = imageFileName;
             }
+
+            // Update non-nullable fields (Sku, Name, Description)
+            if (!string.IsNullOrEmpty(dto.Sku)) product.Sku = dto.Sku;
+            if (!string.IsNullOrEmpty(dto.Name)) product.Name = dto.Name;
+            if (!string.IsNullOrEmpty(dto.Description)) product.Description = dto.Description;
+
+            // Update nullable fields if values are provided (Rate, ManufacturerId, BrandId, CategoryId)
+            product.Rate = dto.Rate;
+            product.ManufacturerId = dto.ManufacturerId;
+            product.BrandId = dto.BrandId;
+            product.CategoryId = dto.CategoryId;
+
+            // Update optional fields (Status, IsFeatured, HsCode, etc.)
+            if (!string.IsNullOrEmpty(dto.Status)) product.Status = dto.Status;
+            if (dto.IsFeatured.HasValue) product.IsFeatured = dto.IsFeatured.Value;
+            if (!string.IsNullOrEmpty(dto.HsCode)) product.HsCode = dto.HsCode;
+            if (!string.IsNullOrEmpty(dto.SeoTitle)) product.SeoTitle = dto.SeoTitle;
+            if (!string.IsNullOrEmpty(dto.SeoDescription)) product.SeoDescription = dto.SeoDescription;
+            if (!string.IsNullOrEmpty(dto.Attributes)) product.Attributes = dto.Attributes;
+
+            // Set the update timestamp
+            product.UpdatedAt = DateTime.UtcNow;
+
+            // Call the UpdateAsync method to update the product in the repository
+            var updateSuccess = await repositorysitory.UpdateAsync(product);
+            if (!updateSuccess) return StatusCode(500, "Failed to update product.");
+
+            // Optionally, fetch the updated product to return as a response
+            product = await repositorysitory.GetByIdAsync(id);
+
+            // Return the updated product object as response
+            return Ok(product);
+        }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)

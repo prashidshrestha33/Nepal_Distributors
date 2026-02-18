@@ -125,7 +125,7 @@
             <input
               type="number"
               formControlName="rate"
-              placeholder="Price"
+              placeholder="Rate"
               min="0"
               step="1"
               pattern="\d*"
@@ -237,23 +237,45 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
         <!-- Manufacturer -->
-        <div class="space-y-1">
-           <label class="block text-sm font-semibold text-gray-700 ">
-             Manufacture
-           </label>
-           <input
-             type="number"
-             formControlName="manufacturerId"
-             placeholder="Manufacturer ID"
-             min="0"
-             step="1"
-             pattern="\d*"
-             inputmode="numeric"
-             class="w-full bg-gray-100 border border-gray-300  rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 no-spinner"
-           />
-           <span *ngIf="isFieldInvalid('manufacturerId')" class="text-red-500 text-xs">
-             Manufacturer is required.
-           </span>
+        <div class="space-y-1 relative">
+          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+            Manufacture <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <button
+              type="button"
+              class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+              (click)="showManufactureMenu = !showManufactureMenu"
+            >
+              {{ getManufactureName(form.get('manufacturerId')?.value) || 'Select Manufacture' }}
+            </button>
+            <!--Clear Brand -->
+            <button
+              *ngIf="form.get('manufacturerId')?.value"
+              type="button"
+              class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-red-600"
+              (click)="clearManufacture()"
+            >
+              ✕
+            </button>
+
+            <div *ngIf="showManufactureMenu" class="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-64 overflow-auto">
+              <ul>
+                <li *ngFor="let manufacture of filteredManufacture">
+                  <button
+                    type="button"
+                    class="w-full text-left px-4 py-2 hover:bg-blue-100 dark:hover:bg-blue-900"
+                    (click)="selectManufacture(manufacture)"
+                  >
+                    {{ manufacture.staticValueKey }}
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <span *ngIf="isFieldInvalid('manufacture')" class="text-red-500 text-xs">
+            Manufacture is required.
+          </span>
         </div>
       </div>
       <!-- Error -->

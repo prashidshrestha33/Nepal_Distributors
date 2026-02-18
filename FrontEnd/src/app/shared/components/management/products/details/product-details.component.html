@@ -1,12 +1,16 @@
 <div *ngIf="!loading && product" class="product-wrapper max-w-6xl mx-auto p-6">
+
   <!-- Product Card -->
   <div class="product-card flex flex-col md:flex-row gap-8 bg-white rounded-xl shadow-lg p-6 min-h-[700px]">
-    
+
     <!-- LEFT: Main Image -->
     <div class="flex flex-col items-center md:w-1/2 w-full">
       <div class="image-zoom mb-4">
-        <img [src]="product.imageUrl" [alt]="product?.imageName"
-             class="w-96 h-96 object-cover rounded-lg border shadow hover:scale-105 transition-transform duration-300" />
+        <img
+          [src]="product.imageUrl"
+          [alt]="product?.imageName"
+          class="w-96 h-96 object-cover rounded-lg border shadow hover:scale-105 transition-transform duration-300"
+        />
       </div>
     </div>
 
@@ -23,52 +27,95 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-gray-700">
         <div>
           <span class="font-semibold">Status:</span>
-          <span [ngClass]="{
-            'bg-green-100 text-green-800 px-3 py-1 rounded-full': product?.status === 'Approved',
-            'bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full': product?.status !== 'Approved'
-          }" class="ml-2">
+          <span
+            [ngClass]="{
+              'bg-green-100 text-green-800 px-3 py-1 rounded-full': product?.status === 'Approved',
+              'bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full': product?.status !== 'Approved'
+            }"
+            class="ml-2"
+          >
             {{ product?.status || 'Pending' }}
           </span>
         </div>
-<br/>
+
         <div>
           <span class="font-semibold">Manufacturer:</span> {{ product?.manufacturerId }}
         </div>
-<br/>
-        <!-- Category styled like Daraz -->
+
         <div class="flex items-center gap-2">
           <span class="font-semibold">Category:</span>
           <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
             {{ getCategoryName(product?.categoryId) }}
           </span>
         </div>
-<br/>
-        <!-- Brand styled -->
+
         <div class="flex items-center gap-2">
           <span class="font-semibold">Brand:</span>
           <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
-            {{ getBrandName(product.brandId) }}
+            {{ getBrandName(product?.brandId) }}
           </span>
         </div>
       </div>
-<br/>
+
       <div><span class="font-semibold">Created By:</span> {{ product?.createdBy }}</div>
 
-      <!-- Back Button -->
-      <button (click)="goBack()" 
-              class="mt-6 px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded shadow w-max transition">
+      <button
+        (click)="goBack()"
+        class="mt-6 px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded shadow w-max transition"
+      >
         ← Back
       </button>
     </div>
   </div>
 
-  <!-- Separate Description Card -->
+  <!-- Product Description Card -->
   <div class="description-card bg-white rounded-xl shadow-md p-6 mt-6">
     <h2 class="text-2xl font-bold text-gray-900 mb-3">Product Description</h2>
     <p class="text-gray-700 leading-relaxed">
       {{ product?.description || 'No description available.' }}
     </p>
   </div>
+
+  <!-- ⭐ Feedback & Rating Section -->
+  <div class="feedback-card bg-white rounded-xl shadow-md p-6 mt-6">
+    <h2 class="text-2xl font-bold text-gray-900 mb-4">Leave a Review</h2>
+
+    <!-- Dynamic 5 Star Rating -->
+    <div class="flex gap-1 text-3xl">
+      <ng-container *ngFor="let star of [1,2,3,4,5]; let i = index">
+        <i
+          class="cursor-pointer transition-colors"
+          [ngClass]="{
+            'text-yellow-400': i < selectedRating,
+            'text-gray-300 hover:text-yellow-400': i >= selectedRating
+          }"
+          (click)="setRating(i + 1)"
+        >
+          ★
+        </i>
+      </ng-container>
+    </div>
+
+    <div class="text-sm text-gray-600 mt-1">
+      {{ selectedRating ? (selectedRating + ' star' + (selectedRating > 1 ? 's' : '')) : 'Tap to rate' }}
+    </div>
+
+    <!-- Comment Box -->
+    <textarea
+      [(ngModel)]="commentText"
+      class="mt-4 w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      rows="4"
+      placeholder="Write your review here..."
+    ></textarea>
+
+    <button
+      (click)="submitFeedback()"
+      class="mt-4 bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-blue-700 transition"
+    >
+      Submit Review
+    </button>
+  </div>
+
 </div>
 
 <div *ngIf="loading" class="loading text-center text-lg text-gray-500">Loading...</div>

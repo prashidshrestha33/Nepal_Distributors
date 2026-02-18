@@ -8,35 +8,63 @@
     </div>
 
     <div class="flex flex-wrap gap-3">
-      <!-- Approve Button -->
-      <button
-        type="button"
-        (click)="bulkApprove()"
-        [disabled]="!canBulkApprove"
-        class="px-5 py-2 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400 transition"
-      >
-        Approve Selected
-      </button>
+  <!-- Approve Button -->
+  <button
+    type="button"
+    (click)="bulkApprove()"
+    [disabled]="!canBulkApprove"
+    class="flex items-center gap-2 px-2 py-2 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400 transition"
+  >
+    <!-- Check Icon -->
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+         viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round"
+            stroke-width="2"
+            d="M5 13l4 4L19 7" />
+    </svg>
+    Approve Selected
+  </button>
 
-      <!-- CSV Upload Button -->
-      <input #csvInput type="file" accept=".csv" (change)="onFileSelected($event)" class="hidden" />
-      <button
-        type="button"
-        (click)="csvInput.click()"
-        [disabled]="loading"
-        class="px-5 py-2 rounded-lg font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-gray-400 transition"
-      >
-        {{ loading ? 'Importing...' : 'Import CSV' }}
-      </button>
+  <!-- CSV Upload Button -->
+  <input #csvInput type="file" accept=".csv" (change)="onFileSelected($event)" class="hidden" />
+  <button
+    type="button"
+    (click)="csvInput.click()"
+    [disabled]="loading"
+    class="flex items-center gap-2 px-2 py-2 rounded-lg font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-gray-400 transition"
+  >
+    <!-- Upload Icon -->
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
+         fill="none" viewBox="0 0 24 24"
+         stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 12v-9m0 0l-3 3m3-3l3 3"/>
+    </svg>
+    {{ loading ? 'Importing...' : 'Import CSV' }}
+  </button>
 
-      <!-- Add Product Button -->
-      <a
-        routerLink="/products/add"
-        class="px-5 py-2 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
-      >
-        + Add Product
-      </a>
-    </div>
+  <!-- Add Product Button -->
+  <a
+    routerLink="/products/add"
+    class="flex items-center gap-2 px-2 py-2 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
+  >
+    <!-- Plus Icon -->
+    <svg xmlns="http://www.w3.org/2000/svg"
+         class="w-5 h-5"
+         fill="none"
+         viewBox="0 0 24 24"
+         stroke="currentColor">
+      <path stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4" />
+    </svg>
+    Add Product
+  </a>
+
+</div>
+
   </div>
 
   <!-- STATUS MESSAGES -->
@@ -83,7 +111,7 @@
           <th class="px-4 py-3">
             <input type="checkbox" [checked]="allSelected" (change)="toggleSelectAll($event)" />
           </th>
-          <th class="px-4 py-3 text-left">S.N</th>
+          <th class="px-3 py-3 text-left">S.N</th>
           <th class="px-6 py-3 text-left">Name</th>
           <th class="px-6 py-3 text-left">Category</th>
           <th class="px-6 py-3 text-left">Brand</th>
@@ -173,13 +201,16 @@
               </a>
 
               <!-- Edit Button -->
-              <button
-                (click)="goToEditProduct(product.id)"
-                class="w-9 h-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all hover:scale-110"
-                title="Edit"
-              >
-                ✏
-              </button>
+<button
+  (click)="goToEditProduct(product.id)"
+  class="w-9 h-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all hover:scale-110 flex items-center justify-center"
+  title="Edit"
+>
+  <span class="inline-block rotate-[135deg]">
+    ✏
+  </span>
+</button>
+
             </div>
           </td>
         </tr>

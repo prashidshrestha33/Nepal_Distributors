@@ -106,7 +106,9 @@ FROM [NepalDistributers].[dbo].[Products]
 
         public async Task<int> CreateAsync(ProductModel product)
         {
-                var sql = @"
+            // Ensure SKU/SEO fields are generated before performing the single UPDATE on the shared connection.
+            await GenerateSkuAndSeoAsync(product);
+            var sql = @"
             INSERT INTO [NepalDistributers].[dbo].[products]
             (company_id, sku, name, description, short_description, category_id, brand_id, manufacturer_id,
              rate, hs_code, status, is_featured, seo_title, seo_description, attributes, ImageName,
@@ -165,15 +167,32 @@ FROM [NepalDistributers].[dbo].[Products]
         public async Task<long> AddCatagoryAsync(CreateCategoryDto dto)
         {
             var p = new DynamicParameters();
-            var slug = string.IsNullOrWhiteSpace(dto.Slug) ? Slugify(dto.Name) : Slugify(dto.Slug);
+
+            // Decide base slug from provided slug or name
+            var baseText = string.IsNullOrWhiteSpace(dto.Slug) ? dto.Name : dto.Slug;
+
+            // Slugify raw text (remove spaces, lower case, etc.)
+            var rawSlug = Slugify(baseText);
+
+            // Remove any existing "categories/" prefix if present
+            if (rawSlug.StartsWith("categories/"))
+            {
+                rawSlug = rawSlug.Substring("categories/".Length);
+            }
+
+            // Now add your own correct prefix
+            var finalSlug = $"{baseText}";
+
             p.Add("@name", dto.Name);
-            p.Add("@slug", slug);
+            p.Add("@slug", finalSlug);
             p.Add("@parent_id", dto.ParentId);
             p.Add("@new_id", dbType: DbType.Int64, direction: ParameterDirection.Output);
 
             await _db.ExecuteAsync("dbo.sp_AddCategory", p, commandType: CommandType.StoredProcedure);
             return p.Get<long>("@new_id");
         }
+
+
 
         // Move (re-parent) a category via sp_MoveCategory
         public async Task MoveCatagoryAsync(MoveCategoryDto dto)

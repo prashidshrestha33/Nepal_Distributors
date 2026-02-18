@@ -1,21 +1,37 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { ProductService, CategoryService, Category, Product, StaticValue, StaticValueService } from '../../../../services/management/management.service';
+import { FormsModule } from '@angular/forms';
+import {
+  ProductService,
+  StaticValueService,
+  CategoryService,
+  Category,
+  Product,
+  StaticValue,
+  StaticValueCatalog
+} from '../../../../services/management/management.service';
 import { environment } from '../../../../../../environments/environment';
 
 @Component({
   selector: 'app-product-details',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './product-details.component.html',
   styleUrl: './product-details.component.css'
 })
 export class ProductDetailsComponent implements OnInit {
   product?: Product;
   loading = true;
+
   categories: Category[] = [];
-  brandMap = new Map<number, string>(); // brandId -> brandName mapping
+
+  brandMap = new Map<number, string>();
+  manufactureMap = new Map<number, string>();
+
+  // ————————— Feedback / Rating —————————
+  selectedRating: number = 0;
+  commentText: string = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -28,57 +44,38 @@ export class ProductDetailsComponent implements OnInit {
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     this.loadProduct(id);
-
-    // Load categories
-    this.categoryService.getCategories().subscribe((cats) => {
-      this.categories = cats;
-    });
-
-    // Load brand static values
-    this.loadBrandStaticValues();
+    this.loadCategories();
+    this.loadStaticValues();
   }
 
-  // Load all brand static values once
-  loadBrandStaticValues(): void {
-    this.staticValueService.getStaticValuesCatagory().subscribe({
-      next: (catalogs) => {
-        const brandCatalog = catalogs.find(c => c.catalogName === 'Brand');
-        if (!brandCatalog) return;
-
-        // Fetch brand values
-        this.staticValueService.getStaticValues(brandCatalog.catalogId).subscribe({
-          next: (values: StaticValue[]) => {
-            this.brandMap.clear();
-
-            values.forEach(v => {
-              const id = Number(v.staticId); // Convert to number for BIGINT compatibility
-              this.brandMap.set(id, v.staticValueKey.toString());
-            });
-
-            console.log('Brand map loaded:', this.brandMap);
-          },
-          error: (err) => console.error('Error loading brand values', err)
-        });
-      },
-      error: (err) => console.error('Error loading static value catalog', err)
-    });
+  // ————— Ratings & Feedback —————
+  setRating(rating: number) {
+    this.selectedRating = rating;
   }
 
-  // Get brand name safely by brandId
-  getBrandName(brandId?: number | null): string {
-    if (!brandId) return 'N/A';
-    return this.brandMap.get(Number(brandId)) ?? 'N/A';
+  submitFeedback() {
+    if (!this.commentText.trim() || this.selectedRating === 0) {
+      alert('Please select a rating and enter a comment.');
+      return;
+    }
+
+    const feedback = {
+      productId: this.product?.id,
+      rating: this.selectedRating,
+      comment: this.commentText.trim(),
+      createdAt: new Date()
+    };
+
+    // TODO: Save to backend
+    alert('Thank you for your feedback!');
+
+    this.selectedRating = 0;
+    this.commentText = '';
   }
 
-  // Get category name safely
-  getCategoryName(categoryId?: number): string {
-    if (typeof categoryId !== 'number') return 'N/A';
-    const cat = this.categories.find(c => c.id === categoryId);
-    return cat && cat.name ? cat.name : categoryId.toString();
-  }
+  // ————— Loading Product & Lookups —————
 
-  // Load product details
-  loadProduct(id: number) {
+  private loadProduct(id: number) {
     this.productService.getProductById(id).subscribe({
       next: (res: any) => {
         this.product = res.result;
@@ -87,11 +84,54 @@ export class ProductDetailsComponent implements OnInit {
             ? this.getImageUrl(this.product.imageName)
             : 'assets/images/no-image.png';
         }
-
         this.loading = false;
       },
       error: () => (this.loading = false)
     });
+  }
+
+  private loadCategories() {
+    this.categoryService.getCategories().subscribe({
+      next: (cats) => (this.categories = cats),
+      error: (err) => console.error('Error loading categories', err)
+    });
+  }
+
+  private loadStaticValues() {
+    this.staticValueService.getStaticValuesCatagory().subscribe({
+      next: (catalogs: StaticValueCatalog[]) => {
+        if (!catalogs) return;
+
+        // Brand
+        const brandCat = catalogs.find(c => c.catalogName === 'Brand');
+        if (brandCat) {
+          this.staticValueService.getStaticValues(brandCat.catalogId)
+            .subscribe({ next: (vals: StaticValue[]) => vals.forEach(v => this.brandMap.set(Number(v.staticId), v.staticValueKey)) });
+        }
+
+        // Manufacture
+        const manuCat = catalogs.find(c => c.catalogName === 'Manufacture');
+        if (manuCat) {
+          this.staticValueService.getStaticValues(manuCat.catalogId)
+            .subscribe({ next: (vals: StaticValue[]) => vals.forEach(v => this.manufactureMap.set(Number(v.staticId), v.staticValueKey)) });
+        }
+      },
+      error: (err) => console.error('Error loading static value catalog', err)
+    });
+  }
+
+  getBrandName(brandId?: number | null): string {
+    return !brandId ? 'N/A' : this.brandMap.get(Number(brandId)) ?? 'N/A';
+  }
+
+  getManufactureName(manufacturerId?: number | null): string {
+    return !manufacturerId ? 'N/A' : this.manufactureMap.get(Number(manufacturerId)) ?? 'N/A';
+  }
+
+  getCategoryName(categoryId?: number): string {
+    if (typeof categoryId !== 'number') return 'N/A';
+    const cat = this.categories.find(c => c.id === categoryId);
+    return cat?.name ?? 'N/A';
   }
 
   getImageUrl(imageName?: string): string {
