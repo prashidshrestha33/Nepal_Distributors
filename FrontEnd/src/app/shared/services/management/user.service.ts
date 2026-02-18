@@ -32,10 +32,7 @@ export class UserService {
       request$ =this.apiGateway.getWithResult<User>(`${environment.apiBaseUrl}/api/Users/GetAll/${componeyid}`,
       { requiresAuth: true }
     );
-    debugger;
-    
-    // Handle both array response and object response with data property
-    return request$.pipe(
+     return request$.pipe(
       map(response => {
         
         let users: any[] = [];

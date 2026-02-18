@@ -34,5 +34,8 @@ namespace Marketpalce.Repository.Repositories.UserReop
         Task UpdatePasswordAsync(long userid, string Passwordhass);
         Task UpdateOtpTokem(string ranno, string email);
 
+        Task<int> SetFcmId(string FcmId,string userid);
+        Task<string?> GetTokenByUserIdAsync(int userId);
+
     }
 }

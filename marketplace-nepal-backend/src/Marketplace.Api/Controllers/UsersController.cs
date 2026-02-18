@@ -1,6 +1,7 @@
 ﻿using Marketpalce.Repository.Repositories.ComponyRepo;
 using Marketpalce.Repository.Repositories.UserReop;
 using Marketplace.Api.Services.FacebookToken;
+using Marketplace.Api.Services.FcmNotificationService;
 using Marketplace.Api.Services.GoogleTokenVerifier;
 using Marketplace.Api.Services.Hassing;
 using Marketplace.Api.Services.Helper;
@@ -28,6 +29,7 @@ namespace Marketplace.Api.Controllers
         private readonly IGoogleTokenVerifier _googleVerifier;
         private readonly IFacebookTokenVerifier _facebookVerifier;
         private readonly IDbConnection _db; // scoped connection to allow transactions
+        private readonly IFcmNotificationService _fcm;
 
         private static readonly string[] AllowedRoles = new[]
         {
@@ -38,12 +40,13 @@ namespace Marketplace.Api.Controllers
             IUserRepository users,
             ICompanyRepository companies,
             IPasswordHasher<MarketplaceUser> hasher,
+            IFcmNotificationService fcm,
             IDbConnection db)
         {
             _users = users ?? throw new ArgumentNullException(nameof(users));
             _companies = companies ?? throw new ArgumentNullException(nameof(companies));
             _hasher = hasher ?? throw new ArgumentNullException(nameof(hasher));
-            _db = db ?? throw new ArgumentNullException(nameof(db));
+            _db = db ?? throw new ArgumentNullException(nameof(db)); _fcm = fcm;
         }
         [HttpGet("GetAll/{id:long}")]
         public async Task<ActionResult<IEnumerable<MarketplaceUser>>> GetAllUser(long id)
@@ -130,6 +133,16 @@ namespace Marketplace.Api.Controllers
                 try { tx.Rollback(); } catch { /* ignore rollback error */ }
                 return StatusCode(500, new { error = "Registration failed", details = ex.Message });
             }
+        }
+        [HttpPost("setFCM")]
+        public async Task<IAsyncResult> SetFTM([FromQuery] string fciid)
+        {
+            string userid = HttpContext.User.GetClaimValue("Userid");
+            _users.SetFcmId(fciid, userid);
+
+            var c =_users.SetFcmId(fciid, userid);
+            if (c == null) return (IAsyncResult)NotFound();
+            return (IAsyncResult)Ok(c);
         }
         [HttpPost("EditUser")]
         public async Task<IActionResult> EditUser([FromBody] MarketplaceUser req)
@@ -218,6 +231,24 @@ namespace Marketplace.Api.Controllers
                 try { tx.Rollback(); } catch { }
                 return StatusCode(500, new { error = "Approval failed", details = ex.Message });
             }
+        }
+
+        [HttpPost("sendpsh")]
+        public async Task<IActionResult> Send(string token)
+        {  // Fire-and-forget task
+            _ = Task.Run(async () =>
+            {
+                // Wait 1 minute
+                await Task.Delay(TimeSpan.FromMinutes(.4));
+
+                if (!string.IsNullOrEmpty(token))
+                {
+                    await _fcm.SendToUserAsync(token, "Test Title", "Hello from API after 1 minute");
+                    Console.WriteLine("✅ Delayed notification sent");
+                }
+            });
+
+            return Ok("Notification will be sent in 1 minute");
         }
     }
 }

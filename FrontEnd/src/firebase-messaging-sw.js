@@ -7,44 +7,39 @@ firebase.initializeApp({
   projectId: "nepaldist-3c2b5",
   storageBucket: "nepaldist-3c2b5.firebasestorage.app",
   messagingSenderId: "698076186328",
-  appId: "1:698076186328:web: b9fedc20c67d8c14b8b9ad"
+  appId: "1:698076186328:web:b9fedc20c67d8c14b8b9ad"
 });
 
 const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage((payload) => {
-  console.log('📩 Received background message:', payload);
-  
-  const notificationTitle = payload.notification?. title || 'New Notification';
-  const notificationOptions = {
-    body: payload. notification?.body || '',
-    icon: '/assets/icons/icon-192x192.png',
-    badge: '/assets/icons/badge-72x72.png',
-    data: payload.data,
-    requireInteraction: false
+mmessaging.onBackgroundMessage(function (payload) {
+  console.log('[SW] Background message received:', payload);
+
+  const title = payload.notification?.title || "New Notification";
+
+  const options = {
+    body: payload.notification?.body || "",
+    data: {
+      url: payload.data?.url || '/'
+    },
+    requireInteraction: true   // keeps popup visible until click
   };
 
-  return self.registration.showNotification(notificationTitle, notificationOptions);
+  self.registration.showNotification(title, options);
 });
 
 self.addEventListener('notificationclick', (event) => {
-  console.log('🔔 Notification clicked:', event);
   event.notification.close();
   
-  const urlToOpen = event.notification. data?.url || '/';
-  
+  const urlToOpen = event.notification.data?.url || '/';
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
-        for (let i = 0; i < clientList.length; i++) {
-          const client = clientList[i];
-          if (client.url === urlToOpen && 'focus' in client) {
-            return client.focus();
-          }
+        for (let client of clientList) {
+          if (client.url === urlToOpen && 'focus' in client) return client.focus();
         }
-        if (clients.openWindow) {
-          return clients.openWindow(urlToOpen);
-        }
+        if (clients.openWindow) return clients.openWindow(urlToOpen);
       })
   );
 });

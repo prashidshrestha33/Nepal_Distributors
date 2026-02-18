@@ -389,7 +389,20 @@ WHERE
             return (result.payload, result.is_read, result.user_id);
         }
 
+        public Task<int> SetFcmId(string FcmId, string userid)
+        {
+            string updateSql = @"update [dbo].[users] 
+            set fmc_token=@FcmId
+            where 
+            id=@userid;";
 
+            return _db.ExecuteAsync(updateSql, new { @FcmId=FcmId, userid=userid });
+        }
+        public Task<string?> GetTokenByUserIdAsync(int userId)
+        {
+            // TODO: fetch from DB
+            return Task.FromResult<string?>("f56dblt_MfquiMe6dkAzv4:APA91bE5_8eCtnsxaouGr_yJ4l2mKYcmQYGi5KfkDie7o20kOqxsh_PKu3MJhi9wGZhcbr6jmh7WhXdCstdMDRvgmPLsxcmokMa9ojrTYqQwZs2Lp3YwIzo");
+        }
 
     }
 }

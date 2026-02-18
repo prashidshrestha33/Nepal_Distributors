@@ -10,6 +10,7 @@ import { RegisterCompanyComponent } from './pages/auth-pages/register-company/re
 import { TermsAndConditionsComponent } from './pages/auth-pages/terms-and-conditions/terms-and-conditions.component';
 import { AuthGuard } from './guards/auth.guard';
 
+import { DashboardComponent } from './pages/Dashboard/dashboard.component';
 // Management Components - Users
 import { UsersComponent } from './shared/components/management/users/list/users.component';
 import { UserFormComponent } from './shared/components/management/users/form/user-form.component';
@@ -84,6 +85,16 @@ export const routes: Routes = [
     component: AppLayoutComponent,
     canActivate: [AuthGuard],
     children: [
+         {
+        path: '',
+        component: DashboardComponent,
+        title: 'Nepal Distributors - Dashboard'
+      },
+      {
+        path: 'dashboard',
+        component: DashboardComponent,
+        title: 'Nepal Distributors - Dashboard'
+      },
       // Management Routes - nested under /management
       {
         path: 'management',

@@ -128,13 +128,26 @@ OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
             try
             {
                 const string sql = @"
-        INSERT INTO dbo.companies_category_assigned
-            (category_id, company_id, created_at, updated_at, push_notificaion)
-        OUTPUT INSERTED.id
-        VALUES
-            (@CategoryId, @CompanyId, SYSUTCDATETIME(), SYSUTCDATETIME(), @PushNotification);";
+IF NOT EXISTS (
+    SELECT 1 
+    FROM dbo.companies_category_assigned 
+    WHERE category_id = @CategoryId 
+      AND company_id = @CompanyId
+)
+BEGIN
+    INSERT INTO dbo.companies_category_assigned
+        (category_id, company_id, created_at, updated_at, push_notificaion)
+    OUTPUT INSERTED.id
+    VALUES
+        (@CategoryId, @CompanyId, SYSUTCDATETIME(), SYSUTCDATETIME(), @PushNotification);
+END
+ELSE
+BEGIN
+    SELECT 0; -- already exists
+END
+";
 
-                var id = await _db.ExecuteAsync(sql, new
+                var id = await _db.ExecuteScalarAsync<long>(sql, new
                 {
                     CategoryId = CategoryId,
                     CompanyId = companyId,
@@ -149,6 +162,7 @@ OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
                 throw;
             }
         }
+
         public async Task<(int totalRows, List<string> emails)> ApproveCompanyAsync(
      long companyId,
      string approveFg,
