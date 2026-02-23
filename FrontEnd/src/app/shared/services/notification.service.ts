@@ -3,6 +3,7 @@ import { Messaging, getToken, onMessage } from '@angular/fire/messaging';
 import { environment } from '../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 
+import { ApiGatewayService } from './api-gateway.service';
 @Injectable({
   providedIn: 'root'
 })
@@ -10,23 +11,17 @@ export class NotificationService {
   private messaging = inject(Messaging);
   private http = inject(HttpClient);
 
-  constructor() {
+  constructor(private apiGateway: ApiGatewayService) {
   }
 
   async requestPermission(): Promise<string | null> {
     try {
-      
-      // Request permission
       const permission = await Notification.requestPermission();
 
       if (permission === 'granted') {
-        
-        // Register service worker
         const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
           scope: '/'
         });
-        
-        // Wait for service worker to be ready
         await navigator.serviceWorker.ready;
 
         // Get FCM token with VAPID key
@@ -36,9 +31,7 @@ export class NotificationService {
         });
 
         if (token) {
-          
-          // Save token to backend
-          await this.saveFcmTokenToBackend(token);
+          var fmc=await this.saveFcmTokenToBackend(token);
           
           return token;
         } else {
@@ -55,12 +48,11 @@ export class NotificationService {
   listenForMessages() {
     try {
       onMessage(this.messaging, (payload) => {
-        
         // Show notification
         if (payload.notification) {
+        alert(payload.notification.title);
           new Notification(payload.notification.title || 'New Message', {
             body: payload.notification.body,
-            icon: payload.notification.icon || '/assets/icons/icon-192x192.png',
             data: payload.data
           });
         }
@@ -68,18 +60,20 @@ export class NotificationService {
     } catch (error) {
     }
   }
+ saveFcmTokenToBackend(token: string) {
+  try {
+    debugger;
+    const apiUrl = `${environment.apiBaseUrl}/api/Users/setFCM?fciid=${token}`;
 
-  private async saveFcmTokenToBackend(token: string): Promise<void> {
-    try {
-      // Replace with your actual API endpoint
-      const apiUrl = `${environment.apiBaseUrl}/api/notifications/register-token`;
-      
-      await this.http.post(apiUrl, { 
-        fcmToken: token,
-        deviceType: 'web'
-      }).toPromise();
-    } catch (error) {
-      // Don't throw - token is still valid even if backend save fails
-    }
+    return  this.apiGateway.post(
+      apiUrl,
+      {},                   
+      { requiresAuth: true });
+
+  } catch (error) {
+    console.error("FCM save failed", error);
+     return [];
   }
+}
+
 }

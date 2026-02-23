@@ -1,0 +1,90 @@
+/* Container spacing */
+.p-6 {
+  padding: 1.5rem;
+}
+.space-y-6 > * + * {
+  margin-top: 1.5rem;
+}
+
+/* Cards */
+.grid {
+  display: grid;
+  gap: 1.5rem;
+}
+.grid-cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+.grid-cols-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+.bg-white {
+  background-color: #ffffff;
+}
+.rounded {
+  border-radius: 0.5rem;
+}
+.shadow {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+}
+.text-center {
+  text-align: center;
+}
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+.font-bold {
+  font-weight: 700;
+}
+.text-blue-600 {
+  color: #2563eb;
+}
+.text-green-600 {
+  color: #16a34a;
+}
+.text-purple-600 {
+  color: #7c3aed;
+}
+.text-orange-600 {
+  color: #ea580c;
+}
+
+/* Charts */
+canvas {
+    width: auto !important;
+    height: 90% !important;
+    margin-left: auto;
+    margin-right: auto;
+}
+.h-\[300px\] {
+  height: 300px;
+}
+
+/* Table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th, td {
+  padding: 0.5rem 1rem;
+  text-align: left;
+}
+thead {
+  background-color: #f9fafb;
+}
+tbody tr:nth-child(even) {
+  background-color: #f3f4f6;
+}
+tbody tr:hover {
+  background-color: #e5e7eb;
+}
+
+/* Responsive tweaks */
+@media (max-width: 1024px) {
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+}

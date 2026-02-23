@@ -5,7 +5,7 @@ import { RouterModule } from '@angular/router';
 import { DropdownItemTwoComponent } from '../../ui/dropdown/dropdown-item/dropdown-item.component-two';
 import { AuthService } from '../../../services/auth.service';
 import { InactivityService } from '../../../services/inactivity.service';
-
+import { UiService } from '../../../../../app/ui.service';
 @Component({
   selector: 'app-user-dropdown',
   templateUrl: './user-dropdown.component.html',
@@ -16,15 +16,27 @@ export class UserDropdownComponent implements OnInit {
   userName: string = 'Guest';
   userEmail: string = 'guest@example.com';
   userInitials: string = 'G';
+   catalogId: number | null = null;
+     UserId: number | null = null;
 
   constructor(
     private authService: AuthService,
-    private inactivityService: InactivityService
+    private inactivityService: InactivityService,
+    private ui: UiService
   ) {
     this.loadUserData();
   }
 
   ngOnInit() {
+      const tokenString  = localStorage.getItem('userClaims') || sessionStorage.getItem('userClaims');
+  
+       if(tokenString)
+      {
+             const token = JSON.parse(tokenString); 
+             this.catalogId = +token.company_id;
+             this.UserId=+token.Userid;
+             
+      }
     this.loadUserData();
   }
 
@@ -48,6 +60,12 @@ export class UserDropdownComponent implements OnInit {
 
   toggleDropdown() {
     this.isOpen = !this.isOpen;
+  }
+  OnComopneyProfileClick() {
+   this.ui.openCompanyProfile(this.catalogId||0);
+  }
+  OnUserProfileClick() {
+   this.ui.openUserProfile(this.UserId||0);
   }
 
   closeDropdown() {

@@ -1,0 +1,63 @@
+<div class="p-6 space-y-6">
+
+  <!-- Stats cards -->
+  <div class="grid grid-cols-4 gap-6">
+    <div class="bg-white p-4 rounded shadow text-center">
+      <h2 class="text-2xl font-bold text-blue-600">{{stats.totalOrders}}</h2>
+      <p>Total Orders</p>
+    </div>
+    <div class="bg-white p-4 rounded shadow text-center">
+      <h2 class="text-2xl font-bold text-green-600">{{stats.totalDeals}}</h2>
+      <p>Total Deals</p>
+    </div>
+    <div class="bg-white p-4 rounded shadow text-center">
+      <h2 class="text-2xl font-bold text-purple-600">{{stats.totalProducts}}</h2>
+      <p>Total Products Added</p>
+    </div>
+    <div class="bg-white p-4 rounded shadow text-center">
+      <h2 class="text-2xl font-bold text-orange-600">{{stats.creditPoints}}</h2>
+      <p>Total Credit Points</p>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="grid grid-cols-2 gap-6">
+    <div class="bg-white p-4 rounded shadow h-[300px]">
+      <h3 class="font-bold mb-2">Sales Overview</h3>
+      <canvas baseChart [data]="lineChartData" [type]="'line'" [options]="lineChartOptions"></canvas>
+    </div>
+
+    <div class="bg-white p-4 rounded shadow h-[300px]">
+      <h3 class="font-bold mb-2">Quotation vs Deals</h3>
+      <canvas baseChart [data]="pieChartData" [type]="'pie'"></canvas>
+    </div>
+  </div>
+
+  <!-- Orders table -->
+  <div class="bg-white p-4 rounded shadow">
+    <h3 class="font-bold mb-2">Recent Orders</h3>
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-2 text-left">#ID</th>
+          <th class="px-4 py-2 text-left">Customer</th>
+          <th class="px-4 py-2 text-left">Product</th>
+          <th class="px-4 py-2 text-left">Date</th>
+          <th class="px-4 py-2 text-left">Amount</th>
+          <th class="px-4 py-2 text-left">Status</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        <tr *ngFor="let o of orders">
+          <td class="px-4 py-2">{{o.id}}</td>
+          <td class="px-4 py-2">{{o.customer}}</td>
+          <td class="px-4 py-2">{{o.product}}</td>
+          <td class="px-4 py-2">{{o.date | date:'short'}}</td>
+          <td class="px-4 py-2">{{o.amount}}</td>
+          <td class="px-4 py-2">{{o.status}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

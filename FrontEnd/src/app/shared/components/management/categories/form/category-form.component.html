@@ -44,22 +44,21 @@
           Parent Category
         </label>
 
-      <ng-select
-  [items]="nestedCategories"
-  bindLabel="name"
-  class="Selectorcustom"
-  formControlName="parent_id"
-  bindValue="id"
-  [multiple]="true"
-  [closeOnSelect]="false"
-  [searchable]="true"
-  placeholder="Select categories"
-  [(ngModel)]="selectedCategoryIds"
-  class="w-full">
+        <ng-select
+          [items]="nestedCategories"
+          bindLabel="name"
+          bindValue="id"
+          formControlName="parent_id"
+          [clearable]="true"
+          [searchable]="true"
+          placeholder="Select parent category"
+          class="Selectorcustom w-full">
 
-  <ng-template ng-label-tmp let-item="item">
-    <span [style.paddingLeft.px]="(item.depth || 0) * 10">{{ item.name }}</span>
-  </ng-template>
+          <ng-template ng-label-tmp let-item="item">
+            <span [style.paddingLeft.px]="(item.depth || 0) * 10">
+              {{ item.name }}
+            </span>
+          </ng-template>
 
   <ng-template ng-option-tmp let-item="item">
     <span [style.paddingLeft.px]="(item.depth || 0) * 20">{{ item.name }}</span>

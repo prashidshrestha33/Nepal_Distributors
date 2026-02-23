@@ -1,3 +1,5 @@
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 using Marketpalce.Repository.Repositories.ComponyRepo;
 using Marketpalce.Repository.Repositories.ProductRepo;
 using Marketpalce.Repository.Repositories.StaticValueReop;
@@ -5,6 +7,7 @@ using Marketpalce.Repository.Repositories.UserReop;
 using Marketplace.Api.Services.Company;
 using Marketplace.Api.Services.EmailService;
 using Marketplace.Api.Services.FacebookToken;
+using Marketplace.Api.Services.FcmNotificationService;
 using Marketplace.Api.Services.GoogleTokenVerifier;
 using Marketplace.Api.Services.Hassing;
 using Marketplace.Api.Services.Helper;
@@ -43,6 +46,7 @@ builder.Services.AddScoped<ICompanyTypeRepository, CompanyTypeRepository>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IGoogleTokenVerifier, GoogleTokenVerifier>();
 // Register Facebook verifier
+builder.Services.AddScoped<IFcmNotificationService, FcmNotificationService>();
 builder.Services.AddScoped<IFacebookTokenVerifier, FacebookTokenVerifier>();
 builder.Services.AddScoped<ICompanyTypeService, CompanyTypeService>();
 builder.Services.AddTransient<IEmailService, EmailService>();
@@ -87,6 +91,13 @@ var requireAuthenticatedPolicy = new AuthorizationPolicyBuilder()
     .RequireAuthenticatedUser()
     .Build();
 
+if (FirebaseApp.DefaultInstance == null)
+{
+    FirebaseApp.Create(new AppOptions()
+    {
+        Credential = GoogleCredential.FromFile("nepaldist-3c2b5-firebase-adminsdk-fbsvc-c3d02a4065.json")
+    });
+}
 builder.Services.AddControllers(options =>
 {
     // Apply global authorize filter - controllers can opt-out using [AllowAnonymous]
