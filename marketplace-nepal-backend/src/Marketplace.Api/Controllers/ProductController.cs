@@ -106,11 +106,8 @@ namespace Marketplace.Api.Controllers
                 return Unauthorized("Company information not found for this user");
 
             int companyId = int.Parse(companyIdClaim.Value);
-
-            // 🔹 Get the email of the logged-in user from JWT claims
             string userEmail = User?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
 
-            // 🔹 Handle image upload
             string imageFileName = null;
             if (dto.ImageFile != null && dto.ImageFile.Length > 0)
             {
@@ -124,28 +121,28 @@ namespace Marketplace.Api.Controllers
                 await dto.ImageFile.CopyToAsync(stream);
             }
 
-            // 🔹 Map DTO to ProductModel
             ProductModel product = moduleToCommon.Map<ProductModel>(dto);
             product.ImageName = imageFileName;
-
-            // 🔹 Assign JWT info and defaults
             product.CompanyId = companyId;
             product.CreatedBy = userEmail;
-            product.Status = "Pending";  // Set status as pending by default
+            product.Status = "Pending";
 
-            // 🔹 Insert product
             try
             {
                 product.Id = await repositorysitory.CreateAsync(product);
             }
             catch (Exception ex)
             {
-                // Optional: handle exception gracefully
-                return BadRequest($"Error creating product: {ex.Message}");
+                // Check if it's duplicate
+                if (ex.Message.Contains("Product already exists"))
+                    return Conflict(new { message = ex.Message });
+
+                return BadRequest(new { message = $"Error creating product: {ex.Message}" });
             }
 
             return CreatedAtAction(nameof(Get), new { id = product.Id }, product);
         }
+
 
         [HttpPost("{id}")]
         public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductModels dto)

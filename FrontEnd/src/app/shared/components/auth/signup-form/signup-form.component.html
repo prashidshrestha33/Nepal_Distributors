@@ -41,10 +41,10 @@
   <!-- Main Card -->
   <div class="bg-white rounded-xl p-3 sm:p-4">
     <div class="mb-3 sm:mb-4">
-      <h1 class="mb-2 font-semibold text-gray-800 text-title-sm sm:text-title-md" *ngIf="returnUrl==null">
+      <h1 class="mb-2 font-semibold text-gray-800 text-title-sm sm:text-title-md" *ngIf="returnUrl==null"  style=" font-size: xx-large">
         Step 2 - Register User
       </h1>
-      <h1 class="mb-2 font-semibold text-gray-800 text-title-sm sm:text-title-md" *ngIf="returnUrl!=null">
+      <h1 class="mb-2 font-semibold text-gray-800 text-title-sm sm:text-title-md" *ngIf="returnUrl!=null"  style=" font-size: xx-large">
         Accept Invite
       </h1>
     </div>
@@ -56,13 +56,20 @@
       </div>
     }
 
-    <!-- Company summary -->
-    <div *ngIf="returnUrl==null && flow.getCompanyForm()" class="p-2.5 mb-4 text-xs text-gray-700 bg-blue-50 rounded-lg border border-blue-200">
-      <strong *ngIf="!Componeyid" class="text-blue-900">Company:</strong> 
-      <span class="text-gray-700">{{ flow.getCompanyForm().name }} — {{ flow.getCompanyForm().companyType }}</span>
-      <strong *ngIf="Componeyid" class="text-blue-900">Company:</strong> 
-      <span class="text-gray-700">{{ flow.getCompanyForm().name }}</span>
-    </div>
+<div class="bg-gray-100 rounded-lg shadow p-4 md:p-8">
+<!-- Company summary -->
+<div *ngIf="returnUrl == null && flow.getCompanyForm()" class="p-2.5 mb-4 text-xs text-gray-700 bg-blue-50 rounded-lg border border-blue-200">
+  <strong class="text-blue-900">Company:</strong> 
+  <!-- Show name and company type if Componeyid does not exist -->
+  <span *ngIf="!Componeyid" class="text-gray-700">
+    {{ flow.getCompanyForm().name }} — {{ flow.getCompanyForm().companyType }}
+  </span>
+  
+  <!-- Show only name if Componeyid exists -->
+  <span *ngIf="Componeyid" class="text-gray-700">
+    {{ flow.getCompanyForm().name }}
+  </span>
+</div>
 
     <!-- Company document -->
     <div *ngIf="companyFileName && !returnUrl" class="mb-4 p-2.5 bg-green-50 rounded-lg border border-green-200">
@@ -73,7 +80,6 @@
         <p class="text-xs text-green-800"><strong>Registration document found:</strong> <span class="font-medium">{{ companyFileName }}</span></p>
       </div>
     </div>
-
     <form [formGroup]="signupForm" (ngSubmit)="onSignUp()" class="space-y-2">
       <!-- Two Column Grid -->
       <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -87,7 +93,7 @@
             placeholder="Enter your full name"
             formControlName="firstName"
             name="firstName"
-            class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 bg-transparent text-gray-800 border-gray-300"
+            class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 text-gray-800 border-gray-300"
             required
           />
           @if (firstName?.invalid && firstName?.touched) {
@@ -109,7 +115,7 @@
             placeholder="Enter your phone number"
             formControlName="phoneNo"
             name="phoneNo"
-            class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 bg-transparent text-gray-800 border-gray-300"
+            class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 text-gray-800 border-gray-300"
             required
           />
           @if (phoneNo?.invalid && phoneNo?.touched) {
@@ -134,7 +140,7 @@
             placeholder="info@gmail.com"
             formControlName="email"
             name="email"
-            class="h-11 flex-1 rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 bg-transparent text-gray-800 border-gray-300"
+            class="h-11 flex-1 rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 text-gray-800 border-gray-300"
             required
           />
           <button
@@ -147,15 +153,21 @@
           </button>
         </div>
 
-        @if (emailConflictError) {
-          <p class="mt-1 text-sm text-red-600">{{ emailConflictError }}</p>
-        }
-        @if (email?.invalid && email?.touched && !emailConflictError) {
-          <p class="mt-1 text-sm text-red-600">
-            @if (email?.errors?.['required']) { Email is required }
-            @if (email?.errors?.['invalidEmailFormat']) { Invalid email format }
-          </p>
-        }
+        <!-- Email Conflict Error Message -->
+<div *ngIf="emailConflictError" class="mt-1 text-sm text-red-600">
+  {{ emailConflictError }}
+</div>
+
+<!-- Email Validation Errors -->
+<div *ngIf="email?.invalid && email?.touched && !emailConflictError" class="mt-1 text-sm text-red-600">
+  <ng-container *ngIf="email?.errors?.['required']">
+    Email is required
+  </ng-container>
+  <ng-container *ngIf="email?.errors?.['invalidEmailFormat']">
+    Invalid email format
+  </ng-container>
+</div>
+
       </div>
 
       <input *ngIf="returnUrl!=null" formControlName="email" type="hidden" /> 
@@ -217,6 +229,8 @@
           Sign In
         </a>
       </p>
+    </div>
+    
     </div>
   </div>
 </div>

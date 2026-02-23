@@ -106,7 +106,6 @@ export class ProductFormComponent implements OnInit {
     // Load Brand Catalog
     const brandCatalog = catalogs?.find(c => c.catalogName === 'Brand');
     if (brandCatalog) {
-      console.log(this.filteredItems.values);
       this.loadStaticValue(brandCatalog.catalogId, this.items, this.filteredItems);
     }
 
@@ -281,7 +280,7 @@ selectManufacture(m: StaticValue) {
       },
       error: err => {
         this.loading = false;
-        this.showSnackbar('Operation failed', false);
+        this.showSnackbar('Product updated failed', false);
         console.error(err);
       }
     });

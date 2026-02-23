@@ -144,7 +144,7 @@ namespace Marketplace.Api.Controllers
                 return Unauthorized(new
                 {
                     success = false,
-                    message = "Invalid or expired OTP"
+                    message = "Please validate email to complete signup process"
                 });
             }
 

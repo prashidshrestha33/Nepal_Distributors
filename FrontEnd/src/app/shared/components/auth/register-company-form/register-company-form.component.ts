@@ -9,6 +9,7 @@ import { FormDataService } from '../../../services/form-data.service';
 import { RegistrationFlowService } from '../../../services/registration-flow.service';
 import { CatalogService } from '../../../services/catalog.service';
 import { environment } from '../../../../../environments/environment';
+import { FormsModule } from '@angular/forms';
 
 // Phone number validator: 7-10 digits only
 function phoneNumberValidator(control: AbstractControl): ValidationErrors | null {
@@ -34,7 +35,7 @@ function phoneNumberValidator(control: AbstractControl): ValidationErrors | null
 @Component({
   selector: 'app-register-company-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, FormsModule],
   templateUrl: './register-company-form.component.html',
   styles: [],
 })
@@ -48,7 +49,8 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
   fileName = '';
   filePreview: string | null = null;
   companyTypes: any[] = []; // Store fetched company types
-  loadingCompanyTypes = false; // Loading state for company types
+  imagePreview: string | ArrayBuffer | null = null;
+  // loadingCompanyTypes = false; // Loading state for company types
   // Map picker state
   @ViewChild('mapContainer') mapContainer!: ElementRef<HTMLDivElement>;
   showMapModal = false;
@@ -57,9 +59,13 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
   private marker: any = null;
   private mapInitialized = false;
   private selectedLatLng: { lat: number; lng: number } | null = null;
+   searchQuery: string = '';
+  loadingCompanyTypes: boolean = false;
   
   // Registration flow state
   isComingFromSignup = false;
+  filteredTypes: any[] = [];
+  companyType: any = null;
 
   constructor(
     private fb: FormBuilder,
@@ -73,13 +79,13 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
   ) {
     this.form = this.fb.group({
       name: ['', Validators.required],
-      companyPerson: ['', Validators.required],
+      companyPerson: [''],
       mobilePhone: [''],
       landLinePhone: [''],
-      registrationDocument: [null, Validators.required], // To hold the file
+      registrationDocument: [null, Validators.required],
       companyType: ['', Validators.required],
       address: ['', Validators.required],
-      googleMapLocation: ['', Validators.required],
+      googleMapLocation: [''],
     });
   }
 
@@ -276,7 +282,6 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
     const DEFAULT = { lat: 27.7172, lng: 85.3240, zoom: 13 };
     this.map = L.map(container, { center: [DEFAULT.lat, DEFAULT.lng], zoom: DEFAULT.zoom });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
     }).addTo(this.map);
 
     // initialize marker if form already has a value
@@ -416,6 +421,43 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Select company type from the filtered list
+  selectCompanyType(type: any) {
+    this.searchQuery = type.staticValueKey;  // Set the selected value to the input field
+    this.filteredTypes = [];  // Hide the dropdown
+    this.form.get('companyType')?.setValue(type.staticValueKey);  // Update form control
+    this.companyType = type;  // Store the selected value
+  }
+    onDragOver(event: DragEvent) { event.preventDefault(); }
+  onDragLeave(event: DragEvent) { event.preventDefault(); }
+  onDrop(event: DragEvent) {
+    event.preventDefault();
+    const file = event.dataTransfer?.files[0];
+    if (file) this.previewFile(file);
+  }
+  previewFile(file: File) {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = () => this.imagePreview = reader.result;
+    reader.readAsDataURL(file);
+  }
+  removeImage(event?: Event) {
+    this.imagePreview = null;
+    if (event) {
+      event.stopPropagation();
+    }
+  }
+    onProductImageChange(event: any) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { alert('Only image files are allowed'); return; }
+
+    this.form.get('registrationDocument')?.setValue(file);
+    const reader = new FileReader();
+    reader.onload = () => this.imagePreview = reader.result;
+    reader.readAsDataURL(file);
+  }
+
   // Form submit handler
   onSubmit() {
     if (this.form.invalid) {
@@ -459,6 +501,15 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
       this.router.navigate(['/signup']);
     }, 200);
   }
+  // Method to filter company types based on search query
+  filteredCompanyTypes() {
+    if (!this.searchQuery) {
+      return this.companyTypes;
+    }
+    return this.companyTypes.filter((type) =>
+      type.staticValueKey.toLowerCase().includes(this.searchQuery.toLowerCase())
+    );
+  }
 
   // convenience getters for template validation checks
   get name() {
@@ -481,7 +532,7 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
     return this.form.get('registrationDocument');
   }
 
-  get companyType() {
+  get companyTypeControl() {
     return this.form.get('companyType');
   }
 

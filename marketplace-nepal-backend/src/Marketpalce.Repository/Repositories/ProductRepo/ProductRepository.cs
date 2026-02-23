@@ -106,23 +106,38 @@ FROM [NepalDistributers].[dbo].[Products]
 
         public async Task<int> CreateAsync(ProductModel product)
         {
-            // Ensure SKU/SEO fields are generated before performing the single UPDATE on the shared connection.
-            await GenerateSkuAndSeoAsync(product);
-            var sql = @"
-            INSERT INTO [NepalDistributers].[dbo].[products]
-            (company_id, sku, name, description, short_description, category_id, brand_id, manufacturer_id,
-             rate, hs_code, status, is_featured, seo_title, seo_description, attributes, ImageName,
-             created_by, created_at, updated_at)
-            VALUES
-            (@CompanyId, @Sku, @Name, @Description, @ShortDescription, @CategoryId, @BrandId, @ManufacturerId,
-             @Rate, @HsCode, @Status, @IsFeatured, @SeoTitle, @SeoDescription, @Attributes, @ImageName,
-             @CreatedBy, SYSDATETIME(), SYSDATETIME());
+            // 🔹 Check for duplicate: Name + Manufacturer + Brand + Category
+            var duplicate = await _db.ExecuteScalarAsync<int>(@"
+        SELECT COUNT(1)
+        FROM [NepalDistributers].[dbo].[products]
+        WHERE Name = @Name
+          AND Manufacturer_Id = @ManufacturerId
+          AND Brand_Id = @BrandId
+          AND Category_Id = @CategoryId
+    ", product);
 
-            SELECT CAST(SCOPE_IDENTITY() AS int);
-        ";
-                return await _db.ExecuteScalarAsync<int>(sql, product);
-            }
-            
+            if (duplicate > 0)
+                throw new Exception("A product with the same name, manufacturer, brand, and category already exists.");
+
+            // 🔹 Generate SKU and SEO
+            await GenerateSkuAndSeoAsync(product);
+
+            // 🔹 Insert product
+            var sql = @"
+        INSERT INTO [NepalDistributers].[dbo].[products]
+        (company_id, sku, name, description, short_description, category_id, brand_id, manufacturer_id,
+         rate, hs_code, status, is_featured, seo_title, seo_description, attributes, ImageName,
+         created_by, created_at, updated_at)
+        VALUES
+        (@CompanyId, @Sku, @Name, @Description, @ShortDescription, @CategoryId, @BrandId, @ManufacturerId,
+         @Rate, @HsCode, @Status, @IsFeatured, @SeoTitle, @SeoDescription, @Attributes, @ImageName,
+         @CreatedBy, SYSDATETIME(), SYSDATETIME());
+
+        SELECT CAST(SCOPE_IDENTITY() AS int);
+    ";
+            return await _db.ExecuteScalarAsync<int>(sql, product);
+        }
+
         public async Task<bool> UpdateAsync(ProductModel product)
         {
             // Ensure SKU/SEO fields are generated before performing the single UPDATE on the shared connection.
@@ -166,33 +181,55 @@ FROM [NepalDistributers].[dbo].[Products]
         }
         public async Task<long> AddCatagoryAsync(CreateCategoryDto dto)
         {
-            var p = new DynamicParameters();
+            // Step 1: Check duplicate name under same parent
+            var existingName = await _db.ExecuteScalarAsync<int>(
+                @"SELECT COUNT(1) 
+          FROM Categories 
+          WHERE Name = @Name 
+          AND ISNULL(Parent_Id, 0) = ISNULL(@ParentId, 0)",
+                new { Name = dto.Name, ParentId = dto.ParentId });
 
-            // Decide base slug from provided slug or name
-            var baseText = string.IsNullOrWhiteSpace(dto.Slug) ? dto.Name : dto.Slug;
+            if (existingName > 0)
+                throw new Exception("Category already exists under this parent.");
 
-            // Slugify raw text (remove spaces, lower case, etc.)
-            var rawSlug = Slugify(baseText);
+            // Step 2: Build hierarchical slug
+            var slugParts = new List<string>();
 
-            // Remove any existing "categories/" prefix if present
-            if (rawSlug.StartsWith("categories/"))
+            // Add current category name first
+            slugParts.Add(Slugify(dto.Name));
+
+            long? parentId = dto.ParentId;
+
+            while (parentId != null)
             {
-                rawSlug = rawSlug.Substring("categories/".Length);
+                var parent = await _db.QueryFirstOrDefaultAsync<CreateCategoryDto>(
+                    "SELECT name FROM product_categories WHERE Id = @Id",
+                    new { Id = parentId });
+
+                if (parent == null)
+                    break;
+
+                slugParts.Add(Slugify(parent.Name));
+                parentId = parent.ParentId;
             }
 
-            // Now add your own correct prefix
-            var finalSlug = $"{baseText}";
+            // Reverse to get correct hierarchy order
+            slugParts.Reverse();
 
+            var finalSlug = string.Join("-", slugParts);
+
+            // Step 3: Insert
+            var p = new DynamicParameters();
             p.Add("@name", dto.Name);
             p.Add("@slug", finalSlug);
             p.Add("@parent_id", dto.ParentId);
             p.Add("@new_id", dbType: DbType.Int64, direction: ParameterDirection.Output);
 
             await _db.ExecuteAsync("dbo.sp_AddCategory", p, commandType: CommandType.StoredProcedure);
+
             return p.Get<long>("@new_id");
+
         }
-
-
 
         // Move (re-parent) a category via sp_MoveCategory
         public async Task MoveCatagoryAsync(MoveCategoryDto dto)

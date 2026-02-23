@@ -60,14 +60,11 @@
             </span>
           </ng-template>
 
-          <ng-template ng-option-tmp let-item="item">
-            <span [style.paddingLeft.px]="(item.depth || 0) * 20">
-              {{ item.name }}
-            </span>
-          </ng-template>
-
-        </ng-select>
-      </div>
+  <ng-template ng-option-tmp let-item="item">
+    <span [style.paddingLeft.px]="(item.depth || 0) * 20">{{ item.name }}</span>
+  </ng-template>
+</ng-select>
+</div>
 
       <!-- Error -->
       <div *ngIf="error" class="p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">

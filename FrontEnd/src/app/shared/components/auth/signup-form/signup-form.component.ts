@@ -566,21 +566,37 @@ if (decryptedData && decryptedData.CompanyEmail) {
     });
   }
 
-   verifyOtp(otp: string) {
-        const formValues = this.signupForm.value;
-     
-       this.authService.ValidateRegisterOPT(formValues.email,otp).subscribe({
-      next: (response: any) => {
-          this.signupForm.patchValue({
-            isemailvalid:true
+verifyOtp(otp: string) {
+  const formValues = this.signupForm.value;
+
+  this.authService.ValidateRegisterOPT(formValues.email, otp).subscribe({
+    next: (response: any) => {
+      // On successful OTP verification, update the form to reflect valid email
+      this.signupForm.patchValue({
+        isemailvalid: true
       });
-      },
-      error: (error: any) => {   
-         this.emailConflictError = error.error.message;
+
+      // Optionally, you could reset error messages upon successful validation
+      this.emailConflictError = '';
+      this.errorMessage = ''; // Clear any previous error messages
+
+      // Handle success if needed
+      console.log('OTP validated successfully:', response.message);
+    },
+    error: (error: any) => {
+      // On error, set the appropriate error message
+      if (error.error?.message) {
+        this.emailConflictError = error.error.message; // Set specific error from backend
+      } else {
+        this.emailConflictError = 'An unknown error occurred during OTP validation';
       }
-    });
-    
+
+      // Optionally, clear out any other messages
+      this.errorMessage = ''; // Reset any global error messages
+    }
+  });
 }
+
 
 sendOtpAgain() {
       this.ui.closeOtp();

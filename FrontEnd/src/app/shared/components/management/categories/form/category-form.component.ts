@@ -24,6 +24,7 @@ export class CategoryFormComponent implements OnInit {
   categories: Category[] = [];
   allCategories: Category[] = [];
   nestedCategories: any[] = [];   // flattened tree for display
+  selectedCategoryIds: number[] = [];
 
   constructor(
     private fb: FormBuilder,
