@@ -1,178 +1,109 @@
 <div class="flex flex-col justify-start flex-1 w-full max-w-3xl mx-auto p-4">
-  <h6 class="mb-2 font-semibold text-gray-800 text-title-xl /90 sm:text-title-md header" style=" font-size: xx-large">
+  <h6 class="mb-2 font-semibold text-gray-800 text-title-xl /90 sm:text-title-md header" style="font-size: xx-large">
     Step 1 — Add Company
   </h6>
-<!-- 
-<p *ngIf="lgmessage"
-   class="mb-3 text-sm text-green-600 bg-green-50 border border-green-200 rounded-md px-3 py-2">
-  {{ lgmessage }}
-</p> -->
+
+  <!-- Success/Validation message (commented) -->
+  <!-- 
+  <p *ngIf="lgmessage" class="mb-3 text-sm text-green-600 bg-green-50 border border-green-200 rounded-md px-3 py-2">
+    {{ lgmessage }}
+  </p> 
+  -->
+
   <div class="bg-gray-100 rounded-lg shadow p-4 md:p-8">
     <form [formGroup]="form" (ngSubmit)="onSubmit()">
       <div class="grid grid-cols-1 gap-3">
 
         <!-- BASIC INFORMATION -->
         <section class="mb-3">
-          <h3 class="text-sm font-semibold mb-2" style="color: var(--color-gray-700);">
-            Basic Information
-          </h3>
+          <h3 class="text-sm font-semibold mb-2" style="color: var(--color-gray-700);">Basic Information</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Company Name -->
             <div>
-              <label class="block text-xs font-medium mb-1 text-gray-700">
-                Company Name <span class="text-error-500">*</span>
-              </label>
-              <input
-                formControlName="name"
-                placeholder="Enter company name"
-                required
-                class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 text-gray-800 border-gray-300"
-              />
+              <label class="block text-xs font-medium mb-1 text-gray-700">Company Name <span class="text-error-500">*</span></label>
+              <input formControlName="name" placeholder="Enter company name" required class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 text-gray-800 border-gray-300" />
               <p *ngIf="name?.invalid && name?.touched" class="mt-1 text-sm text-red-600">Company name is required</p>
             </div>
 
-            <div>
-              <label class="block text-xs font-medium mb-1 text-gray-700">
-                Company Person <span class="text-error-500"></span>
-              </label>
-              <input
-                formControlName="companyPerson"
-                placeholder="Company person name"
-                class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 text-gray-800 border-gray-300"
-              />
-            </div>
+            <!-- Company Person -->
+            <!-- <div>
+              <label class="block text-xs font-medium mb-1 text-gray-700">Company Person</label>
+              <input formControlName="companyPerson" placeholder="Company person name" class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 text-gray-800 border-gray-300" />
+            </div> -->
+            <!-- Company Type -->
+        <div>
+          <label class="block text-xs font-medium mb-1 text-gray-700">Company Type <span class="text-error-500">*</span></label>
+          <select formControlName="companyType" aria-placeholder="Select Company Type" aria-readonly="true" [disabled]="loadingCompanyTypes || companyTypes.length === 0"
+            class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs bg-white focus:outline-none focus:ring-3 text-gray-800 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">
+            <option *ngFor="let type of companyTypes" [value]="type.staticValueKey">{{ type.staticValueKey }}</option>
+          </select>
+          <p *ngIf="companyType?.invalid && companyType?.touched" class="mt-1 text-sm text-red-600">Company type is required</p>
+        </div>
           </div>
         </section>
         <hr class="border-gray-200">
 
         <!-- COMPANY DETAILS -->
         <section class="mb-3">
-          <h3 class="text-sm font-semibold mb-2" style="color: var(--color-gray-700);">
-            Company Details
-          </h3>
+          <h3 class="text-sm font-semibold mb-2" style="color: var(--color-gray-700);">Company Details</h3>
           <div class="grid grid-cols-1">
             <div class="space-y-1">
-  <div class="space-y-1">
-  <label class="block text-sm font-semibold text-gray-700">
-    Image
-  </label>
+              <!-- Registration Document Upload -->
+              <div class="space-y-1">
+                <label class="block text-xs font-medium mb-1 text-gray-700">Registration Document <span class="text-error-500">*</span></label>
 
-  <!-- Upload Box with Button -->
-  <div
-    class="relative flex items-center justify-center h-44 w-full border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 bg-gray-50 border-gray-300 hover:border-blue-500 hover:bg-blue-50/40"
-    (click)="fileInput.click()"
-    (dragover)="onDragOver($event)"
-    (dragleave)="onDragLeave($event)"
-    (drop)="onDrop($event)"
-  >
-    
-    <!-- Image Preview -->
-    <ng-container *ngIf="imagePreview; else uploadPlaceholder">
-      <img
-        [src]="imagePreview"
-        class="absolute inset-0 h-full w-full object-cover rounded-xl"
-      />
+                <!-- Upload Box with Button -->
+                <div class="relative flex items-center justify-center h-44 w-full border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 bg-gray-50 border-gray-300 hover:border-blue-500 hover:bg-blue-50/40"
+                  (click)="fileInput.click()" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+                  <!-- Image Preview -->
+                  <ng-container *ngIf="imagePreview; else uploadPlaceholder">
+                    <img [src]="imagePreview" class="absolute inset-0 h-full w-full object-cover rounded-xl" />
+                    <button type="button" (click)="removeImage($event)" class="absolute top-2 right-2 bg-black/60 text-white rounded-full h-7 w-7 flex items-center justify-center hover:bg-black">
+                      ✕
+                    </button>
+                  </ng-container>
 
-      <!-- Remove Button with event.stopPropagation() -->
-      <button
-        type="button"
-        (click)="removeImage($event)"
-        class="absolute top-2 right-2 bg-black/60 text-white rounded-full h-7 w-7 flex items-center justify-center hover:bg-black"
-      >
-        ✕
-      </button>
-    </ng-container>
+                  <!-- Placeholder Text and Icon when no Image -->
+                  <ng-template #uploadPlaceholder>
+                    <div class="text-center pointer-events-none">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-10 w-10 text-blue-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 12v6m0 0l-3-3m3 3l3-3" />
+                      </svg>
+                      <p class="text-sm text-gray-600 ">
+                        <span class="font-medium text-blue-600">Click to upload</span> or drag and drop
+                      </p>
+                      <p class="text-xs text-gray-400 mt-1">PNG, JPG up to 5MB</p>
+                    </div>
+                  </ng-template>
 
-    <!-- Placeholder Text and Icon when no Image -->
-    <ng-template #uploadPlaceholder>
-      <div class="text-center pointer-events-none">
-        <svg xmlns="http://www.w3.org/2000/svg"
-             class="mx-auto h-10 w-10 text-blue-500 mb-2"
-             fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6
-                   a5 5 0 011 9.9M12 12v6m0 0l-3-3m3 3l3-3" />
-        </svg>
-
-        <p class="text-sm text-gray-600 ">
-          <span class="font-medium text-blue-600">Click to upload</span>
-          or drag and drop
-        </p>
-        <p class="text-xs text-gray-400 mt-1">
-          PNG, JPG up to 5MB
-        </p>
-      </div>
-    </ng-template>
-
-    <!-- Hidden File Input -->
-    <input
-      #fileInput
-      type="file"
-      accept="image/*"
-      class="hidden"
-      (change)="onProductImageChange($event)"
-    />
-  </div>
-</div>
-</div>            
+                  <!-- Hidden File Input -->
+                  <input #fileInput type="file" accept="image/*" class="hidden" (change)="onProductImageChange($event)" />
+                </div>
+              </div>
+            </div>
           </div>
         </section>
-        <hr class="border-gray-200">
-        <div>
-              <label class="block text-xs font-medium mb-1 text-gray-700">
-                   Company Type <span class="text-error-500">*</span>
-              </label>              
-              <select
-                    formControlName="companyType"
-                aria-placeholder="Select Company Type"
-                    [disabled]="loadingCompanyTypes || companyTypes.length === 0"
-                    class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs bg-white focus:outline-none focus:ring-3 text-gray-800 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >                  
-                <option *ngFor="let type of companyTypes" [value]="type.staticValueKey">
-                  {{type.staticValueKey}}
-                </option>
-              </select>
-              <p *ngIf="companyType?.invalid && companyType?.touched" class="mt-1 text-sm text-red-600">Company type is required</p>
-            </div>
         <hr class="border-gray-200">
 
         <!-- ADDITIONAL INFORMATION -->
         <section class="mb-3">
-          <h3 class="text-sm font-semibold mb-2" style="color: var(--color-gray-700);">
-            Additional Information
-          </h3>
+          <h3 class="text-sm font-semibold mb-2" style="color: var(--color-gray-700);">Additional Information</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Address -->
             <div>
-              <label class="block text-xs font-medium mb-1 text-gray-700">
-                Address <span class="text-error-500">*</span>
-              </label>
-              <input
-                formControlName="address"
-                placeholder="Company address"
-                required
-                class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 text-gray-800 border-gray-300"
-              />
+              <label class="block text-xs font-medium mb-1 text-gray-700">Address <span class="text-error-500">*</span></label>
+              <input formControlName="address" placeholder="Company address" required class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 text-gray-800 border-gray-300" />
               <p *ngIf="address?.invalid && address?.touched" class="mt-1 text-sm text-red-600">Address is required</p>
             </div>
-        
-            <div>
-              <label class="block text-xs font-medium mb-1 text-gray-700">
-                Geographical Location <span class="text-error-500"></span>
-              </label>
 
-              <!-- Input + picker button -->
+            <!-- Geographical Location -->
+            <div>
+              <label class="block text-xs font-medium mb-1 text-gray-700">Geographical Location</label>
               <div class="relative">
-                <input
-                  formControlName="googleMapLocation"
-                  placeholder="latitude,longitude — click the pin to pick"
-                  readonly
-                  class="h-11 w-full rounded-lg border px-4 pr-10 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 text-gray-800 border-gray-300"
-                />
-                <button
-                  type="button"
-                  (click)="openMapPicker()"
-                  title="Open location picker"
-                  class="absolute inset-y-0 right-0 pr-1 flex items-center"
-                >
+                <input formControlName="googleMapLocation" placeholder="latitude,longitude — click the pin to pick" readonly
+                  class="h-11 w-full rounded-lg border px-4 pr-10 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 text-gray-800 border-gray-300" />
+                <button type="button" (click)="openMapPicker()" title="Open location picker"
+                  class="absolute inset-y-0 right-0 pr-1 flex items-center">
                   <span class="inline-flex items-center justify-center h-8 w-8 rounded-md bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700">
                     <!-- simple pin icon -->
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -187,22 +118,19 @@
 
         <!-- BUTTON -->
         <div class="pt-2 flex justify-center">
-          <button
-            type="submit"
-            [disabled]="loading || form.invalid"
-            class="flex items-center justify-center px-16 py-2 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <button type="submit" [disabled]="loading || form.invalid"
+            class="flex items-center justify-center px-16 py-2 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed">
             <span *ngIf="loading" class="inline-block w-4 h-4 mr-2 border-2 border-gray-300 border-t-white rounded-full animate-spin"></span>
             Next
           </button>
         </div>
 
-        <!-- Validation summary -->
+        <!-- Validation Summary -->
         <div *ngIf="form.invalid && (form.touched || form.dirty)" class="mt-3 text-sm text-red-600">
           Please fill all required fields before proceeding.
         </div>
 
-        <!-- Feedback -->
+        <!-- Feedback Messages -->
         <div *ngIf="createdCompanyId" class="text-green-600 text-xs">
           Created company ID: {{ createdCompanyId }}
         </div>
@@ -215,21 +143,20 @@
   </div>
 </div>
 
-
-      <!-- Map picker modal -->
-      <div *ngIf="showMapModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div class="bg-white rounded-lg  w-full max-w-4xl h-[70vh] flex flex-col overflow-hidden">
-          <div class="flex items-center justify-between p-3 border-b">
-            <h3 class="text-sm font-semibold">Select location</h3>
-            <div class="space-x-2">
-              <button class="px-3 py-1 rounded-md text-sm bg-gray-100 hover:bg-gray-200" (click)="closeMapPicker()">Cancel</button>
-              <button class="px-3 py-1 rounded-md text-sm bg-brand-500 text-white hover:bg-brand-600" (click)="saveLocation()">Save Location</button>
-            </div>
-          </div>
-
-          <!-- map container -->
-          <div class="flex-1 overflow-hidden">
-            <div #mapContainer id="company-map" style="width: 100%; height: 100%;"></div>
-          </div>
-        </div>
+<!-- Map Picker Modal -->
+<div *ngIf="showMapModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+  <div class="bg-white rounded-lg w-full max-w-4xl h-[70vh] flex flex-col overflow-hidden">
+    <div class="flex items-center justify-between p-3 border-b">
+      <h3 class="text-sm font-semibold">Select location</h3>
+      <div class="space-x-2">
+        <button class="px-3 py-1 rounded-md text-sm bg-gray-100 hover:bg-gray-200" (click)="closeMapPicker()">Cancel</button>
+        <button class="px-3 py-1 rounded-md text-sm bg-brand-500 text-white hover:bg-brand-600" (click)="saveLocation()">Save Location</button>
       </div>
+    </div>
+
+    <!-- Map Container -->
+    <div class="flex-1 overflow-hidden">
+      <div #mapContainer id="company-map" style="width: 100%; height: 100%;"></div>
+    </div>
+  </div>
+</div>
