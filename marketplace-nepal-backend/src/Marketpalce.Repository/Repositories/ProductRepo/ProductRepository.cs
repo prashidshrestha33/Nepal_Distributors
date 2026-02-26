@@ -413,5 +413,23 @@ FROM [NepalDistributers].[dbo].[Products]
             }
             return Task.CompletedTask;
         }
+        public async Task<IEnumerable<ProductModel>> SearchProductsAsync(
+    string? categoryIds,
+    string? keyword,
+    long? companyId)
+        {
+            var parameters = new DynamicParameters();
+            parameters.Add("@CategoryIds", categoryIds, DbType.String);
+            parameters.Add("@Keyword", keyword, DbType.String);
+            parameters.Add("@CompanyId", companyId, DbType.Int64);
+
+            var result = await _db.QueryAsync<ProductModel>(
+                "dbo.sp_GetProductsByCategoryAndKeyword",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
+
+            return result;
+        }
     }
 }

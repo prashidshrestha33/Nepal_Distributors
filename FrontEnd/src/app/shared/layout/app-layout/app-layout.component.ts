@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { SidebarService } from '../../services/sidebar.service';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -17,7 +17,8 @@ import { CompanyProfilePopupComponent } from '../../components/CustomComponents/
 import { UserProfilePopupComponent } from '../../components/CustomComponents/user-detail/user-profile-popup.component';
 import { RegisterUserlinkPopupComponent } from '../../components/CustomComponents/RegisterUserlink/RegisterUserlink-popup.component';
 
-// Global UI service
+// Services
+import { NavigationHistoryService } from '../../services/navigation-history.service';
 import { UiService, StatusPopupState } from '../../../ui.service';
 
 @Component({
@@ -39,52 +40,69 @@ import { UiService, StatusPopupState } from '../../../ui.service';
   templateUrl: './app-layout.component.html',
   styleUrls: ['./app-layout.component.css']
 })
-export class AppLayoutComponent {
+export class AppLayoutComponent implements OnInit {
+
   readonly isExpanded$: Observable<boolean>;
   readonly isHovered$: Observable<boolean>;
   readonly isMobileOpen$: Observable<boolean>;
+
+  // ✅ Full page trail
+  pageTrail: string = '';
 
   // Popups
   showOtp$: Observable<boolean>;
   showImage$: Observable<{ url: string } | null>;
   showStatus$: Observable<StatusPopupState | null>;
-  showCompanyProfile$: Observable<number | null>; 
-  showRegisterLink$: Observable<number | null>; 
+  showCompanyProfile$: Observable<number | null>;
   showUserProfile$: Observable<number | null>;
+  showRegisterLink$: Observable<number | null>;
+
   constructor(
+    public navHistory: NavigationHistoryService,
     public sidebarService: SidebarService,
-    public ui: UiService // inject global UI service
+    public ui: UiService
   ) {
-    // Sidebar observables
+    // Sidebar state
     this.isExpanded$ = this.sidebarService.isExpanded$;
     this.isHovered$ = this.sidebarService.isHovered$;
     this.isMobileOpen$ = this.sidebarService.isMobileOpen$;
 
-    // Popup observables
+    // Popup state
     this.showOtp$ = this.ui.showOtp$;
     this.showImage$ = this.ui.showImage$;
     this.showStatus$ = this.ui.showStatus$;
-    this.showCompanyProfile$ = this.ui.showCompanyProfile$; 
-    this.showUserProfile$ = this.ui.showUserProfile$; 
     this.showCompanyProfile$ = this.ui.showCompanyProfile$;
-    this.showUserProfile$ = this.ui.showUserProfile$; 
-    this.showRegisterLink$ = this.ui.showRegisterLink$; 
+    this.showUserProfile$ = this.ui.showUserProfile$;
+    this.showRegisterLink$ = this.ui.showRegisterLink$;
   }
 
-  get containerClasses(): string[] {
+  // ✅ Layout margin handler
+  containerClasses(expanded: boolean, hovered: boolean, mobile: boolean): string[] {
     return [
       'flex-1',
       'transition-all',
       'duration-300',
       'ease-in-out',
-      (this.isExpanded$ || this.isHovered$) ? 'xl:ml-[290px]' : 'xl:ml-[90px]',
-      this.isMobileOpen$ ? 'ml-0' : ''
+      (expanded || hovered) ? 'xl:ml-[290px]' : 'xl:ml-[90px]',
+      mobile ? 'ml-0' : ''
     ];
+  }
+
+  ngOnInit(): void {
+    // Subscribe to breadcrumb changes via NavigationHistoryService
+    this.updatePageTrail();
+  }
+
+  // 🔙 Back navigation
+  goBack() {
+    this.navHistory.goBack();
+    this.updatePageTrail();
   }
 
   // --------------------------
   // Popup helper methods
   // --------------------------
+
   openOtp(): void {
     this.ui.openOtp();
   }
@@ -100,11 +118,17 @@ export class AppLayoutComponent {
   closeUserProfile(): void {
     this.ui.closeUserProfile();
   }
-   closeCompanyProfile(): void {
+
+  closeCompanyProfile(): void {
     this.ui.closeCompanyProfile();
   }
-//componey user
+
   closeRegisterLink(): void {
-  this.ui.closeRegisterLink();
-}
+    this.ui.closeRegisterLink();
+  }
+
+  private updatePageTrail() {
+    const crumbs = this.navHistory.getCurrentTrail();
+    this.pageTrail = crumbs.map(c => c.title).join(' / ');
+  }
 }

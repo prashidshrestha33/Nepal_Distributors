@@ -294,5 +294,24 @@ namespace Marketplace.Api.Controllers
                 });
             }
         }
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchProducts([FromQuery] string? categoryIds,[FromQuery] string? keyword)
+        {
+            var companyIdClaim = HttpContext.User.GetClaimValue("company_id");
+            long? companyId = null;
+            if (!string.IsNullOrWhiteSpace(companyIdClaim) && long.TryParse(companyIdClaim, out var parsedId))
+            {
+                companyId = parsedId;
+            }
+
+            var data = await repositorysitory.SearchProductsAsync(categoryIds, keyword, companyId);
+
+            return Ok(new
+            {
+                success = true,
+                count = data.Count(),
+                data
+            });
+        }
     }
 }

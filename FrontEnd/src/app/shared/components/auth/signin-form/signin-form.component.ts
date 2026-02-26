@@ -63,11 +63,15 @@ export class SigninFormComponent implements OnInit {
       this.errorMessage = 'Email is Required';
       return;
     } 
+    
+this.isLoading=true;
     const { email} = this.loginForm. value;
      this.authService.SendOPT(email).subscribe({
       next: (response: any) => {
       
       this.ui.openOtp(); 
+      
+this.isLoading=false;
       },
       error: (error: any) => {   
          this.errorMessage = error;
@@ -83,7 +87,7 @@ export class SigninFormComponent implements OnInit {
     const { email, password,oTP, rememberMe } = this.loginForm. value;
     this.isLoading = true;
     this. errorMessage = '';
-
+this.isLoading=true;
     this. authService.login(email, password,oTP, rememberMe).subscribe({
       next: (response:  any) => {
         this.isLoading = false;
