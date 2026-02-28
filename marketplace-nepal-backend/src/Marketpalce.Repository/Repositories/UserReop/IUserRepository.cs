@@ -37,5 +37,7 @@ namespace Marketpalce.Repository.Repositories.UserReop
         Task<int> SetFcmId(string FcmId,string userid);
         Task<string?> GetTokenByUserIdAsync(int userId);
 
+        void UpdateToken(string email, string googleId = null, string facebookId = null);
+
     }
 }

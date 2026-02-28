@@ -45,76 +45,83 @@
           class="w-full bg-gray-100 border border-gray-300  rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
         ></textarea>
       </div>
-<!-- Product Image Upload -->
-<div class="space-y-1">
-  <label class="block text-sm font-semibold text-gray-700 ">
-     Image
+<!-- Product Images Upload -->
+<div class="space-y-3">
+  <label class="block text-sm font-semibold text-gray-700">
+    Upload Images
   </label>
 
-  <!-- Upload Box -->
-  <div
-    class="relative flex items-center justify-center h-44 w-full
-           border-2 border-dashed rounded-xl cursor-pointer
-           transition-all duration-200
-           bg-gray-50
-           border-gray-300 
-           hover:border-blue-500 hover:bg-blue-50/40"
-    (click)="fileInput.click()"
-    (dragover)="onDragOver($event)"
-    (dragleave)="onDragLeave($event)"
-    (drop)="onDrop($event)"
-  >
+  <p class="text-xs text-gray-500">
+    You can upload up to 8 images
+    ({{ productImages.length }}/8)
+  </p>
 
-    <!-- Image Preview -->
-    <ng-container *ngIf="imagePreview; else uploadPlaceholder">
-      <img
-        [src]="imagePreview"
-        class="absolute inset-0 h-full w-full object-cover rounded-xl"
-      />
+  <div class="flex flex-wrap gap-4">
 
-      <!-- Remove Button -->
-      <button
-        type="button"
-        (click)="removeImage()"
-        class="absolute top-2 right-2 bg-black/60 text-white
-               rounded-full h-7 w-7 flex items-center justify-center
-               hover:bg-black"
-      >
-        ✕
-      </button>
-    </ng-container>
+    <!-- Add Image Box -->
+    <div
+      *ngIf="productImages.length < 8"
+      (click)="fileInput.click()"
+      class="w-32 h-32 border-2 border-dashed border-gray-300 
+             rounded-xl flex flex-col items-center justify-center 
+             cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition"
+    >
+      <span class="text-3xl text-gray-400">+</span>
+      <span class="text-xs text-gray-500 mt-1">Add a photo</span>
+    </div>
 
-    <!-- Placeholder -->
-    <ng-template #uploadPlaceholder>
-      <div class="text-center pointer-events-none">
-        <!-- Cloud Icon -->
-        <svg xmlns="http://www.w3.org/2000/svg"
-             class="mx-auto h-10 w-10 text-blue-500 mb-2"
-             fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6
-                   a5 5 0 011 9.9M12 12v6m0 0l-3-3m3 3l3-3" />
-        </svg>
+    <!-- Image Thumbnails -->
+    <div
+      *ngFor="let img of productImages; let i = index"
+      class="w-32"
+    >
+      <div class="relative w-32 h-32 rounded-xl overflow-hidden border">
 
-        <p class="text-sm text-gray-600 ">
-          <span class="font-medium text-blue-600">Click to upload</span>
-          or drag and drop
-        </p>
-        <p class="text-xs text-gray-400 mt-1">
-          PNG, JPG up to 5MB
-        </p>
+        <!-- Image -->
+        <img
+          [src]="img.previewUrl"
+          class="w-full h-full object-cover"
+        />
+
+        <!-- Delete Icon -->
+        <button
+  type="button"
+  (click)="removeImage(i)"
+  class="absolute top-2 right-2 bg-white rounded-full p-2 shadow 
+         hover:bg-red-100 hover:text-red-600 transition duration-150"
+>
+  <!-- Clean trash bin icon -->
+  <svg xmlns="http://www.w3.org/2000/svg"
+       class="h-5 w-5 text-gray-700"
+       fill="currentColor"
+       viewBox="0 0 24 24">
+    <path d="M9 3V4H4V6H5V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V6H20V4H15V3H9ZM7 6H17V19H7V6Z"/>
+  </svg>
+</button>
       </div>
-    </ng-template>
 
-    <!-- Hidden File Input -->
-    <input
-      #fileInput
-      type="file"
-      accept="image/*"
-      class="hidden"
-      (change)="onProductImageChange($event)"
-    />
+      <!-- Set Default -->
+      <div class="flex items-center mt-2 space-x-2">
+        <input
+          type="checkbox"
+          [checked]="img.isDefault"
+          (change)="setDefaultImage(i)"
+          class="accent-blue-600"
+        />
+        <span class="text-xs text-gray-600">Set as default</span>
+      </div>
+    </div>
   </div>
+
+  <!-- Hidden Input -->
+  <input
+    #fileInput
+    type="file"
+    multiple
+    accept="image/*"
+    class="hidden"
+    (change)="onMultipleImageChange($event)"
+  />
 </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Product Rate -->

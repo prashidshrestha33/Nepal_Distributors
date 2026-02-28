@@ -36,12 +36,44 @@ namespace Marketpalce.Repository.Repositories.UserReop
 [dbo].[companies] as companie on users.company_id=companie.id WHERE 1=1";
             if (email != null)
                 sql += "AND LOWER(email) = LOWER(@Email);  ";
-            else if (googleId != null)
-                sql += "AND google_id = @GoogleId; ";
-            else if (facebookId != null)
-                sql += "AND facebook_id = @FacebookId;";
+            //else if (googleId != null)
+            //    sql += "AND google_id = @GoogleId; ";
+            //else if (facebookId != null)
+            //    sql += "AND facebook_id = @FacebookId;";
             MarketplaceUser test = await _db.QueryFirstOrDefaultAsync<MarketplaceUser>(sql, new { Email = email, GoogleId = googleId, FacebookId = facebookId });
             return await _db.QueryFirstOrDefaultAsync<MarketplaceUser>(sql, new { Email = email, GoogleId = googleId, FacebookId = facebookId });
+        }
+
+        public void UpdateToken(string email, string googleId = null, string facebookId = null)
+        {
+            try
+            {
+                string sql = null;
+                object parameters = null;
+
+                if (googleId != null)
+                {
+                    sql = "UPDATE users SET google_id = @googleId WHERE email = @email";
+                    parameters = new { email, googleId };
+                }
+                else if (facebookId != null)
+                {
+                    sql = "UPDATE users SET facebook_id = @facebookId WHERE email = @email";
+                    parameters = new { email, facebookId };
+                }
+                else
+                {
+                    // Nothing to update
+                    return;
+                }
+
+                _db.ExecuteAsync(sql, parameters);                
+            }
+            catch (Exception ex)
+            {
+                // Optional: log exception
+                throw;
+            }
         }
         public async Task<long> CreateAsync(MarketplaceUser user, IDbTransaction? transaction = null)
         {

@@ -193,39 +193,36 @@ ApprovedProductById(id: number, payload: ApproveProduct): Observable<Product> {
   );
 }
 
-  createProduct(product: Product, image?: File): Observable<Product> {
-    
-    const formData = this.buildProductFormData(product, image);
-    for (let pair of formData.entries()) {
-    }
-    return this.apiGateway.post<Product>(
-      '/api/Product/AddProduct',
-      formData,
-      { 
-        requiresAuth: true,
-        headers: {}
-      }
-    );
-  }
-  updateProduct(id:  number, product: Product, image?: File): Observable<Product> {
-    const formData = this.buildProductFormData(product, image);
-    return this.apiGateway.post<Product>(
-      `/api/Product/${id}`,
-      formData,
-      { 
-        requiresAuth: true,
-        headers: {}
-      }
-    );
-  }
+  createProduct(product: Product, images?: { file: File, isDefault: boolean }[]): Observable<Product> {
+  debugger;
+    const formData = this.buildProductFormData(product, images);
+  return this.apiGateway.post<Product>(
+    '/api/Product/AddProduct',
+    formData,
+    { requiresAuth: true, headers: {} }
+  );
+}
 
+updateProduct(id: number, product: Product, images?: { file: File, isDefault: boolean }[]): Observable<Product> {
+  const formData = this.buildProductFormData(product, images);
+  return this.apiGateway.post<Product>(
+    `/api/Product/${id}`,
+    formData,
+    { requiresAuth: true, headers: {} }
+  );
+}
 
-  private buildProductFormData(product: Product, imageFile?: File): FormData { 
+  private buildProductFormData(
+  product: Product,
+  images?: { file: File; isDefault: boolean }[]
+): FormData {
+
   const formData = new FormData();
-  formData.append('Sku', (product.sku ?? 0).toString());
+
+  formData.append('Sku', product.sku ?? '');
   formData.append('Name', product.name ?? '');
   formData.append('Description', product.description ?? '');
-  formData.append('ShortDescription', (product.shortDescription ?? 0).toString());
+  formData.append('ShortDescription', product.shortDescription ?? '');
   formData.append('CategoryId', (product.categoryId ?? 0).toString());
   formData.append('BrandId', (product.brandId ?? 0).toString());
   formData.append('ManufacturerId', (product.manufacturerId ?? 0).toString());
@@ -235,14 +232,14 @@ ApprovedProductById(id: number, payload: ApproveProduct): Observable<Product> {
   formData.append('IsFeatured', product.isFeatured ? 'true' : 'false');
   formData.append('SeoTitle', product.seoTitle ?? '');
   formData.append('SeoDescription', product.seoDescription ?? '');
-  formData.append('Attributes', (product.attributes ?? 0).toString());
+  formData.append('Attributes', product.attributes ?? '');
   formData.append('CreatedBy', product.createdBy ?? '');
 
-  // Append file if exists
-  if (imageFile) {
-    formData.append('ImageFile', imageFile, (imageFile as File).name);
-  } else if (typeof product.imageFile === 'string') {
-    formData.append('ImageFile', product.imageFile);
+  if (images && images.length > 0) {
+    images.forEach(img => {
+      formData.append('Images', img.file);         // files
+      formData.append('IsDefault', img.isDefault.toString()); // matching flags
+    });
   }
 
   return formData;

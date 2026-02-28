@@ -35,6 +35,12 @@ export class ProductFormComponent implements OnInit {
   // Image
   productImage?: File;
   imagePreview: string | ArrayBuffer | null = null;
+  productImages: {
+  file: File;
+  previewUrl: string;
+  isDefault: boolean;
+}[] = [];
+
 
   // Dropdown visibility
   showBrandMenu = false;
@@ -240,12 +246,12 @@ selectManufacture(m: StaticValue) {
     reader.readAsDataURL(file);
   }
 
-  removeImage() {
-    this.productImage = undefined;
-    this.imagePreview = null;
-    if (this.fileInput?.nativeElement) this.fileInput.nativeElement.value = '';
-    this.form.get('productImage')?.setValue(null);
-  }
+  // removeImage() {
+  //   this.productImage = undefined;
+  //   this.imagePreview = null;
+  //   if (this.fileInput?.nativeElement) this.fileInput.nativeElement.value = '';
+  //   this.form.get('productImage')?.setValue(null);
+  // }
 
   onDragOver(event: DragEvent) { event.preventDefault(); }
   onDragLeave(event: DragEvent) { event.preventDefault(); }
@@ -262,29 +268,77 @@ selectManufacture(m: StaticValue) {
   }
 
   // ------------------- Submit -------------------
-
-  onSubmit() {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-
-    const product: Product = { ...this.form.getRawValue(), isFeatured: true };
-    this.loading = true;
-    const req$ = this.editMode && this.productId
-      ? this.productService.updateProduct(this.productId, product, this.productImage)
-      : this.productService.createProduct(product, this.productImage);
-
-    req$.subscribe({
-      next: () => {
-        this.loading = false;
-        this.showSnackbar(this.editMode ? 'Product updated successfully!' : 'Product added successfully!', true);
-        this.router.navigate(['/management/products']);
-      },
-      error: err => {
-        this.loading = false;
-        this.showSnackbar('Product updated failed', false);
-        console.error(err);
-      }
-    });
+onSubmit() {
+  if (this.form.invalid) {
+    this.form.markAllAsTouched();
+    return;
   }
+
+  const product: Product = { ...this.form.getRawValue(), isFeatured: true };
+  this.loading = true;
+
+  const req$ = this.editMode && this.productId
+    ? this.productService.updateProduct(this.productId, product, this.productImages)
+    : this.productService.createProduct(product, this.productImages);
+
+  req$.subscribe({
+    next: () => {
+      this.loading = false;
+      this.showSnackbar(
+        this.editMode ? 'Product updated successfully!' : 'Product added successfully!',
+        true
+      );
+      this.router.navigate(['/management/products']);
+    },
+    error: err => {
+      this.loading = false;
+      this.showSnackbar('Operation failed', false);
+      console.error(err);
+    }
+  });
+}
+onMultipleImageChange(event: any) {
+  const files: FileList = event.target.files;
+
+  if (!files) return;
+
+  for (let i = 0; i < files.length; i++) {
+
+    if (this.productImages.length >= 8) break;
+
+    const file = files[i];
+
+    if (!file.type.startsWith('image/')) continue;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.productImages.push({
+        file: file,
+        previewUrl: reader.result as string,
+        isDefault: this.productImages.length === 0 // first image default
+      });
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  event.target.value = '';
+}
+
+removeImage(index: number) {
+  const wasDefault = this.productImages[index].isDefault;
+  this.productImages.splice(index, 1);
+
+  if (wasDefault && this.productImages.length > 0) {
+    this.productImages[0].isDefault = true;
+  }
+}
+
+setDefaultImage(index: number) {
+  this.productImages.forEach((img, i) => {
+    img.isDefault = i === index;
+  });
+}
 
   goBack() { this.router.navigate(['/management/products']); }
 
