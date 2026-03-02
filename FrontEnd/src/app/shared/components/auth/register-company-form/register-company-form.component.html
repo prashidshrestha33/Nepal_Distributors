@@ -20,7 +20,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <!-- Company Name -->
             <div>
-              <label class="block text-xs font-medium mb-1 text-gray-700">Company Name <span class="text-error-500">*</span></label>
+              <label class="block text-xs font-medium mb-1 text-gray-700">Company Name <span class="text-red-500">*</span></label>
               <input formControlName="name" placeholder="Enter company name" required class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 text-gray-800 border-gray-300" />
               <p *ngIf="name?.invalid && name?.touched" class="mt-1 text-sm text-red-600">Company name is required</p>
             </div>
@@ -32,7 +32,7 @@
             </div> -->
             <!-- Company Type -->
         <div>
-          <label class="block text-xs font-medium mb-1 text-gray-700">Company Type <span class="text-error-500">*</span></label>
+          <label class="block text-xs font-medium mb-1 text-gray-700">Company Type <span class="text-red-500">*</span></label>
           <select formControlName="companyType" aria-placeholder="Select Company Type" aria-readonly="true" [disabled]="loadingCompanyTypes || companyTypes.length === 0"
             class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs bg-white focus:outline-none focus:ring-3 text-gray-800 border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed">
             <option *ngFor="let type of companyTypes" [value]="type.staticValueKey">{{ type.staticValueKey }}</option>
@@ -50,7 +50,7 @@
             <div class="space-y-1">
               <!-- Registration Document Upload -->
               <div class="space-y-1">
-                <label class="block text-xs font-medium mb-1 text-gray-700">Registration Document <span class="text-error-500">*</span></label>
+                <label class="block text-xs font-medium mb-1 text-gray-700">Registration Document <span class="text-red-500">*</span></label>
 
                 <!-- Upload Box with Button -->
                 <div class="relative flex items-center justify-center h-44 w-full border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 bg-gray-50 border-gray-300 hover:border-blue-500 hover:bg-blue-50/40"
@@ -91,7 +91,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <!-- Address -->
             <div>
-              <label class="block text-xs font-medium mb-1 text-gray-700">Address <span class="text-error-500">*</span></label>
+              <label class="block text-xs font-medium mb-1 text-gray-700">Address <span class="text-red-500">*</span></label>
               <input formControlName="address" placeholder="Company address" required class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 text-gray-800 border-gray-300" />
               <p *ngIf="address?.invalid && address?.touched" class="mt-1 text-sm text-red-600">Address is required</p>
             </div>
