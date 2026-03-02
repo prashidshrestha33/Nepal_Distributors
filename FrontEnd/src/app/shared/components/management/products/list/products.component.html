@@ -118,6 +118,7 @@
           <th class="px-6 py-3 text-left">Rate</th>
           <th class="px-6 py-3 text-left">Created By</th>
           <th class="px-6 py-3 text-left">Status</th>
+          <th class="px-6 py-3 text-left">Image</th>
           <th class="px-6 py-3 text-left">Actions</th>
         </tr>
       </thead>
@@ -177,6 +178,11 @@
             >
               {{ product.status || 'Pending' }}
             </span>
+          </td>
+          <!-- Image -->
+          <td class="px-6 py-3 text-sm">
+            <img *ngIf="product.imageName" [src]="getImageUrl(product.imageName)" alt="Product Image" class="w-12 h-12 object-cover rounded-lg" />
+            <span *ngIf="!product.imageName" class="text-gray-500">No Image</span>
           </td>
 
           <!-- ACTIONS -->

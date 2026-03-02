@@ -300,44 +300,49 @@ onSubmit() {
   req$.subscribe({
     next: () => {
       this.loading = false;
+      console.log("Update successful!"); // Log message to confirm success
       this.showSnackbar(
         this.editMode ? 'Product updated successfully!' : 'Product added successfully!',
-        true
+        true // success = true
       );
       this.router.navigate(['/management/products']);
     },
     error: err => {
       this.loading = false;
-      this.showSnackbar('Operation failed', false);
-      console.error(err);
+      console.error("Error during update:", err); // Log the error to help debug
+      this.showSnackbar('Operation failed', false); // error message
     }
   });
 }
 onMultipleImageChange(event: any) {
   const files: FileList = event.target.files;
-
   if (!files) return;
 
   for (let i = 0; i < files.length; i++) {
     if (this.productImages.length >= 8) break;
 
     const file = files[i];
-
-    if (!file.type.startsWith('image/')) continue;
+    if (!file.type.startsWith('image/')) continue; // Check if the file is an image
 
     const reader = new FileReader();
     reader.onload = () => {
       this.productImages.push({
         file: file,
-        previewUrl: reader.result as string,
-        isDefault: this.productImages.length === 0 // first image default
+        previewUrl: reader.result as string, // Set the preview URL
+        isDefault: this.productImages.length === 0 // Mark the first image as default
       });
     };
 
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(file); // Convert the image to a base64 string
   }
 
-  event.target.value = '';
+  event.target.value = ''; // Reset the file input value
+}
+
+setDefaultImage(index: number) {
+  this.productImages.forEach((img, i) => {
+    img.isDefault = i === index; // Mark the selected image as the default
+  });
 }
 
 removeImage(index: number) {
@@ -345,16 +350,9 @@ removeImage(index: number) {
   this.productImages.splice(index, 1);
 
   if (wasDefault && this.productImages.length > 0) {
-    this.productImages[0].isDefault = true;
+    this.productImages[0].isDefault = true; // Set the first image as default if needed
   }
 }
-
-setDefaultImage(index: number) {
-  this.productImages.forEach((img, i) => {
-    img.isDefault = i === index;
-  });
-}
-
   goBack() { this.router.navigate(['/management/products']); }
 
   isFieldInvalid(fieldName: string): boolean {

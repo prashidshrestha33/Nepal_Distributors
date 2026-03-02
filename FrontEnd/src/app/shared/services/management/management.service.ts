@@ -149,13 +149,13 @@ export class CategoryService {
     return this.getTreeCategories();
   }
 
-  createCategory(category: Category): Observable<Category> {
-    return this.apiGateway.postWithResult<Category>(
-      '/api/Product/AddCatagory',
-      category,
-      { requiresAuth: true }
-    );
-  }
+createCategory(formData: FormData): Observable<Category> {
+  return this.apiGateway.postWithResult<Category>(
+    '/api/Product/AddCatagory',  // Your backend endpoint
+    formData,  // Send FormData instead of the regular Category object
+    { requiresAuth: true }  // Add any necessary headers
+  );
+}
 
   moveCategory(categoryId: number, newParentId:  number): Observable<Category> {
     return this.apiGateway.postWithResult<Category>(
@@ -205,7 +205,6 @@ ApprovedProductById(id: number, payload: ApproveProduct): Observable<Product> {
 }
 
   createProduct(product: Product, images?: { file: File, isDefault: boolean }[]): Observable<Product> {
-  debugger;
     const formData = this.buildProductFormData(product, images);
   return this.apiGateway.post<Product>(
     '/api/Product/AddProduct',
