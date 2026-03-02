@@ -188,10 +188,16 @@ export class ProductService {
       { requiresAuth: true, params }
     );
   }
-
-getProductById(id: number): Observable<Product> {
-  return this.apiGateway
-    .get<ApiResponse<Product>>(
+  
+SearchProducts(keyword:string,page: number = 1, pageSize: number = 20): Observable<ProductResponse> {
+    const params = this.apiGateway.buildParams({ page, pageSize });
+    return this.apiGateway. get<ProductResponse>(
+      `/api/Product/search?keyword=${keyword}`,
+      { requiresAuth: true, params }
+    );
+  }
+  getProductById(id: number): Observable<Product> {
+    return this.apiGateway.get<Product>(
       `/api/Product/Update/${id}`,
       { requiresAuth: true }
     )

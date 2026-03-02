@@ -547,5 +547,23 @@ ON p.id = pi.ProductId";
             var query = "DELETE FROM ProductImages WHERE ProductId = @ProductId AND Id IN @ImageIds";
             await _db.ExecuteAsync(query, new { ProductId = productId, ImageIds = imageIds });
         }
+        public async Task<IEnumerable<ProductModel>> SearchProductsAsync(
+    string? categoryIds,
+    string? keyword,
+    long? companyId)
+        {
+            var parameters = new DynamicParameters();
+            parameters.Add("@CategoryIds", categoryIds, DbType.String);
+            parameters.Add("@Keyword", keyword, DbType.String);
+            parameters.Add("@CompanyId", companyId, DbType.Int64);
+
+            var result = await _db.QueryAsync<ProductModel>(
+                "dbo.sp_GetProductsByCategoryAndKeyword",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
+
+            return result;
+        }
     }
 }

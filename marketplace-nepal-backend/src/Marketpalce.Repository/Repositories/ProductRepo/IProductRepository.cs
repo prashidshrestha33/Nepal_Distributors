@@ -49,7 +49,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
             IDbTransaction tx);
 
         Task<bool> ApproveProductAsync(long Productid, string approvedBy, string details, IDbTransaction? transaction = null);
-
+        Task<IEnumerable<ProductModel>> SearchProductsAsync(string? categoryIds, string? keyword, long? companyId);
 
     }
 }

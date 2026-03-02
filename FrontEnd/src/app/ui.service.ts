@@ -85,4 +85,31 @@ export class UiService {
   closeRegisterLink(): void {
     this._showRegisterLink.next(null);
   }
+
+  // ------------------
+// Product List Popup
+// ------------------
+private _showProductList = new BehaviorSubject<{
+  companyId: number;
+  keyword?: string;
+  style?: string;
+} | null>(null);
+
+readonly showProductList$: Observable<{
+  companyId: number;
+  keyword?: string;
+  style?: string;
+} | null> = this._showProductList.asObservable();
+
+openProductList(companyId: number, keyword: string = '', style: string = ''): void {
+  this._showProductList.next({
+    companyId,
+    keyword,
+    style
+  });
+}
+
+closeProductList(): void {
+  this._showProductList.next(null);
+}
 }

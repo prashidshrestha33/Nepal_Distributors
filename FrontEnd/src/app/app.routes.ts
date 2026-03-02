@@ -49,35 +49,35 @@ export const routes: Routes = [
   {
     path: 'signin',
     component: SignInComponent,
-    title: 'Nepal Distributors - Sign In'
+    title: 'Sign In'
   },  {
     path: 'RegisterUser',
      loadComponent: () => import('./pages/auth-pages/register-user/register-user.component')
                      .then(m => m.RegisterUser),
-    title: 'Nepal Distributors - Register User by componey'
+    title: 'Register User by componey'
   },{
     path: 'ForgetPassword',
      component: ForgetPasswordComponent,
-    title: 'Nepal Distributors - Forget Pasword'
+    title: 'Forget Pasword'
   },{
     path: 'ForgetPasswordRequest',
      component: ForgetPasswordRequestComponent,
-    title: 'Nepal Distributors - Forget Pasword Request'
+    title: 'Forget Pasword Request'
   },
   {
     path: 'signup',
     component: SignUpComponent,
-    title: 'Nepal Distributors - Sign Up'
+    title: 'Sign Up'
   },
   {
     path: 'register-company',
     component: RegisterCompanyComponent,
-    title: 'Nepal Distributors - Register Company'
+    title: 'Register Company'
   },
   {
     path: 'terms-and-conditions',
     component: TermsAndConditionsComponent,
-    title: 'Nepal Distributors - Terms and Conditions'
+    title: 'Terms and Conditions'
   },
   // Protected routes
   {
@@ -88,12 +88,12 @@ export const routes: Routes = [
          {
         path: '',
         component: DashboardComponent,
-        title: 'Nepal Distributors - Dashboard'
+        title: 'Dashboard'
       },
       {
         path: 'dashboard',
         component: DashboardComponent,
-        title: 'Nepal Distributors - Dashboard'
+        title: 'Dashboard'
       },
       // Management Routes - nested under /management
       {
@@ -102,91 +102,91 @@ export const routes: Routes = [
           {
             path: 'users',
             component: UsersComponent,
-            title: 'Nepal Distributors - Users'
+            title: 'Users'
           },
           {
             path: 'users/add',
             component: UserFormComponent,
-            title: 'Nepal Distributors - Add User'
+            title: 'Add User'
           }, {
             path: 'company',
             component: CompanyComponent,
-            title: 'Nepal Distributors - Company'
+            title: 'Company'
           },
           {
             path: 'company/add',
             component: CompanyFormComponent,
-            title: 'Nepal Distributors - Add Company'
+            title: 'Add Company'
           },
           {
             path: 'categories',
             component: CategoriesComponent,
-            title: 'Nepal Distributors - Categories'
+            title: 'Categories'
           },
           {
             path: 'categories/add',
             component: CategoryFormComponent,
-            title: 'Nepal Distributors - Add Category'
+            title: 'Add Category'
           },
           {
             path: 'products',
             component: ProductsMgmtComponent,
-            title: 'Nepal Distributors - Products Management'
+            title: 'Products Management'
           },
           {
             path: 'products/details/:id',
             loadComponent: () => import('./shared/components/management/products/details/product-details.component').then(m => m.ProductDetailsComponent),
-            title: 'Nepal Distributors - Product Details'
+            title: 'Product Details'
           },
           {
             path: 'products/edit/:id',
             component: ProductFormComponent,
-            title: 'Nepal Distributors - Edit Product'
+            title: 'Edit Product'
           },
           {
             path: 'products/add',
             component: ProductFormComponent,
-            title: 'Nepal Distributors - Add Product'
+            title: 'Add Product'
           },
           {
             path: 'orders',
             component: OrdersComponent,
-            title: 'Nepal Distributors - Orders'
+            title: 'Orders'
           },
           {
             path: 'orders/add',
             component: OrderFormComponent,
-            title: 'Nepal Distributors - Add Order'
+            title: 'Add Order'
           },
           {
             path: 'notifications',
             component: NotificationsComponent,
-            title: 'Nepal Distributors - Notifications'
+            title: 'Notifications'
           },
           {
             path: 'quotations',
             component: QuotationsComponent,
-            title: 'Nepal Distributors - Quotations'
+            title: 'Quotations'
           },
           {
             path: 'quotations/add',
             component: QuotationFormComponent,
-            title: 'Nepal Distributors - Add Quotation'
+            title: 'Add Quotation'
           },
           {
             path: 'static-values',
             component: StaticValuesComponent,
-            title: 'Nepal Distributors - Static Values'
+            title: 'Static Values'
           },
           {
             path: 'static-values-catalog',
             component: StaticValuesCatalogComponent,
-            title: 'Nepal Distributors - Static Values Catalog'
+            title: 'Static Values Catalog'
           },
           {
             path: 'static-values/add',
             component: StaticValueFormComponent,
-            title: 'Nepal Distributors - Add Static Value'
+            title: 'Add Static Value'
           }
         ]
       },
@@ -194,77 +194,77 @@ export const routes: Routes = [
       {
         path: 'users',
         component: UsersComponent,
-        title: 'Nepal Distributors - Users'
+        title: 'Users'
       },
       {
         path: 'users/add',
         component: UserFormComponent,
-        title: 'Nepal Distributors - Add User'
+        title: 'Add User'
       },
       {
         path: 'categories',
         component: CategoriesComponent,
-        title: 'Nepal Distributors - Categories'
+        title: 'Categories'
       },
       {
         path: 'categories/add',
         component: CategoryFormComponent,
-        title: 'Nepal Distributors - Add Category'
+        title: 'Add Category'
       },
       {
         path: 'products/details/:id',
         loadComponent: () => import('./shared/components/management/products/details/product-details.component').then(m => m.ProductDetailsComponent),
-        title: 'Nepal Distributors - Product Details'
+        title: 'Product Details'
       },
       {
         path: 'products',
         component: ProductsMgmtComponent,
-        title: 'Nepal Distributors - Products Management'
+        title: 'Products Management'
       },
       {
         path: 'products/add',
         component: ProductFormComponent,
-        title: 'Nepal Distributors - Add Product'
+        title: 'Add Product'
       },
       {
         path: 'orders',
         component: OrdersComponent,
-        title: 'Nepal Distributors - Orders'
+        title: 'Orders'
       },
       {
         path: 'orders/add',
         component: OrderFormComponent,
-        title: 'Nepal Distributors - Add Order'
+        title: 'Add Order'
       },
       {
         path: 'notifications',
         component: NotificationsComponent,
-        title: 'Nepal Distributors - Notifications'
+        title: 'Notifications'
       },
       {
         path: 'quotations',
         component: QuotationsComponent,
-        title: 'Nepal Distributors - Quotations'
+        title: 'Quotations'
       },
       {
         path: 'quotations/add',
         component: QuotationFormComponent,
-        title: 'Nepal Distributors - Add Quotation'
+        title: 'Add Quotation'
       },
       {
         path: 'static-values',
         component: StaticValuesComponent,
-        title: 'Nepal Distributors - Static Values'
+        title: 'Static Values'
       },
       {
         path: 'static-values-Catalog',
         component: StaticValuesCatalogComponent,
-        title: 'Nepal Distributors - Static Values Catalog'
+        title: 'Static Values Catalog'
       },
       {
         path: 'static-values/add',
         component: StaticValueFormComponent,
-        title: 'Nepal Distributors - Add Static Value'
+        title: 'Add Static Value'
       }
     ]
   },
@@ -273,6 +273,6 @@ export const routes: Routes = [
   {
     path: '**',
     component: NotFoundComponent,
-    title: 'Nepal Distributors - Not Found'
+    title: 'Not Found'
   }
 ];
