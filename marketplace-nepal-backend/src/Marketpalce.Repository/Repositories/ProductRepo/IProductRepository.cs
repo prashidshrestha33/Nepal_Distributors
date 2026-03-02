@@ -22,6 +22,8 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
         Task<IEnumerable<CategoryDto>> GetCatagoryChildrenAsync(long? parentId);
         Task<CategoryDto?> GetCatagoryByIdAsync(long id);
         Task<ProductModel> GetByIdAsync(int id, IDbTransaction tx);
+        Task InsertProductImagesAsync(int productId, List<ProductImageModel> images);
+        Task DeleteProductImagesByIdsAsync(int productId, List<int> imageIds);
 
         Task ApproveProductAsync(
             int id,

@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiGatewayService } from '../api-gateway.service';
+import { ApiResponse } from '../../models/api-response.model';
 
 // ============================================
 // INTERFACES
@@ -16,6 +17,13 @@ export interface Category {
   children?: Category[];
   createdAt?: string;
   updatedAt?: string;
+}
+export interface ProductImage {
+  id: number;
+  productId: number;
+  imageName: string;
+  isDefault: boolean;
+  createdAt: string;
 }
 export interface Product {
   id: number;
@@ -41,6 +49,7 @@ export interface Product {
   approveTs?: Date;
   imageUrl?: string;
   imageName?: string;
+  images?: ProductImage[];
 }
 export interface ProductResponse {
   data: Product[];
@@ -180,12 +189,14 @@ export class ProductService {
     );
   }
 
-  getProductById(id: number): Observable<Product> {
-    return this.apiGateway.get<Product>(
+getProductById(id: number): Observable<Product> {
+  return this.apiGateway
+    .get<ApiResponse<Product>>(
       `/api/Product/Update/${id}`,
       { requiresAuth: true }
-    );
-  }
+    )
+    .pipe(map(res => res.result));
+}
 ApprovedProductById(id: number, payload: ApproveProduct): Observable<Product> {
   return this.apiGateway.post<Product>(
     `api/Product/ApproveProduct/${id}`,
@@ -214,11 +225,12 @@ updateProduct(id: number, product: Product, images?: { file: File, isDefault: bo
 
   private buildProductFormData(
   product: Product,
-  images?: { file: File; isDefault: boolean }[]
+  images?: { file: File; isDefault: boolean; id?: number }[], 
+  deletedImageIds: number[] = []
 ): FormData {
-
   const formData = new FormData();
 
+  // ------------------- Product Fields -------------------
   formData.append('Sku', product.sku ?? '');
   formData.append('Name', product.name ?? '');
   formData.append('Description', product.description ?? '');
@@ -235,17 +247,40 @@ updateProduct(id: number, product: Product, images?: { file: File, isDefault: bo
   formData.append('Attributes', product.attributes ?? '');
   formData.append('CreatedBy', product.createdBy ?? '');
 
-  if (images && images.length > 0) {
-    images.forEach(img => {
-      formData.append('Images', img.file);         // files
-      formData.append('IsDefault', img.isDefault.toString()); // matching flags
-    });
+  // ------------------- Handle Image Deletions -------------------
+  if (deletedImageIds.length > 0) {
+    formData.append('ImageIdsToDelete', JSON.stringify(deletedImageIds)); // Serialize the array to JSON string
   }
+
+  // ------------------- Handle Image Uploads -------------------
+  if (images && images.length > 0) {
+    let defaultIndex = 0;
+
+    images.forEach((img, index) => {
+      if (img.file) {
+        formData.append('ImageFiles', img.file); // append new image files
+      }
+
+      if (img.isDefault) {
+        defaultIndex = index; // set default image index
+      }
+
+      if (img.id) {
+        formData.append('ExistingImageIds', img.id.toString()); // append existing image IDs
+      }
+    });
+
+    formData.append('DefaultImageIndex', defaultIndex.toString()); // append default image index
+  }
+
+  // Log the FormData content manually
+  console.log('FormData contents:');
+  formData.forEach((value, key) => {
+    console.log(key, value);
+  });
 
   return formData;
 }
-
-  
     approveProduct(id:  number, product: Product): Observable<Product> {
     const formData = this.buildProductFormData(product);
     return this.apiGateway.put<Product>(

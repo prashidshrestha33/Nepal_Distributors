@@ -184,7 +184,6 @@ namespace Marketplace.Api.Controllers
                 SeoTitle = name, // product name
                 SeoDescription = GenerateSeoDescription(dict.GetValueOrDefault("description")),
                 Attributes = dict.GetValueOrDefault("attributes"),
-                ImageName = null, // Will be set after processing
                 CreatedBy = createdBy,
                 CreatedAt = dict.GetValueOrDefault("created_at") != null
                   ? DateTime.Parse(dict.GetValueOrDefault("created_at"))
@@ -300,9 +299,6 @@ namespace Marketplace.Api.Controllers
                             //Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
 
                             System.IO.File.Move(tempFilePath, destinationPath);
-
-                            product.ImageName = newFileName; // Or save full path if needed
-                            // If ProductModel has ImageUrl, set it: product.ImageUrl = PublicBasePath + newFileName;
                         }
                     }
                     catch (Exception ex)

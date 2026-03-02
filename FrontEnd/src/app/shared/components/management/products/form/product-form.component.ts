@@ -36,7 +36,7 @@ export class ProductFormComponent implements OnInit {
   productImage?: File;
   imagePreview: string | ArrayBuffer | null = null;
   productImages: {
-  file: File;
+  file: File | null;
   previewUrl: string;
   isDefault: boolean;
 }[] = [];
@@ -168,16 +168,29 @@ export class ProductFormComponent implements OnInit {
     return result;
   }
 
-  loadProductForEdit(id: number) {
+loadProductForEdit(id: number) {
   this.loading = true;
   this.productService.getProductById(id).subscribe({
     next: res => {
       const product: Product = (res as any)?.result ?? res;
-      this.form.patchValue(product); 
-      if (product?.imageName) {
-        this.imagePreview = this.getImageUrl(product.imageName);
+      this.form.patchValue(product); // Fill the form with product data
+debugger;
+      // Handle the images
+      if (product?.images && product.images.length > 0) {
+        // Set the default image (assuming one of the images has isDefault set to true)
+        const defaultImage = product.images.find(img => img.isDefault);
+        if (defaultImage) {
+          this.imagePreview = this.getImageUrl(defaultImage.imageName);
+        }
+debugger;
+        // Map through the images and display them
+        this.productImages = product.images.map((img, index) => ({
+          file: null,  // You might need to handle actual file uploads later
+          previewUrl: this.getImageUrl(img.imageName),
+          isDefault: img.isDefault,  // Use the isDefault flag to mark the default image
+        }));
       }
-      const manufactureName = this.getManufactureName(product.manufacturerId);
+
       this.loading = false;
     },
     error: () => {
@@ -186,10 +199,12 @@ export class ProductFormComponent implements OnInit {
     }
   });
 }
-
-  getImageUrl(imageName?: string): string {
-    return imageName ? `${environment.apiBaseUrl}/api/CompanyFile/${imageName}` : 'assets/images/no-image.png';
-  }
+getImageUrl(imageName?: string): string {
+  debugger;
+  return imageName 
+    ? `${environment.apiBaseUrl}/api/CompanyFile?fileName=${encodeURIComponent(imageName)}`
+    : 'assets/images/no-image.png';
+}
 
   // ------------------- Dropdowns -------------------
 
@@ -235,23 +250,20 @@ selectManufacture(m: StaticValue) {
 
   // ------------------- Image -------------------
 
-  onProductImageChange(event: any) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) { alert('Only image files are allowed'); return; }
+onProductImageChange(event: any) {
+  const file = event.target.files?.[0];
+  if (!file) return;
 
-    this.productImage = file;
-    const reader = new FileReader();
-    reader.onload = () => this.imagePreview = reader.result;
-    reader.readAsDataURL(file);
+  if (!file.type.startsWith('image/')) {
+    alert('Only image files are allowed');
+    return;
   }
 
-  // removeImage() {
-  //   this.productImage = undefined;
-  //   this.imagePreview = null;
-  //   if (this.fileInput?.nativeElement) this.fileInput.nativeElement.value = '';
-  //   this.form.get('productImage')?.setValue(null);
-  // }
+  this.productImage = file;
+  const reader = new FileReader();
+  reader.onload = () => this.imagePreview = reader.result;
+  reader.readAsDataURL(file);
+}
 
   onDragOver(event: DragEvent) { event.preventDefault(); }
   onDragLeave(event: DragEvent) { event.preventDefault(); }
@@ -277,9 +289,13 @@ onSubmit() {
   const product: Product = { ...this.form.getRawValue(), isFeatured: true };
   this.loading = true;
 
+  const imagesToSend = this.productImages
+    .filter(img => img.file !== null)
+    .map(img => ({ file: img.file as File, isDefault: img.isDefault }));
+
   const req$ = this.editMode && this.productId
-    ? this.productService.updateProduct(this.productId, product, this.productImages)
-    : this.productService.createProduct(product, this.productImages);
+    ? this.productService.updateProduct(this.productId, product, imagesToSend)
+    : this.productService.createProduct(product, imagesToSend);
 
   req$.subscribe({
     next: () => {
@@ -303,7 +319,6 @@ onMultipleImageChange(event: any) {
   if (!files) return;
 
   for (let i = 0; i < files.length; i++) {
-
     if (this.productImages.length >= 8) break;
 
     const file = files[i];

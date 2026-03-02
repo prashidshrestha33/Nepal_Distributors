@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using Marketplace.Model.Models;
+using System.Text.Json.Serialization;
 
 namespace Marketplace.Api.Models
 {
@@ -23,5 +24,14 @@ namespace Marketplace.Api.Models
         public string? Attributes { get; set; }
         public string? CreatedBy { get; set; }
         public IFormFile? ImageFile { get; set; }
+        public List<IFormFile>? ImageFiles { get; set; }
+
+        // Default index
+        public int? DefaultImageIndex { get; set; }
+        public List<ProductImageModel> Images { get; set; } = new();
+        // New property to accept deleted image IDs (if any)
+        public string? ImageIdsToDelete { get; set; }
+
+
     }
 }

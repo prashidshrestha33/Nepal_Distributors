@@ -77,37 +77,68 @@ FROM [NepalDistributers].[dbo].[Products]
         }
 
         public async Task<ProductModel> GetByIdAsync(int id)
+{
+    var sql = @"
+    SELECT 
+        p.id AS Id,
+        p.sku AS Sku,
+        p.name AS Name,
+        p.description AS Description,
+        p.short_description AS ShortDescription,
+        p.category_id AS CategoryId,
+        p.company_id AS CompanyId,
+        p.rate AS Rate,
+        p.brand_id AS BrandId,
+        p.manufacturer_id AS ManufacturerId,
+        p.hs_code AS HsCode,
+        p.status AS Status,
+        p.is_featured AS IsFeatured,
+        p.seo_title AS SeoTitle,
+        p.seo_description AS SeoDescription,
+        p.attributes AS Attributes,
+        p.created_by AS CreatedBy,
+        p.created_at AS CreatedAt,
+
+        pi.Id,
+        pi.ProductId,
+        pi.ImageName,
+        pi.IsDefault,
+        pi.CreatedAt
+
+    FROM Products p
+    LEFT JOIN ProductImages pi ON p.id = pi.ProductId
+    WHERE p.id = @Id";
+
+    var productDictionary = new Dictionary<int, ProductModel>();
+
+    var result = await _db.QueryAsync<ProductModel, ProductImageModel, ProductModel>(
+        sql,
+        (product, image) =>
         {
-            var sql = @"SELECT
-    id                  AS Id,
-    sku                 AS Sku,
-    name                AS Name,
-    description         AS Description,
-    short_description   AS ShortDescription,
-    category_id         AS CategoryId,
-    company_id          AS CompanyId,
-    rate                AS Rate,
-    brand_id            AS BrandId,
-    manufacturer_id     AS ManufacturerId,
-    hs_code             AS HsCode,
-    status              AS Status,
-    is_featured         AS IsFeatured,
-    seo_title           AS SeoTitle,
-    seo_description     AS SeoDescription,
-    attributes          AS Attributes,
-    ImageName           AS ImageName,
-    created_by          AS CreatedBy,
-    created_at          AS CreatedAt
-FROM [NepalDistributers].[dbo].[Products]
-    WHERE id = @Id";
+            if (!productDictionary.TryGetValue(product.Id, out var productEntry))
+            {
+                productEntry = product;
+                productEntry.Images = new List<ProductImageModel>();
+                productDictionary.Add(productEntry.Id, productEntry);
+            }
 
-            return await _db.QuerySingleOrDefaultAsync<ProductModel>(sql, new { Id = id });
-        }
+            if (image != null)
+                productEntry.Images.Add(image);
 
+            return productEntry;
+        },
+        new { Id = id },
+        splitOn: "Id"
+    );
+
+    return productDictionary.Values.FirstOrDefault();
+}
         public async Task<int> CreateAsync(ProductModel product)
         {
-            // 🔹 Check for duplicate: Name + Manufacturer + Brand + Category
-            var duplicate = await _db.ExecuteScalarAsync<int>(@"
+            try
+            {
+                // 🔹 Check for duplicate: Name + Manufacturer + Brand + Category
+                var duplicate = await _db.ExecuteScalarAsync<int>(@"
         SELECT COUNT(1)
         FROM [NepalDistributers].[dbo].[products]
         WHERE Name = @Name
@@ -116,60 +147,126 @@ FROM [NepalDistributers].[dbo].[Products]
           AND Category_Id = @CategoryId
     ", product);
 
-            if (duplicate > 0)
-                throw new Exception("A product with the same name, manufacturer, brand, and category already exists.");
+                if (duplicate > 0)
+                    throw new Exception("A product with the same name, manufacturer, brand, and category already exists.");
 
-            // 🔹 Generate SKU and SEO
-            await GenerateSkuAndSeoAsync(product);
+                // 🔹 Generate SKU and SEO
+                await GenerateSkuAndSeoAsync(product);
 
-            // 🔹 Insert product
-            var sql = @"
+                // 🔹 Insert product
+                var sql = @"
         INSERT INTO [NepalDistributers].[dbo].[products]
         (company_id, sku, name, description, short_description, category_id, brand_id, manufacturer_id,
-         rate, hs_code, status, is_featured, seo_title, seo_description, attributes, ImageName,
+         rate, hs_code, status, is_featured, seo_title, seo_description, attributes,
          created_by, created_at, updated_at)
         VALUES
         (@CompanyId, @Sku, @Name, @Description, @ShortDescription, @CategoryId, @BrandId, @ManufacturerId,
-         @Rate, @HsCode, @Status, @IsFeatured, @SeoTitle, @SeoDescription, @Attributes, @ImageName,
+         @Rate, @HsCode, @Status, @IsFeatured, @SeoTitle, @SeoDescription, @Attributes,
          @CreatedBy, SYSDATETIME(), SYSDATETIME());
 
         SELECT CAST(SCOPE_IDENTITY() AS int);
     ";
-            return await _db.ExecuteScalarAsync<int>(sql, product);
+                return await _db.ExecuteScalarAsync<int>(sql, product);
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
         }
 
         public async Task<bool> UpdateAsync(ProductModel product)
         {
-            // Ensure SKU/SEO fields are generated before performing the single UPDATE on the shared connection.
             await GenerateSkuAndSeoAsync(product);
 
             var parameters = new DynamicParameters();
             var setClauses = new List<string>();
 
-            if (!string.IsNullOrEmpty(product.Sku)) { setClauses.Add("sku=@Sku"); parameters.Add("@Sku", product.Sku); }
-            if (!string.IsNullOrEmpty(product.Name)) { setClauses.Add("name=@Name"); parameters.Add("@Name", product.Name); }
-            if (!string.IsNullOrEmpty(product.Description)) { setClauses.Add("description=@Description"); parameters.Add("@Description", product.Description); }
-            if (product.CategoryId > 0) { setClauses.Add("category_id=@CategoryId"); parameters.Add("@CategoryId", product.CategoryId); }
-            if (product.BrandId > 0) { setClauses.Add("brand_id=@BrandId"); parameters.Add("@BrandId", product.BrandId); }
-            if (product.ManufacturerId > 0) { setClauses.Add("manufacturer_id=@ManufacturerId"); parameters.Add("@ManufacturerId", product.ManufacturerId); }
-            if (product.Rate > 0) { setClauses.Add("rate=@Rate"); parameters.Add("@Rate", product.Rate); }
-            if (!string.IsNullOrEmpty(product.HsCode)) { setClauses.Add("hs_code=@HsCode"); parameters.Add("@HsCode", product.HsCode); }
-            if (!string.IsNullOrEmpty(product.Status)) { setClauses.Add("status=@Status"); parameters.Add("@Status", product.Status); }
-            if (product.IsFeatured.HasValue) { setClauses.Add("is_featured=@IsFeatured"); parameters.Add("@IsFeatured", product.IsFeatured); }
-            if (!string.IsNullOrEmpty(product.SeoTitle)) { setClauses.Add("seo_title=@SeoTitle"); parameters.Add("@SeoTitle", product.SeoTitle); }
-            if (!string.IsNullOrEmpty(product.SeoDescription)) { setClauses.Add("seo_description=@SeoDescription"); parameters.Add("@SeoDescription", product.SeoDescription); }
-            if (!string.IsNullOrEmpty(product.Attributes)) { setClauses.Add("attributes=@Attributes"); parameters.Add("@Attributes", product.Attributes); }
-            if (!string.IsNullOrEmpty(product.ImageName)) { setClauses.Add("ImageName=@ImageName"); parameters.Add("@ImageName", product.ImageName); }
+            if (!string.IsNullOrEmpty(product.Sku))
+            {
+                setClauses.Add("sku = @Sku");
+                parameters.Add("@Sku", product.Sku);
+            }
 
+            if (!string.IsNullOrEmpty(product.Name))
+            {
+                setClauses.Add("name = @Name");
+                parameters.Add("@Name", product.Name);
+            }
+
+            if (!string.IsNullOrEmpty(product.Description))
+            {
+                setClauses.Add("description = @Description");
+                parameters.Add("@Description", product.Description);
+            }
+
+            if (product.CategoryId > 0)
+            {
+                setClauses.Add("category_id = @CategoryId");
+                parameters.Add("@CategoryId", product.CategoryId);
+            }
+
+            if (product.BrandId > 0)
+            {
+                setClauses.Add("brand_id = @BrandId");
+                parameters.Add("@BrandId", product.BrandId);
+            }
+
+            if (product.ManufacturerId > 0)
+            {
+                setClauses.Add("manufacturer_id = @ManufacturerId");
+                parameters.Add("@ManufacturerId", product.ManufacturerId);
+            }
+
+            setClauses.Add("rate = @Rate");
+            parameters.Add("@Rate", product.Rate);
+
+            if (!string.IsNullOrEmpty(product.HsCode))
+            {
+                setClauses.Add("hs_code = @HsCode");
+                parameters.Add("@HsCode", product.HsCode);
+            }
+
+            if (!string.IsNullOrEmpty(product.Status))
+            {
+                setClauses.Add("status = @Status");
+                parameters.Add("@Status", product.Status);
+            }
+
+            if (product.IsFeatured.HasValue)
+            {
+                setClauses.Add("is_featured = @IsFeatured");
+                parameters.Add("@IsFeatured", product.IsFeatured);
+            }
+
+            if (!string.IsNullOrEmpty(product.SeoTitle))
+            {
+                setClauses.Add("seo_title = @SeoTitle");
+                parameters.Add("@SeoTitle", product.SeoTitle);
+            }
+
+            if (!string.IsNullOrEmpty(product.SeoDescription))
+            {
+                setClauses.Add("seo_description = @SeoDescription");
+                parameters.Add("@SeoDescription", product.SeoDescription);
+            }
+
+            if (!string.IsNullOrEmpty(product.Attributes))
+            {
+                setClauses.Add("attributes = @Attributes");
+                parameters.Add("@Attributes", product.Attributes);
+            }
+
+            // Always update timestamp
+            setClauses.Add("updated_at = @UpdatedAt");
             parameters.Add("@UpdatedAt", DateTime.UtcNow);
-            setClauses.Add("updated_at=@UpdatedAt");
+
+            parameters.Add("@Id", product.Id);
 
             var sql = $@"
         UPDATE [NepalDistributers].[dbo].[products]
         SET {string.Join(", ", setClauses)}
-        WHERE id=@Id";
-
-            parameters.Add("@Id", product.Id);
+        WHERE id = @Id";
 
             return (await _db.ExecuteAsync(sql, parameters)) > 0;
         }
@@ -412,6 +509,28 @@ FROM [NepalDistributers].[dbo].[Products]
                     : product.Description;
             }
             return Task.CompletedTask;
+        }
+
+        public async Task InsertProductImagesAsync(int productId, List<ProductImageModel> images)
+        {
+            var sql = @"
+        INSERT INTO ProductImages (ProductId, ImageName, IsDefault, CreatedAt)
+        VALUES (@ProductId, @ImageName, @IsDefault, GETUTCDATE())";
+
+            foreach (var image in images)
+            {
+                await _db.ExecuteAsync(sql, new
+                {
+                    ProductId = productId,
+                    ImageName = image.ImageName,
+                    IsDefault = image.IsDefault
+                });
+            }
+        }
+        public async Task DeleteProductImagesByIdsAsync(int productId, List<int> imageIds)
+        {
+            var query = "DELETE FROM ProductImages WHERE ProductId = @ProductId AND Id IN @ImageIds";
+            await _db.ExecuteAsync(query, new { ProductId = productId, ImageIds = imageIds });
         }
     }
 }
