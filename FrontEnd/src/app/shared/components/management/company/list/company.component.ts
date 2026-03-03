@@ -73,14 +73,12 @@ loadCategories() {
   this.loading = true;
   this.CompanyService.getCategories().subscribe({
     next: (res: any) => { // API wrapper
-      debugger;
       this.categories = res || [];
 
       // Flatten for ng-select
       this.nestedCategories = this.flattenCategories(this.categories);
 
       this.loading = false;
-      console.log('Nested Categories:', this.nestedCategories);
     },
     error: (err) => {
       console.error('Failed to load categories:', err);
@@ -152,7 +150,6 @@ flattenCategories(categories: Category[], depth = 0): Category[] {
   }
     openRegisterUser(id: number) {
       
-    this.ui.openUserProfile(id);
     this.ui.openRegisterLink(id);
       //   this.showApproveModal2 = true;
       //  // this.openCompanyProfile(id);
@@ -160,10 +157,8 @@ flattenCategories(categories: Category[], depth = 0): Category[] {
   }
    
   getStaticValuesrole(){
-  debugger;
       this.CompanyService.getStaticValuesrole().subscribe({
        next: (res: any) => { // API wrapper
-      debugger;
       this.StaticValue = res || [];
       },
       error: (err) => {
@@ -257,7 +252,7 @@ openApprovestep1Modal(fg: string){
     });
   }
     openCompanyProfile(companyId: number): void {
-    this.ui.openUserProfile(companyId);
+    this.ui.openCompanyProfile(companyId);
   }
  openUsersList(companyId: number): void {
   // Navigate to the user list page for the given company

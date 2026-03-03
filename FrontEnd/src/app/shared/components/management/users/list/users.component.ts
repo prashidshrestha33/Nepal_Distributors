@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UserService } from '../../../../services/management/user.service';
 import type { User } from '../../../../services/management/user.service';
+import { UiService } from '../../../../../ui.service';
 
 @Component({
   selector: 'app-users',
@@ -23,6 +24,7 @@ export class UsersComponent implements OnInit {
 
   constructor(private userService: UserService,
     private route: ActivatedRoute,
+    private ui: UiService,
     private router: Router) {}
 
   ngOnInit() {
@@ -49,12 +51,9 @@ export class UsersComponent implements OnInit {
 }
 
   loadUsers() {
-    debugger;
     this.loading = true;
-    console.log('Loading users...');
     this.userService.getUsers(this.catalogId||0).subscribe({
       next: (data: User[]) => {
-        console.log('Users loaded:', data);
         this.users = data;
         this.filteredUsers = data;
         this.loading = false;
@@ -80,7 +79,6 @@ export class UsersComponent implements OnInit {
     if (confirm('Are you sure you want to approve this user?')) {
       this.userService.approveUser(id).subscribe({
         next: () => {
-          console.log('User approved successfully');
           this.error = null;
           this.loadUsers();
         },
@@ -96,7 +94,6 @@ export class UsersComponent implements OnInit {
     if (confirm('Are you sure you want to delete this user?')) {
       this.userService.deleteUser(id).subscribe({
         next: () => {
-          console.log('User deleted successfully');
           this.error = null;
           this.loadUsers();
         },
@@ -106,5 +103,9 @@ export class UsersComponent implements OnInit {
         }
       });
     }
+  }
+  openRegisterUser() {
+      
+    this.ui.openRegisterLink(this.catalogId || 0);      
   }
 }

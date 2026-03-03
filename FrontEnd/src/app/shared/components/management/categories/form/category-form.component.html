@@ -1,42 +1,99 @@
-<div class="space-y-6 px-4 md:px-6">
-  <h1 class="text-xl md:text-2xl font-bold text-gray-800">
+<div class="space-y-6 px-4 md:px-6 max-w-3xl mx-auto">
+  <h1 class="text-xl md:text-2xl font-bold text-gray-900">
     Add New Category
   </h1>
 
-  <div class="bg-white rounded-lg shadow p-4 md:p-8">
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+  <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+    <div class="bg-gray-100 rounded-lg shadow p-4 md:p-8">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-7">
 
-      <!-- Category Name -->
-      <div>
-        <label class="block text-xs md:text-sm font-semibold text-gray-700 mb-2">
-          Category Name *
-        </label>
-        <input
-          type="text"
-          formControlName="name"
-          placeholder="Enter category name"
-          class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+        <!-- Category Name -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Category Name <span class="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            formControlName="name"
+            placeholder="e.g. Electronics, Clothing, Home & Kitchen"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-800 placeholder-gray-400"
+          />
+          <div *ngIf="isFieldInvalid('name')" class="mt-1.5 text-red-600 text-xs">
+            Category name is required
+          </div>
+        </div>
 
-        <span *ngIf="isFieldInvalid('name')" class="text-red-500 text-xs mt-1">
-          Category name is required
-        </span>
-      </div>
+        <!-- Slug -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Slug <span class="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            formControlName="slug"
+            readonly
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+          />
+          <p class="mt-1.5 text-xs text-gray-500">
+            Auto-generated from name (e.g. categories/smartphones)
+          </p>
+        </div>    
 
-      <!-- Slug -->
-      <div>
-        <label class="block text-xs md:text-sm font-semibold text-gray-700 mb-2">
-          Slug *
-        </label>
-        <input
-          type="text"
-          formControlName="slug"
-          readonly
-          class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-sm">
+        <!-- Category Image - Modern Drag & Drop -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Category Image <span class="text-red-500">*</span>
+          </label>
 
-        <p class="text-gray-500 text-xs mt-1">
-          Auto-generated as: categories/category-name
-        </p>
-      </div>
+          <div 
+            class="relative flex items-center justify-center h-48 md:h-56 w-full border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 bg-gray-50/70 border-gray-300 hover:border-blue-500 hover:bg-blue-50/50 hover:shadow-sm"
+            (click)="fileInput.click()"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)"
+            [class.border-blue-500]="isDragging"
+            [class.bg-blue-50/70]="isDragging"
+            [class.shadow-md]="isDragging"
+          >
+            <!-- Preview when image selected -->
+            <ng-container *ngIf="imageUrl; else uploadPlaceholder">
+              <img 
+                [src]="imageUrl" 
+                alt="Category image preview" 
+                class="absolute inset-0 h-full w-full object-cover rounded-xl"
+              />
+              <button 
+                type="button"
+                (click)="removeImage($event); $event.stopPropagation()"
+                class="absolute top-3 right-3 bg-black/70 hover:bg-black/90 text-white rounded-full h-8 w-8 flex items-center justify-center transition-colors shadow-lg"
+              >
+                ✕
+              </button>
+            </ng-container>
+
+            <!-- Placeholder / drag area -->
+            <ng-template #uploadPlaceholder>
+              <div class="text-center pointer-events-none select-none px-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-14 w-14 text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <p class="text-base font-medium text-gray-700 mb-1">
+                  <span class="text-blue-600">Click to upload</span> or drag and drop
+                </p>
+                <p class="text-sm text-gray-500">
+                  PNG, JPG, WEBP — max 5MB recommended
+                </p>
+              </div>
+            </ng-template>
+
+            <input 
+              #fileInput
+              type="file" 
+              accept="image/*" 
+              class="hidden" 
+              (change)="onImageSelected($event)"
+            />
+          </div>
 
       <!-- Parent Category -->
 <div>
@@ -51,23 +108,41 @@
         {{ error }}
       </div>
 
-      <!-- Buttons -->
-      <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
-        <button
-          type="submit"
-          [disabled]="form.invalid || loading"
-          class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg disabled:opacity-50">
-          {{ loading ? 'Saving...' : 'Save Category' }}
-        </button>
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 pt-4 border-t border-gray-100 " style="justify-content: flex-end;">
+          <button
+            type="button"
+            (click)="goBack()"
+            class="bg-gray-500 hover:bg-gray-600 text-white font-bold px-6 py-2 rounded-lg shadow-md transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            [disabled]="form.invalid || loading"
+            class="px-6 py-2 rounded-lg font-bold shadow-md transition
+                 bg-blue-600 text-white
+                 hover:bg-blue-700
+                 disabled:bg-gray-400
+                 disabled:cursor-not-allowed
+                 disabled:hover:bg-gray-400"
+          >
+            {{ loading ? 'Saving...' : 'Save Category' }}
+          </button>
+        </div>
 
-        <button
-          type="button"
-          (click)="goBack()"
-          class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-lg">
-          Cancel
-        </button>
-      </div>
-
-    </form>
+      </form>
+    </div>
   </div>
 </div>
+
+<!-- Optional subtle animation -->
+<style>
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fadeIn {
+    animation: fadeIn 0.35s ease-out forwards;
+  }
+</style>

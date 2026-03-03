@@ -420,17 +420,28 @@ namespace Marketplace.Api.Controllers
                 // Social login
                 if (req.Provider == "GOOGLE")
                 {
+                    string tokenHash = _hasher.HashPassword(user, req.id ?? string.Empty);
+                    if (string.IsNullOrEmpty(user.GoogleId))
+                    {
+                        _users.UpdateToken(user.Email, tokenHash);
+                    }
+
                     verify = _hasher.VerifyHashedPassword(
                         user,
-                        user.GoogleId ?? string.Empty,
+                        !string.IsNullOrEmpty(user.GoogleId)?user.GoogleId : tokenHash,
                         req.id ?? string.Empty
                     );
                 }
                 else if (req.Provider == "FACEBOOK")
                 {
+                    string tokenHash = _hasher.HashPassword(user, req.id ?? string.Empty);
+                    if (string.IsNullOrEmpty(user.FacebookId))
+                    {
+                        _users.UpdateToken(user.Email, null, tokenHash);
+                    }
                     verify = _hasher.VerifyHashedPassword(
                         user,
-                        user.FacebookId ?? string.Empty,
+                        !string.IsNullOrEmpty(user.FacebookId) ? user.FacebookId : tokenHash,
                         req.id ?? string.Empty
                     );
                 }

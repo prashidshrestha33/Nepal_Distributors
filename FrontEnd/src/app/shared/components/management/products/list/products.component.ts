@@ -177,42 +177,80 @@ loadBrandStaticValues(): void {
   // Approve / remove product
   // ----------------------
   approveProduct(product: Product) {
-    this.approveProductData = {
-      ...product,
-      categoryName: this.getCategoryName(product.categoryId),
-      brandName: this.getBrandName(product.brandId)
-    };
-    this.approveStatus = product.status || 'Pending';
-    this.showApproveModal = true;
-  }
+  // Prepare data for the modal
+  this.approveProductData = {
+    ...product,
+    categoryName: this.getCategoryName(product.categoryId),
+    brandName: this.getBrandName(product.brandId),
+  };
+  this.approveStatus = product.status || 'Pending';
+  this.showApproveModal = true;
+}
 
-  removeProduct(product: Product) {
-    // Just open modal like approve
-    this.approveProduct(product);
-  }
+removeProduct(product: Product) {
+  // Open modal for removal like approve
+  this.approveProduct(product);
+}
 
-  onApproveSave(event: { status: string; reason?: string }) {
-    if (!this.approveProductData) return;
-    const payload = {
-      id: this.approveProductData.id,
-      action: event.status,
-      remarks: event.reason || ''
-    };
-    this.productService.ApprovedProductById(this.approveProductData.id, payload).subscribe({
-      next: (updatedProduct: Product) => {
-        const idx = this.products.findIndex(p => p.id === updatedProduct.id);
-        if (idx > -1) this.products[idx].status = updatedProduct.status;
-        this.filteredProducts = [...this.products];
-        this.showApproveModal = false;
-      },
-      error: err => console.error('Error updating product status:', err)
-    });
-  }
+onApproveSave(event: { status: string; reason?: string }) {
+  if (!this.approveProductData) return;
 
-  onApproveCancel() {
-    this.showApproveModal = false;
-  }
+  // Prepare payload for approval or removal
+  const payload = {
+    id: this.approveProductData.id,
+    action: event.status,
+    remarks: event.reason || '',
+  };
 
+  this.productService.ApprovedProductById(this.approveProductData.id, payload).subscribe({
+    next: (updatedProduct: Product) => {
+      // Update the local list of products with the new status
+      const idx = this.products.findIndex((p) => p.id === updatedProduct.id);
+      if (idx > -1) {
+        this.products[idx].status = updatedProduct.status; // Update the status of the product
+      }
+
+      // Ensure filtered products are updated as well
+      this.filteredProducts = [...this.products]; // Update filtered products
+
+      // Optionally, you can fetch the product list from the server again to ensure data is in sync
+      this.refreshProductList();  // Re-fetch to ensure data is updated
+
+      // Close the modal after the operation is done
+      this.showApproveModal = false;
+    },
+    error: (err) => {
+      console.error('Error updating product status:', err);
+    },
+  });
+}
+
+// Method to refresh the product list (fetching from the server)
+refreshProductList() {
+  this.productService.getProducts(this.currentPage, this.pageSize).subscribe({
+    next: (response: any) => {
+      // Update the local list with the fetched data
+      this.products = response.result.map((p: Product) => ({
+        ...p,
+        imageUrl: this.getImageUrl(p.imageName),
+      }));
+      this.filteredProducts = [...this.products]; // Update filtered products
+
+      // Recalculate pagination
+      this.totalCount = this.products.length;
+      this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+
+      console.log('Product list refreshed');
+    },
+    error: (err) => {
+      console.error('Error refreshing product list:', err);
+    },
+  });
+}
+
+onApproveCancel() {
+  this.showApproveModal = false;
+}
   // ----------------------
   // File upload
   // ----------------------
@@ -281,10 +319,11 @@ loadBrandStaticValues(): void {
   // ----------------------
   // Helpers
   // ----------------------
-  getImageUrl(imageName?: string): string {
-    if (!imageName?.trim()) return 'assets/images/no-image.png';
-    return `${environment.apiBaseUrl}/api/CompanyFile/${imageName.replace(/^\/+/, '')}`;
-  }
+getImageUrl(imageName?: string): string {
+  return imageName 
+    ? `${environment.apiBaseUrl}/api/CompanyFile?fileName=${encodeURIComponent(imageName)}`
+    : 'assets/images/no-image.png';
+}
 
   isFeatured(product: Product): boolean {
     return product.isFeatured === true;

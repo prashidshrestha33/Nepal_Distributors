@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -32,5 +33,10 @@ namespace Marketplace.Model.Models
         public DateTime? UpdatedAt { get; set; }
         public DateTime? ApproveFg { get; set; }
         public DateTime? ApproveTs { get; set; }
+        public List<IFormFile>? ImageFiles { get; set; }
+        public List<ProductImageModel> Images { get; set; } = new();
+        // New property to accept deleted image IDs (if any)
+        public string? ImageIdsToDelete { get; set; }
+
     }
 }

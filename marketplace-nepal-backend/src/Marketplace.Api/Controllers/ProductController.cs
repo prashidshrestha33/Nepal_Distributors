@@ -4,6 +4,9 @@ using Marketplace.Api.Services.Helper;
 using Marketplace.Model.Models;
 using Marketplace.Models;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Security.Claims;
 namespace Marketplace.Api.Controllers
@@ -96,112 +99,141 @@ namespace Marketplace.Api.Controllers
         }
 
         [HttpPost("AddProduct")]
-        public async Task<ActionResult<ProductModels>> AddProducts([FromForm] ProductModels dto)
+        public async Task<IActionResult> AddProducts([FromForm] ProductModels dto)
         {
             var companyIdClaim = User.FindFirst("company_id");
-            if (companyIdClaim == null || string.IsNullOrEmpty(companyIdClaim.Value))
-                return Unauthorized("Company information not found for this user");
+            if (companyIdClaim == null)
+                return Unauthorized();
 
             int companyId = int.Parse(companyIdClaim.Value);
-            string userEmail = User?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+            string userEmail = User?.Claims
+                .FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
 
-            string imageFileName = null;
-            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+            // 🔹 Create product first
+            ProductModel product = new ProductModel
+            {
+                Name = dto.Name,
+                Description = dto.Description,
+                CategoryId = dto.CategoryId,
+                BrandId = dto.BrandId,
+                ManufacturerId = dto.ManufacturerId,
+                Rate = dto.Rate,
+                CompanyId = companyId,
+                CreatedBy = userEmail,
+                Status = "Pending"
+            };
+
+            product.Id = await repositorysitory.CreateAsync(product);
+
+            // 🔹 Handle Multiple Images
+            try
+            {
+                if (dto.ImageFiles != null && dto.ImageFiles.Count > 0)
+                {
+                    var uploads = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
+
+                    if (!Directory.Exists(uploads))
+                        Directory.CreateDirectory(uploads);
+
+                    var imageList = new List<ProductImageModel>();
+
+                    for (int i = 0; i < dto.ImageFiles.Count; i++)
+                    {
+                        var file = dto.ImageFiles[i];
+
+                        if (file.Length <= 0) continue;
+
+                        var fileName = $"{Guid.NewGuid()}_{file.FileName}";
+                        var filePath = Path.Combine(uploads, fileName);
+
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await file.CopyToAsync(stream);
+                        }
+
+                        imageList.Add(new ProductImageModel
+                        {
+                            ProductId = product.Id,
+                            ImageName = fileName,
+                            IsDefault = dto.DefaultImageIndex == i
+                        });
+                    }
+
+                    await repositorysitory.InsertProductImagesAsync(product.Id, imageList);
+                }
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+
+            return Ok(product);
+        }
+
+        [HttpPost("{id}")]
+        public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductModels dto)
+        {
+            var product = await repositorysitory.GetByIdAsync(id);
+            if (product == null) return NotFound();
+
+            product.Name = dto.Name;
+            product.Description = dto.Description;
+            product.CategoryId = dto.CategoryId;
+            product.BrandId = dto.BrandId;
+            product.ManufacturerId = dto.ManufacturerId;
+            product.Rate = dto.Rate;
+            product.UpdatedAt = DateTime.UtcNow;
+
+            await repositorysitory.UpdateAsync(product);
+
+            // 🔹 Handle image deletions if any
+            if (!string.IsNullOrEmpty(dto.ImageIdsToDelete))
+            {
+                var imageIdsToDelete = JsonConvert.DeserializeObject<List<int>>(dto.ImageIdsToDelete);
+                if (imageIdsToDelete.Count > 0)
+                {
+                    // Delete the images from the database
+                    await repositorysitory.DeleteProductImagesByIdsAsync(id, imageIdsToDelete);
+                }
+            }
+
+            // 🔹 Handle new image uploads if any
+            if (dto.ImageFiles != null && dto.ImageFiles.Count > 0)
             {
                 var uploads = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
                 if (!Directory.Exists(uploads))
                     Directory.CreateDirectory(uploads);
 
-                imageFileName = $"{Guid.NewGuid()}_{dto.ImageFile.FileName}";
-                var filePath = Path.Combine(uploads, imageFileName);
-                using var stream = new FileStream(filePath, FileMode.Create);
-                await dto.ImageFile.CopyToAsync(stream);
-            }
+                var imageList = new List<ProductImageModel>();
 
-            ProductModel product = moduleToCommon.Map<ProductModel>(dto);
-            product.ImageName = imageFileName;
-            product.CompanyId = companyId;
-            product.CreatedBy = userEmail;
-            product.Status = "Pending";
-
-            try
-            {
-                product.Id = await repositorysitory.CreateAsync(product);
-            }
-            catch (Exception ex)
-            {
-                // Check if it's duplicate
-                if (ex.Message.Contains("Product already exists"))
-                    return Conflict(new { message = ex.Message });
-
-                return BadRequest(new { message = $"Error creating product: {ex.Message}" });
-            }
-
-            return CreatedAtAction(nameof(Get), new { id = product.Id }, product);
-        }
-
-
-        [HttpPost("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductModels dto)
-        {
-            // Fetch the existing product from the repository
-            var product = await repositorysitory.GetByIdAsync(id);
-            if (product == null) return NotFound(); // If the product doesn't exist, return NotFound
-
-            // Process the new image if provided
-            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
-            {
-                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
-                if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads); // Create directory if it doesn't exist
-
-                // Generate a new filename for the image
-                var imageFileName = $"{Guid.NewGuid()}_{dto.ImageFile.FileName}";
-                var filePath = Path.Combine(uploads, imageFileName);
-
-                // Save the file to the server
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                for (int i = 0; i < dto.ImageFiles.Count; i++)
                 {
-                    await dto.ImageFile.CopyToAsync(stream);
+                    var file = dto.ImageFiles[i];
+                    if (file.Length <= 0) continue;
+
+                    var fileName = $"{Guid.NewGuid()}_{file.FileName}";
+                    var filePath = Path.Combine(uploads, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+
+                    imageList.Add(new ProductImageModel
+                    {
+                        ProductId = id,
+                        ImageName = fileName,
+                        IsDefault = dto.DefaultImageIndex == i
+                    });
                 }
 
-                // Update the ImageName property in the product object
-                product.ImageName = imageFileName;
+                // Insert new images into the database
+                await repositorysitory.InsertProductImagesAsync(id, imageList);
             }
 
-            // Update non-nullable fields (Sku, Name, Description)
-            if (!string.IsNullOrEmpty(dto.Sku)) product.Sku = dto.Sku;
-            if (!string.IsNullOrEmpty(dto.Name)) product.Name = dto.Name;
-            if (!string.IsNullOrEmpty(dto.Description)) product.Description = dto.Description;
-
-            // Update nullable fields if values are provided (Rate, ManufacturerId, BrandId, CategoryId)
-            product.Rate = dto.Rate;
-            product.ManufacturerId = dto.ManufacturerId;
-            product.BrandId = dto.BrandId;
-            product.CategoryId = dto.CategoryId;
-
-            // Update optional fields (Status, IsFeatured, HsCode, etc.)
-            if (!string.IsNullOrEmpty(dto.Status)) product.Status = dto.Status;
-            if (dto.IsFeatured.HasValue) product.IsFeatured = dto.IsFeatured.Value;
-            if (!string.IsNullOrEmpty(dto.HsCode)) product.HsCode = dto.HsCode;
-            if (!string.IsNullOrEmpty(dto.SeoTitle)) product.SeoTitle = dto.SeoTitle;
-            if (!string.IsNullOrEmpty(dto.SeoDescription)) product.SeoDescription = dto.SeoDescription;
-            if (!string.IsNullOrEmpty(dto.Attributes)) product.Attributes = dto.Attributes;
-
-            // Set the update timestamp
-            product.UpdatedAt = DateTime.UtcNow;
-
-            // Call the UpdateAsync method to update the product in the repository
-            var updateSuccess = await repositorysitory.UpdateAsync(product);
-            if (!updateSuccess) return StatusCode(500, "Failed to update product.");
-
-            // Optionally, fetch the updated product to return as a response
-            product = await repositorysitory.GetByIdAsync(id);
-
-            // Return the updated product object as response
             return Ok(product);
         }
-
-
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

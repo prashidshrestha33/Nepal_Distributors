@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiGatewayService } from '../api-gateway.service';
+import { ApiResponse } from '../../models/api-response.model';
 
 // ============================================
 // INTERFACES
@@ -16,6 +17,13 @@ export interface Category {
   children?: Category[];
   createdAt?: string;
   updatedAt?: string;
+}
+export interface ProductImage {
+  id: number;
+  productId: number;
+  imageName: string;
+  isDefault: boolean;
+  createdAt: string;
 }
 export interface Product {
   id: number;
@@ -41,6 +49,7 @@ export interface Product {
   approveTs?: Date;
   imageUrl?: string;
   imageName?: string;
+  images?: ProductImage[];
 }
 export interface ProductResponse {
   data: Product[];
@@ -140,13 +149,13 @@ export class CategoryService {
     return this.getTreeCategories();
   }
 
-  createCategory(category: Category): Observable<Category> {
-    return this.apiGateway.postWithResult<Category>(
-      '/api/Product/AddCatagory',
-      category,
-      { requiresAuth: true }
-    );
-  }
+createCategory(formData: FormData): Observable<Category> {
+  return this.apiGateway.postWithResult<Category>(
+    '/api/Product/AddCatagory',  // Your backend endpoint
+    formData,  // Send FormData instead of the regular Category object
+    { requiresAuth: true }  // Add any necessary headers
+  );
+}
 
   moveCategory(categoryId: number, newParentId:  number): Observable<Category> {
     return this.apiGateway.postWithResult<Category>(
@@ -191,8 +200,9 @@ SearchProducts(keyword:string,page: number = 1, pageSize: number = 20): Observab
     return this.apiGateway.get<Product>(
       `/api/Product/Update/${id}`,
       { requiresAuth: true }
-    );
-  }
+    )
+    .pipe(map(res => res.result));
+}
 ApprovedProductById(id: number, payload: ApproveProduct): Observable<Product> {
   return this.apiGateway.post<Product>(
     `api/Product/ApproveProduct/${id}`,
@@ -200,39 +210,36 @@ ApprovedProductById(id: number, payload: ApproveProduct): Observable<Product> {
   );
 }
 
-  createProduct(product: Product, image?: File): Observable<Product> {
-    
-    const formData = this.buildProductFormData(product, image);
-    for (let pair of formData.entries()) {
-    }
-    return this.apiGateway.post<Product>(
-      '/api/Product/AddProduct',
-      formData,
-      { 
-        requiresAuth: true,
-        headers: {}
-      }
-    );
-  }
-  updateProduct(id:  number, product: Product, image?: File): Observable<Product> {
-    const formData = this.buildProductFormData(product, image);
-    return this.apiGateway.post<Product>(
-      `/api/Product/${id}`,
-      formData,
-      { 
-        requiresAuth: true,
-        headers: {}
-      }
-    );
-  }
+  createProduct(product: Product, images?: { file: File, isDefault: boolean }[]): Observable<Product> {
+    const formData = this.buildProductFormData(product, images);
+  return this.apiGateway.post<Product>(
+    '/api/Product/AddProduct',
+    formData,
+    { requiresAuth: true, headers: {} }
+  );
+}
 
+updateProduct(id: number, product: Product, images?: { file: File, isDefault: boolean }[]): Observable<Product> {
+  const formData = this.buildProductFormData(product, images);
+  return this.apiGateway.post<Product>(
+    `/api/Product/${id}`,
+    formData,
+    { requiresAuth: true, headers: {} }
+  );
+}
 
-  private buildProductFormData(product: Product, imageFile?: File): FormData { 
+  private buildProductFormData(
+  product: Product,
+  images?: { file: File; isDefault: boolean; id?: number }[], 
+  deletedImageIds: number[] = []
+): FormData {
   const formData = new FormData();
-  formData.append('Sku', (product.sku ?? 0).toString());
+
+  // ------------------- Product Fields -------------------
+  formData.append('Sku', product.sku ?? '');
   formData.append('Name', product.name ?? '');
   formData.append('Description', product.description ?? '');
-  formData.append('ShortDescription', (product.shortDescription ?? 0).toString());
+  formData.append('ShortDescription', product.shortDescription ?? '');
   formData.append('CategoryId', (product.categoryId ?? 0).toString());
   formData.append('BrandId', (product.brandId ?? 0).toString());
   formData.append('ManufacturerId', (product.manufacturerId ?? 0).toString());
@@ -242,20 +249,43 @@ ApprovedProductById(id: number, payload: ApproveProduct): Observable<Product> {
   formData.append('IsFeatured', product.isFeatured ? 'true' : 'false');
   formData.append('SeoTitle', product.seoTitle ?? '');
   formData.append('SeoDescription', product.seoDescription ?? '');
-  formData.append('Attributes', (product.attributes ?? 0).toString());
+  formData.append('Attributes', product.attributes ?? '');
   formData.append('CreatedBy', product.createdBy ?? '');
 
-  // Append file if exists
-  if (imageFile) {
-    formData.append('ImageFile', imageFile, (imageFile as File).name);
-  } else if (typeof product.imageFile === 'string') {
-    formData.append('ImageFile', product.imageFile);
+  // ------------------- Handle Image Deletions -------------------
+  if (deletedImageIds.length > 0) {
+    formData.append('ImageIdsToDelete', JSON.stringify(deletedImageIds)); // Serialize the array to JSON string
   }
+
+  // ------------------- Handle Image Uploads -------------------
+  if (images && images.length > 0) {
+    let defaultIndex = 0;
+
+    images.forEach((img, index) => {
+      if (img.file) {
+        formData.append('ImageFiles', img.file); // append new image files
+      }
+
+      if (img.isDefault) {
+        defaultIndex = index; // set default image index
+      }
+
+      if (img.id) {
+        formData.append('ExistingImageIds', img.id.toString()); // append existing image IDs
+      }
+    });
+
+    formData.append('DefaultImageIndex', defaultIndex.toString()); // append default image index
+  }
+
+  // Log the FormData content manually
+  console.log('FormData contents:');
+  formData.forEach((value, key) => {
+    console.log(key, value);
+  });
 
   return formData;
 }
-
-  
     approveProduct(id:  number, product: Product): Observable<Product> {
     const formData = this.buildProductFormData(product);
     return this.apiGateway.put<Product>(

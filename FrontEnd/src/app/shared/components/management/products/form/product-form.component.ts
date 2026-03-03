@@ -35,6 +35,12 @@ export class ProductFormComponent implements OnInit {
   // Image
   productImage?: File;
   imagePreview: string | ArrayBuffer | null = null;
+  productImages: {
+  file: File | null;
+  previewUrl: string;
+  isDefault: boolean;
+}[] = [];
+
 
   // Dropdown visibility
   showBrandMenu = false;
@@ -162,16 +168,29 @@ export class ProductFormComponent implements OnInit {
     return result;
   }
 
-  loadProductForEdit(id: number) {
+loadProductForEdit(id: number) {
   this.loading = true;
   this.productService.getProductById(id).subscribe({
     next: res => {
       const product: Product = (res as any)?.result ?? res;
-      this.form.patchValue(product); 
-      if (product?.imageName) {
-        this.imagePreview = this.getImageUrl(product.imageName);
+      this.form.patchValue(product); // Fill the form with product data
+debugger;
+      // Handle the images
+      if (product?.images && product.images.length > 0) {
+        // Set the default image (assuming one of the images has isDefault set to true)
+        const defaultImage = product.images.find(img => img.isDefault);
+        if (defaultImage) {
+          this.imagePreview = this.getImageUrl(defaultImage.imageName);
+        }
+debugger;
+        // Map through the images and display them
+        this.productImages = product.images.map((img, index) => ({
+          file: null,  // You might need to handle actual file uploads later
+          previewUrl: this.getImageUrl(img.imageName),
+          isDefault: img.isDefault,  // Use the isDefault flag to mark the default image
+        }));
       }
-      const manufactureName = this.getManufactureName(product.manufacturerId);
+
       this.loading = false;
     },
     error: () => {
@@ -180,10 +199,12 @@ export class ProductFormComponent implements OnInit {
     }
   });
 }
-
-  getImageUrl(imageName?: string): string {
-    return imageName ? `${environment.apiBaseUrl}/api/CompanyFile/${imageName}` : 'assets/images/no-image.png';
-  }
+getImageUrl(imageName?: string): string {
+  debugger;
+  return imageName 
+    ? `${environment.apiBaseUrl}/api/CompanyFile?fileName=${encodeURIComponent(imageName)}`
+    : 'assets/images/no-image.png';
+}
 
   // ------------------- Dropdowns -------------------
 
@@ -229,23 +250,20 @@ selectManufacture(m: StaticValue) {
 
   // ------------------- Image -------------------
 
-  onProductImageChange(event: any) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) { alert('Only image files are allowed'); return; }
+onProductImageChange(event: any) {
+  const file = event.target.files?.[0];
+  if (!file) return;
 
-    this.productImage = file;
-    const reader = new FileReader();
-    reader.onload = () => this.imagePreview = reader.result;
-    reader.readAsDataURL(file);
+  if (!file.type.startsWith('image/')) {
+    alert('Only image files are allowed');
+    return;
   }
 
-  removeImage() {
-    this.productImage = undefined;
-    this.imagePreview = null;
-    if (this.fileInput?.nativeElement) this.fileInput.nativeElement.value = '';
-    this.form.get('productImage')?.setValue(null);
-  }
+  this.productImage = file;
+  const reader = new FileReader();
+  reader.onload = () => this.imagePreview = reader.result;
+  reader.readAsDataURL(file);
+}
 
   onDragOver(event: DragEvent) { event.preventDefault(); }
   onDragLeave(event: DragEvent) { event.preventDefault(); }
@@ -262,30 +280,79 @@ selectManufacture(m: StaticValue) {
   }
 
   // ------------------- Submit -------------------
-
-  onSubmit() {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-
-    const product: Product = { ...this.form.getRawValue(), isFeatured: true };
-    this.loading = true;
-    const req$ = this.editMode && this.productId
-      ? this.productService.updateProduct(this.productId, product, this.productImage)
-      : this.productService.createProduct(product, this.productImage);
-
-    req$.subscribe({
-      next: () => {
-        this.loading = false;
-        this.showSnackbar(this.editMode ? 'Product updated successfully!' : 'Product added successfully!', true);
-        this.router.navigate(['/management/products']);
-      },
-      error: err => {
-        this.loading = false;
-        this.showSnackbar('Product updated failed', false);
-        console.error(err);
-      }
-    });
+onSubmit() {
+  if (this.form.invalid) {
+    this.form.markAllAsTouched();
+    return;
   }
 
+  const product: Product = { ...this.form.getRawValue(), isFeatured: true };
+  this.loading = true;
+
+  const imagesToSend = this.productImages
+    .filter(img => img.file !== null)
+    .map(img => ({ file: img.file as File, isDefault: img.isDefault }));
+
+  const req$ = this.editMode && this.productId
+    ? this.productService.updateProduct(this.productId, product, imagesToSend)
+    : this.productService.createProduct(product, imagesToSend);
+
+  req$.subscribe({
+    next: () => {
+      this.loading = false;
+      console.log("Update successful!"); // Log message to confirm success
+      this.showSnackbar(
+        this.editMode ? 'Product updated successfully!' : 'Product added successfully!',
+        true // success = true
+      );
+      this.router.navigate(['/management/products']);
+    },
+    error: err => {
+      this.loading = false;
+      console.error("Error during update:", err); // Log the error to help debug
+      this.showSnackbar('Operation failed', false); // error message
+    }
+  });
+}
+onMultipleImageChange(event: any) {
+  const files: FileList = event.target.files;
+  if (!files) return;
+
+  for (let i = 0; i < files.length; i++) {
+    if (this.productImages.length >= 8) break;
+
+    const file = files[i];
+    if (!file.type.startsWith('image/')) continue; // Check if the file is an image
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.productImages.push({
+        file: file,
+        previewUrl: reader.result as string, // Set the preview URL
+        isDefault: this.productImages.length === 0 // Mark the first image as default
+      });
+    };
+
+    reader.readAsDataURL(file); // Convert the image to a base64 string
+  }
+
+  event.target.value = ''; // Reset the file input value
+}
+
+setDefaultImage(index: number) {
+  this.productImages.forEach((img, i) => {
+    img.isDefault = i === index; // Mark the selected image as the default
+  });
+}
+
+removeImage(index: number) {
+  const wasDefault = this.productImages[index].isDefault;
+  this.productImages.splice(index, 1);
+
+  if (wasDefault && this.productImages.length > 0) {
+    this.productImages[0].isDefault = true; // Set the first image as default if needed
+  }
+}
   goBack() { this.router.navigate(['/management/products']); }
 
   isFieldInvalid(fieldName: string): boolean {
