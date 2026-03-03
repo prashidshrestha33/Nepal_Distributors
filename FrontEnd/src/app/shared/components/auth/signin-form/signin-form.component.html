@@ -66,12 +66,12 @@
       </div>
     </div>
 
-    <!-- Error -->
+    <!-- Error
     @if (errorMessage) {
     <div class="p-3 mb-6 text-sm text-red-600 bg-red-50 rounded-lg">
       {{ errorMessage }}
     </div>
-    }
+    } -->
 
     <!-- Form -->
     <form [formGroup]="loginForm" (ngSubmit)="SendOTP()" class="space-y-6">
@@ -86,11 +86,12 @@
         />
 
         @if (email?.invalid && email?.touched) {
-        <p class="mt-1 text-sm text-red-600">
-          @if (email?.errors?.['required']) { Email is required }
-          @if (email?.errors?.['email']) { Please enter a valid email }
-        </p>
-        }
+  <p class="mt-1 text-sm text-red-600">
+    @if (email?.errors?.['required']) { Email is required }
+    @if (email?.errors?.['email']) {  }
+    @if (email?.errors?.['pattern']) { Please enter a valid email address }
+  </p>
+}
       </div>
 
       <button

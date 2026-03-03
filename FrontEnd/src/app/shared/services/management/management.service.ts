@@ -197,7 +197,7 @@ SearchProducts(keyword:string,page: number = 1, pageSize: number = 20): Observab
     );
   }
   getProductById(id: number): Observable<Product> {
-    return this.apiGateway.get<Product>(
+    return this.apiGateway.get<any>(
       `/api/Product/Update/${id}`,
       { requiresAuth: true }
     )

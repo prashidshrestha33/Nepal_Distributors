@@ -27,13 +27,16 @@ namespace Marketplace.Model.Models
         public string? SeoTitle { get; set; }
         public string? SeoDescription { get; set; }
         public string? Attributes { get; set; }
-        public string? ImageName { get; set; }
         public string? CreatedBy { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public DateTime? ApproveFg { get; set; }
         public DateTime? ApproveTs { get; set; }
+        public IFormFile? ImageFile { get; set; }
         public List<IFormFile>? ImageFiles { get; set; }
+
+        // Default index
+        public int? DefaultImageIndex { get; set; }
         public List<ProductImageModel> Images { get; set; } = new();
         // New property to accept deleted image IDs (if any)
         public string? ImageIdsToDelete { get; set; }

@@ -190,9 +190,15 @@
           </td>
           <!-- Image -->
           <td class="px-6 py-3 text-sm">
-            <img *ngIf="product.imageName" [src]="getImageUrl(product.imageName)" alt="Product Image" class="w-12 h-12 object-cover rounded-lg" />
-            <span *ngIf="!product.imageName" class="text-gray-500">No Image</span>
-          </td>
+  <img 
+    *ngIf="getDefaultImage(product) as img"
+    [src]="getImageUrl(img.imageName)"
+    class="w-12 h-12 object-cover rounded-lg"
+  />
+  <span *ngIf="!getDefaultImage(product)" class="text-gray-500">
+    No Image
+  </span>
+</td>
 
           <!-- ACTIONS -->
           <td class="px-6 py-3">

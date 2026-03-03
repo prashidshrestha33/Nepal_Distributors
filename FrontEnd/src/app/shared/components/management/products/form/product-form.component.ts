@@ -174,7 +174,7 @@ loadProductForEdit(id: number) {
     next: res => {
       const product: Product = (res as any)?.result ?? res;
       this.form.patchValue(product); // Fill the form with product data
-debugger;
+      debugger;
       // Handle the images
       if (product?.images && product.images.length > 0) {
         // Set the default image (assuming one of the images has isDefault set to true)
@@ -182,7 +182,6 @@ debugger;
         if (defaultImage) {
           this.imagePreview = this.getImageUrl(defaultImage.imageName);
         }
-debugger;
         // Map through the images and display them
         this.productImages = product.images.map((img, index) => ({
           file: null,  // You might need to handle actual file uploads later
@@ -200,7 +199,6 @@ debugger;
   });
 }
 getImageUrl(imageName?: string): string {
-  debugger;
   return imageName 
     ? `${environment.apiBaseUrl}/api/CompanyFile?fileName=${encodeURIComponent(imageName)}`
     : 'assets/images/no-image.png';

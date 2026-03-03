@@ -342,6 +342,10 @@ getImageUrl(imageName?: string): string {
   viewProduct(product: Product) {
     if (product?.id) this.router.navigate(['/products', product.id]);
   }
+  getDefaultImage(product: Product) {
+  return product.images?.find(i => i.isDefault) 
+      || product.images?.[0];
+}
 
   goToEditProduct(id: number) {
     this.router.navigate(['/management/products/edit', id]);

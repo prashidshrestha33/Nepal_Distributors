@@ -14,44 +14,61 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
 
         public async Task<IEnumerable<ProductModel>> GetAllAsync()
         {
-            var sql = @"SELECT 
-    p.id AS Id,
-    p.sku AS Sku,
-    p.name AS Name,
-    p.description AS Description,
-    p.short_description AS ShortDescription,
-    p.category_id AS CategoryId,
-    p.company_id AS CompanyId,
-    p.rate AS Rate,
-    p.brand_id AS BrandId,
-    p.manufacturer_id AS ManufacturerId,
-    p.hs_code AS HsCode,
-    p.status AS Status,
-    p.is_featured AS IsFeatured,
-    p.seo_title AS SeoTitle,
-    p.seo_description AS SeoDescription,
-    p.attributes AS Attributes,
-    p.created_by AS CreatedBy,
-    p.created_at AS CreatedAt,
+            var sql = @"
+    SELECT 
+        p.Id,
+        p.Sku,
+        p.Name,
+        p.Description,
+        p.Short_Description AS ShortDescription,
+        p.Category_Id AS CategoryId,
+        p.Company_Id AS CompanyId,
+        p.Rate,
+        p.Brand_Id AS BrandId,
+        p.Manufacturer_Id AS ManufacturerId,
+        p.Hs_Code AS HsCode,
+        p.Status,
+        p.Is_Featured AS IsFeatured,
+        p.Seo_Title AS SeoTitle,
+        p.Seo_Description AS SeoDescription,
+        p.Attributes,
+        p.Created_By AS CreatedBy,
+        p.Created_At AS CreatedAt,
 
-    pi.ProductId,
-    pi.ImageName,
-    pi.IsDefault,
-    pi.CreatedAt AS ImageCreatedAt
+        pi.Id,
+        pi.ProductId,
+        pi.ImageName,
+        pi.IsDefault,
+        pi.CreatedAt
 
-FROM Products p
-LEFT JOIN (
-    SELECT DISTINCT 
-        ProductId,
-        -- Use a subquery to prioritize the default image
-        FIRST_VALUE(Id) OVER (PARTITION BY ProductId ORDER BY IsDefault DESC, CreatedAt ASC) AS ImageId,
-        FIRST_VALUE(ImageName) OVER (PARTITION BY ProductId ORDER BY IsDefault DESC, CreatedAt ASC) AS ImageName,
-        FIRST_VALUE(IsDefault) OVER (PARTITION BY ProductId ORDER BY IsDefault DESC, CreatedAt ASC) AS IsDefault,
-        FIRST_VALUE(CreatedAt) OVER (PARTITION BY ProductId ORDER BY IsDefault DESC, CreatedAt ASC) AS CreatedAt
-    FROM ProductImages
-) pi
-ON p.id = pi.ProductId";
-            return await _db.QueryAsync<ProductModel>(sql);
+    FROM Products p
+    LEFT JOIN ProductImages pi ON p.Id = pi.ProductId
+    ";
+
+            var productDictionary = new Dictionary<int, ProductModel>();
+
+            var products = await _db.QueryAsync<ProductModel, ProductImageModel, ProductModel>(
+                sql,
+                (product, image) =>
+                {
+                    if (!productDictionary.TryGetValue(product.Id, out var currentProduct))
+                    {
+                        currentProduct = product;
+                        currentProduct.Images = new List<ProductImageModel>();
+                        productDictionary.Add(currentProduct.Id, currentProduct);
+                    }
+
+                    if (image != null)
+                    {
+                        currentProduct.Images.Add(image);
+                    }
+
+                    return currentProduct;
+                },
+                splitOn: "Id"
+            );
+
+            return productDictionary.Values;
         }
         public async Task<List<CategoryDto>> GetAllCategoryAsync()
         {

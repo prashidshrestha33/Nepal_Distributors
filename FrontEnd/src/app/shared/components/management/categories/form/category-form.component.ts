@@ -6,13 +6,14 @@ import { NgSelectModule } from '@ng-select/ng-select';
 
 import { CompanyService } from '../../../../services/management/company.service';
 import { CategoryService } from '../../../../services/management/management.service';
+import { FormsModule } from '@angular/forms';
 
 import { CatagoryDynamicComponent } from '../../../../components/CustomComponents/CatagoryDynamic/catagory-dynamic.component'; 
 interface Category {
   id: number;
   name: string;
   slug?: string;
-  parent_id: number | null;
+  parent_id?: number | null;
   children?: Category[];
   depth?: number;
 }
@@ -20,7 +21,7 @@ interface Category {
 @Component({
   selector: 'app-category-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgSelectModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgSelectModule, CatagoryDynamicComponent],
   templateUrl: './category-form.component.html',
   styleUrls: ['./category-form.component.css']
 })
@@ -60,6 +61,8 @@ export class CategoryFormComponent implements OnInit {
 
   ngOnInit() {
     this.loadCategories();
+    this.setupNameToSlugListener();
+  }
 
   private setupNameToSlugListener(): void {
     this.form.get('name')?.valueChanges.subscribe(name => {
@@ -71,24 +74,26 @@ export class CategoryFormComponent implements OnInit {
       }
     });
   }
-    onCategoryChosen(categoryId: number) {
-      this.form.get('parent_id')?.setValue(categoryId);
-  }
-flattenCategories(categories: Category[], depth = 0): Category[] {
-  const result: Category[] = [];
-
-  private flattenCategories(categories: Category[], depth = 0): Category[] {
-    let result: Category[] = [];
-    for (const cat of categories) {
-      result.push({ ...cat, depth });
-      if (cat.children?.length) {
-        result.push(...this.flattenCategories(cat.children, depth + 1));
+    onCategoryChosen(categoryId: any): void {
+      if (typeof categoryId === 'number') {
+        this.form.get('parent_id')?.setValue(categoryId);
+      } else {
+        console.error('Invalid category ID:', categoryId);
       }
-    }
-    return result;
   }
 
-  private initializeCascadingLevels(): void {
+private flattenCategories(categories: Category[], depth = 0): Category[] {
+  let result: Category[] = [];
+  for (const cat of categories) {
+    result.push({ ...cat, depth });
+    if (cat.children?.length) {
+      result.push(...this.flattenCategories(cat.children, depth + 1));
+    }
+  }
+  return result;
+}
+
+private initializeCascadingLevels(): void {
     this.levelCategories = [];
     this.levelCategories[0] = this.allCategories.filter(c => c.parent_id === null);
 
@@ -270,5 +275,19 @@ flattenCategories(categories: Category[], depth = 0): Category[] {
   get currentParentName(): string {
     const lastSelectedId = [...this.selectedParents].reverse().find(id => id !== null);
     return lastSelectedId ? this.findCategoryById(lastSelectedId)?.name || '' : '';
+  }
+
+  private loadCategories(): void {
+    this.categoryService.getTreeCategories().subscribe({
+      next: (categories: Category[]) => {
+        this.allCategories = categories;
+        this.flatCategories = this.flattenCategories(categories);
+        this.initializeCascadingLevels();
+      },
+      error: (err) => {
+        console.error('Error loading categories:', err);
+        this.error = 'Failed to load categories. Please try again later.';
+      }
+    });
   }
 }
