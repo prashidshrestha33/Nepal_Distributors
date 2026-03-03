@@ -1,3 +1,12 @@
+<app-product-list-popup
+  *ngIf="(ui.showProductList$ | async) as state"
+  [companyId]="state?.companyId ?? 2"
+  [productListStyle]="state?.style ?? 'table'"
+  [keyWord]="state?.keyword ?? ''"
+  [displayMode]="'popup'"
+  (close)="ui.closeProductList()">
+</app-product-list-popup>
+<button (click)="openProductList(2, '', 'list')">Open Product List Popup</button>
 <div class="min-h-screen bg-gray-100 p-6 space-y-6">
   
   <!-- HEADER -->

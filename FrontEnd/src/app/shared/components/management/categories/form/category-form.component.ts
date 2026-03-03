@@ -8,10 +8,11 @@ import { CompanyService } from '../../../../services/management/company.service'
 import { CategoryService } from '../../../../services/management/management.service';
 import type { Category } from '../../../../services/management/management.service';
 
+import { CatagoryDynamicComponent } from '../../../../components/CustomComponents/CatagoryDynamic/catagory-dynamic.component'; 
 @Component({
   selector: 'app-category-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgSelectModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgSelectModule,CatagoryDynamicComponent],
   templateUrl: './category-form.component.html',
   styleUrls: ['./category-form.component.css']
 })
@@ -25,7 +26,6 @@ export class CategoryFormComponent implements OnInit {
   allCategories: Category[] = [];
   nestedCategories: any[] = [];   // flattened tree for display
   selectedCategoryIds: number[] = [];
-
   constructor(
     private fb: FormBuilder,
     private categoryService: CategoryService,
@@ -41,38 +41,15 @@ export class CategoryFormComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.loadCategories();
-
     // auto slug
     this.form.get('name')?.valueChanges.subscribe(name => {
       const slug = this.generateSlug(name);
       this.form.get('slug')?.setValue(slug, { emitEvent: false });
     });
   }
-
-  // ===============================
-  // Load + Flatten category tree
-  // ===============================
-loadCategories() {
-  this.loading = true;
-  this.CompanyService.getCategories().subscribe({
-    next: (res: any) => { // API wrapper
-      debugger;
-      this.categories = res || [];
-
-      // Flatten for ng-select
-      this.nestedCategories = this.flattenCategories(this.categories);
-
-      this.loading = false;
-      console.log('Nested Categories:', this.nestedCategories);
-    },
-    error: (err) => {
-      console.error('Failed to load categories:', err);
-      this.error = 'Failed to load categories. Please try again.';
-      this.loading = false;
-    }
-  });
-}
+    onCategoryChosen(categoryId: number) {
+      this.form.get('parent_id')?.setValue(categoryId);
+  }
 flattenCategories(categories: Category[], depth = 0): Category[] {
   const result: Category[] = [];
 

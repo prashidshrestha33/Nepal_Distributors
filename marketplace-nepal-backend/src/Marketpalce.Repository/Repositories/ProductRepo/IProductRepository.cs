@@ -48,6 +48,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
 
         Task<bool> ApproveProductAsync(long Productid, string approvedBy, string details, IDbTransaction? transaction = null);
         Task<IEnumerable<ProductModel>> SearchProductsAsync(string? categoryIds, string? keyword, long? companyId);
+        Task<List<CategoryDto>> GetparentChild(int parentid = 0);
 
     }
 }

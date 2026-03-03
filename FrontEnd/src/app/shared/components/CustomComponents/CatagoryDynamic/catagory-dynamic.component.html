@@ -1,0 +1,18 @@
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+  <div *ngFor="let level of categoryLevels; let i = index">
+    <ng-select
+      [items]="level.categories"
+      bindLabel="name"
+      bindValue="id"
+      [clearable]="true"
+      [searchable]="true"
+      placeholder="Select category"
+      [ngModel]="selectedPath[i] ?? null"
+      (ngModelChange)="onCategorySelect(i, $event)"
+      [ngModelOptions]="{ standalone: true }">
+    </ng-select>
+  </div>
+
+</div>
+
+<div *ngIf="error" class="text-red-600 text-sm mt-2">{{ error }}</div>

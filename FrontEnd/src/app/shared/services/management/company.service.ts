@@ -207,6 +207,12 @@ uploadDocument(
     );
   }
 
+  getCategoriesparent(parentid:number): Observable<Category[]> {
+    return this.apiGateway.getWithResult<Category[]>(
+      `${environment.apiBaseUrl}/api/Product/GetAllCategorybyparentid?parentId=${encodeURIComponent(parentid)}`
+    );
+  }
+
   /* ===================== REGISTRATION ===================== */
 
   sendRegisterLink(email: string, role: string, company_id: string): Observable<any[]> {

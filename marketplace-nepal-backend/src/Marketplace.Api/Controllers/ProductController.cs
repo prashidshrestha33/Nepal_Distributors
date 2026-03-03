@@ -3,15 +3,9 @@ using Marketplace.Api.Models;
 using Marketplace.Api.Services.Helper;
 using Marketplace.Model.Models;
 using Marketplace.Models;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.IO;
 using System.Security.Claims;
-using System.Threading.Tasks;
 namespace Marketplace.Api.Controllers
 {
     [ApiController]
@@ -32,6 +26,9 @@ namespace Marketplace.Api.Controllers
 
         [HttpGet("Category")]
         public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAllCategory() => Ok(await repositorysitory.GetAllCategoryAsync());
+
+        [HttpGet("GetAllCategorybyparentid")]
+        public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAllCategorybyparentid([FromQuery] int parentId) => Ok(await repositorysitory.GetparentChild( parentId));
         [HttpPost("AddCatagory")]
         public async Task<IActionResult> CreateCatagory([FromBody] CreateCategoryDto dto)
         {

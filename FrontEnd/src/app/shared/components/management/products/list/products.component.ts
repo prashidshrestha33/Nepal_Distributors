@@ -9,14 +9,16 @@ import { ProductService } from '../../../../services/management/management.servi
 import type { Product as ProductBase } from '../../../../services/management/management.service';
 import { Category, CategoryService, Users, StaticValueCatalog, StaticValueService, StaticValue } from '../../../../services/management/management.service';
 import { environment } from '../../../../../../environments/environment';
+import { ProductListPopupComponent } from '../../../CustomComponents/ProductList/product-list-popup.component';
 
+import { UiService, StatusPopupState } from '../../../../../ui.service';
 type Product = ProductBase & { selected?: boolean };
 
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ApproveProductComponent, PaginationComponent],
-  templateUrl: './products.component.html',
+  imports: [CommonModule, FormsModule, RouterModule, ApproveProductComponent, PaginationComponent,ProductListPopupComponent],
+  templateUrl:'./products.component.html',
   styleUrls: ['./products.component.css']
 })
 export class ProductsComponent implements OnInit {
@@ -58,7 +60,8 @@ export class ProductsComponent implements OnInit {
     private router: Router,
     private categoryService: CategoryService,
     private cdr: ChangeDetectorRef,
-    private staticValueService: StaticValueService
+    private staticValueService: StaticValueService,
+      public ui: UiService           
   ) {}
 
   ngOnInit() {
@@ -89,6 +92,9 @@ export class ProductsComponent implements OnInit {
       }
     });
   }
+  openProductList(companyId: number, keyword: string = '', style: 'table' | 'list' | 'scroll' = 'table') {
+  this.ui.openProductList(companyId, keyword, 'table');
+}
   // Get brand name by brandId safely
 getBrandName(brandId?: number | null): string {
   if (!brandId) return 'N/A';
@@ -301,4 +307,11 @@ loadBrandStaticValues(): void {
   goToEditProduct(id: number) {
     this.router.navigate(['/management/products/edit', id]);
   }
+  openProductListPopup(product: Product) {
+  this.ui.openProductList(
+   2,
+    product.name || '',
+    'list' // or 'table' or 'scroll'
+  );
+}
 }

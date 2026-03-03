@@ -75,6 +75,35 @@ FROM [NepalDistributers].[dbo].[Products]
 
             return rootCategories;
         }
+        public async Task<List<CategoryDto>> GetparentChild(int parentid = 0)
+        {
+            string sql = @"
+        SELECT
+            id AS Id,
+            name AS Name,
+            slug AS Slug,
+            parent_id AS ParentId,
+            depth AS Depth
+        FROM [NepalDistributers].[dbo].[Product_Categories] where 1=1";
+
+
+                if (parentid == 0)
+                {
+                    sql += " AND depth = 0";
+                }
+                else
+                {
+                    sql += " AND parent_id = @ParentId";
+                }
+    
+                sql += " ORDER BY depth ASC"; // make sure parents come first
+
+            // Fetch flat list
+            var rootCategories = new List<CategoryDto>();
+            rootCategories = (await _db.QueryAsync<CategoryDto>(sql, new { ParentId = parentid })).ToList();
+                     
+            return rootCategories;
+        }
 
         public async Task<ProductModel> GetByIdAsync(int id)
         {
