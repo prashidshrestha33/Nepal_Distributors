@@ -1,4 +1,5 @@
 // src/app/ui.service.ts
+
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 
@@ -8,108 +9,105 @@ export interface ImageViewerState {
 
 export interface StatusPopupState {
   message: string;
-  type: 'success' | 'error'; // success = tick, error = cross
+  type: 'success' | 'error';
+}
+
+export interface FgPopupState {
+  show: boolean;
+  data?: any; // optional data to pass into popup
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class UiService {
-  // ------------------
-  // OTP popup
-  // ------------------
-  private _showOtp = new BehaviorSubject<boolean>(false);
-  readonly showOtp$: Observable<boolean> = this._showOtp.asObservable();
 
-  openOtp(): void { this._showOtp.next(true); }
-  closeOtp(): void { this._showOtp.next(false); }
+  // =========================
+  // OTP POPUP
+  // =========================
+  private otpSubject = new BehaviorSubject<boolean>(false);
+  readonly showOtp$: Observable<boolean> = this.otpSubject.asObservable();
 
-  // ------------------
-  // Image Viewer
-  // ------------------
-  private _showImage = new BehaviorSubject<ImageViewerState | null>(null);
-  readonly showImage$: Observable<ImageViewerState | null> = this._showImage.asObservable();
-
-  openImage(url: string): void { this._showImage.next({ url }); }
-  closeImage(): void { this._showImage.next(null); }
-
-  // ------------------
-  // Status Popup
-  // ------------------
-  private _showStatus = new BehaviorSubject<StatusPopupState | null>(null);
-  readonly showStatus$: Observable<StatusPopupState | null> = this._showStatus.asObservable();
-
-  showStatus(message: string, type: 'success' | 'error'): void {
-    this._showStatus.next({ message, type });
-  }
-  closeStatus(): void { this._showStatus.next(null); }
-
-  // ------------------
-  // Company Profile Popup
-  // ------------------
-  private _showCompanyProfile = new BehaviorSubject<number | null>(null);
-  readonly showCompanyProfile$: Observable<number | null> = this._showCompanyProfile.asObservable();
-
-  openCompanyProfile(companyId: number): void {
-    this._showCompanyProfile.next(companyId);
+  openOtp(): void {
+    this.otpSubject.next(true);
   }
 
-  closeCompanyProfile(): void {
-    this._showCompanyProfile.next(null);
-  }
-  // ------------------
-  // User Profile Popup  ✅ ADDED PROPERLY
-  // ------------------
-  private _showUserProfile = new BehaviorSubject<number | null>(null);
-  readonly showUserProfile$: Observable<number | null> =
-    this._showUserProfile.asObservable();
-
-  openUserProfile(userId: number): void {
-    this._showUserProfile.next(userId);
+  closeOtp(): void {
+    this.otpSubject.next(false);
   }
 
-  closeUserProfile(): void {
-    this._showUserProfile.next(null);
-  }
-   // ------------------
-  // User Profile Popup  ✅ ADDED PROPERLY
-  // ------------------
-  private _showRegisterLink = new BehaviorSubject<number | null>(null);
-  readonly showRegisterLink$: Observable<number | null> =
-    this._showRegisterLink.asObservable();
+  // =========================
+  // IMAGE VIEWER
+  // =========================
+  private imageSubject = new BehaviorSubject<ImageViewerState | null>(null);
+  readonly showImage$: Observable<ImageViewerState | null> = this.imageSubject.asObservable();
 
-  openRegisterLink(companyId: number): void {
-    this._showRegisterLink.next(companyId);
+  openImage(url: string): void {
+    if (!url) return;
+    this.imageSubject.next({ url });
   }
 
-  closeRegisterLink(): void {
-    this._showRegisterLink.next(null);
+  closeImage(): void {
+    this.imageSubject.next(null);
   }
 
-  // ------------------
-// Product List Popup
-// ------------------
-private _showProductList = new BehaviorSubject<{
-  companyId: number;
-  keyword?: string;
-  style?: string;
-} | null>(null);
+  // =========================
+  // STATUS POPUP
+  // =========================
+  private statusSubject = new BehaviorSubject<StatusPopupState | null>(null);
+  readonly showStatus$: Observable<StatusPopupState | null> = this.statusSubject.asObservable();
 
-readonly showProductList$: Observable<{
-  companyId: number;
-  keyword?: string;
-  style?: string;
-} | null> = this._showProductList.asObservable();
+  private statusTimeout: any;
 
-openProductList(companyId: number, keyword: string = '', style: string = ''): void {
-  this._showProductList.next({
-    companyId,
-    keyword,
-    style
+  showStatus(message: string, type: 'success' | 'error', duration: number = 3000): void {
+
+    if (!message) return;
+
+    if (this.statusTimeout) {
+      clearTimeout(this.statusTimeout);
+    }
+
+    this.statusSubject.next({ message, type });
+
+    this.statusTimeout = setTimeout(() => {
+      this.closeStatus();
+    }, duration);
+  }
+
+  showSuccess(message: string, duration?: number): void {
+    this.showStatus(message, 'success', duration);
+  }
+
+  showError(message: string, duration?: number): void {
+    this.showStatus(message, 'error', duration);
+  }
+
+  closeStatus(): void {
+    this.statusSubject.next(null);
+  }
+
+  // =========================
+  // FG POPUP (GENERIC)
+  // =========================
+  private fgPopupSubject = new BehaviorSubject<FgPopupState>({
+    show: false
   });
-}
 
-closeProductList(): void {
-  this._showProductList.next(null);
-}
+  readonly showFgPopup$: Observable<FgPopupState> =
+    this.fgPopupSubject.asObservable();
+
+  openFgPopup(data?: any): void {
+    this.fgPopupSubject.next({
+      show: true,
+      data: data || null
+    });
+  }
+
+  closeFgPopup(): void {
+    this.fgPopupSubject.next({
+      show: false,
+      data: null
+    });
+  }
+
 }
