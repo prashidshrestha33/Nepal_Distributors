@@ -35,14 +35,14 @@
   </button>
 
   <!-- CSV Upload Button -->
-  <input #csvInput type="file" accept=".csv" (change)="onFileSelected($event)" class="hidden" />
+  <!-- <input #csvInput type="file" accept=".csv" (change)="onFileSelected($event)" class="hidden" />
   <button
     type="button"
     (click)="csvInput.click()"
     [disabled]="loading"
     class="flex items-center gap-2 px-2 py-2 rounded-lg font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-gray-400 transition"
   >
-    <!-- Upload Icon -->
+    
     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
          fill="none" viewBox="0 0 24 24"
          stroke="currentColor">
@@ -51,7 +51,65 @@
             d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 12v-9m0 0l-3 3m3-3l3 3"/>
     </svg>
     {{ loading ? 'Importing...' : 'Import CSV' }}
-  </button>
+  </button> -->
+
+
+  <!-- CSV Upload Button -->
+<input #csvInput type="file" accept=".csv" (change)="onFileSelected($event)" class="hidden" />
+
+<!-- Import CSV Button -->
+<button
+  type="button"
+  (click)="togglePanel()"
+  [disabled]="loading"
+  class="flex items-center gap-2 px-2 py-2 rounded-lg font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-gray-400 transition"
+>
+  <!-- Upload Icon -->
+  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 12v-9m0 0l-3 3m3-3l3 3"/>
+  </svg>
+  {{ loading ? 'Importing...' : 'Import CSV' }}
+</button>
+
+<!-- Right Panel for CSV Options -->
+<div 
+  *ngIf="isPanelOpen"
+  class="fixed inset-0 z-50 bg-black/50 flex justify-end"
+>
+  <!-- Panel -->
+  <div class="w-80 bg-white p-6 shadow-lg rounded-l-lg transition-transform transform duration-300"
+       [ngClass]="{'translate-x-0': isPanelOpen, 'translate-x-full': !isPanelOpen}">
+    
+    <!-- Panel Header -->
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-semibold text-gray-800">Import CSV</h2>
+      <button (click)="togglePanel()" class="text-gray-500 hover:text-gray-700">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    
+    <!-- Panel Content -->
+    <div class="space-y-4">
+      <!-- Download Template -->
+<button (click)="downloadTemplate()" class="text-blue-600 hover:underline">
+  Download Template
+</button>
+
+      <!-- Import CSV -->
+      <label class="block">
+        <button
+          type="button"
+          (click)="csvInput.click()"
+          class="w-full bg-emerald-600 text-white px-4 py-2 rounded-md text-center hover:bg-emerald-700"
+        >
+          Import CSV
+        </button>
+      </label>
+    </div>
+  </div>
+</div>
 
   <!-- Add Product Button -->
   <a

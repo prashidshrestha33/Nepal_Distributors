@@ -42,6 +42,8 @@ export class ProductsComponent implements OnInit {
   staticValueCatalogs: StaticValueCatalog[] = [];
   staticValues: StaticValue[] = [];
   brandMap = new Map<number, string>();
+  loadings: boolean = false;
+  isPanelOpen: boolean = false;
 
   // Bulk selection flags
   allSelected = false;
@@ -144,6 +146,15 @@ getBrandName(brandId?: number | null): string {
       return null;
     };
     return findCat(this.treeCategories) || 'N/A';
+  }
+  // Toggle the right panel
+  togglePanel(): void {
+    this.isPanelOpen = !this.isPanelOpen;
+  }
+
+    onFileSelected(event: any) {
+    this.selectedFile = event.target.files[0];
+    if (this.selectedFile) this.importCsv();
   }
 
   // ----------------------
@@ -251,14 +262,6 @@ refreshProductList() {
 onApproveCancel() {
   this.showApproveModal = false;
 }
-  // ----------------------
-  // File upload
-  // ----------------------
-  onFileSelected(event: any) {
-    this.selectedFile = event.target.files[0];
-    if (this.selectedFile) this.importCsv();
-  }
-
   importCsv() {
     if (!this.selectedFile) return;
     this.loading = true;
@@ -274,6 +277,20 @@ onApproveCancel() {
       }
     });
   }
+downloadTemplate() {
+  const fileUrl = '../../../../../assets/templates/product-template.csv';
+
+  // Create a Blob from the URL
+  fetch(fileUrl)
+    .then(response => response.blob())
+    .then(blob => {
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = 'product-template.csv';
+      link.click();  // Trigger the download
+    })
+    .catch(err => console.error('Failed to download file:', err));
+}
 
   // ----------------------
   // Bulk selection
