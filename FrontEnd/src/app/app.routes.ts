@@ -42,6 +42,7 @@ import { StaticValuesComponent } from './shared/components/management/static-val
 import { StaticValuesCatalogComponent } from './shared/components/management/static-values/Static-value-catalog/static-values-catalog.component';
 import { StaticValueFormComponent } from './shared/components/management/static-values/form/static-value-form.component';
 import { register } from 'swiper/element';
+import { ProductDetailsComponent } from './shared/components/management/products/details/product-details.component';
 
 export const routes: Routes = [
   // Public auth pages
@@ -134,10 +135,12 @@ export const routes: Routes = [
             title: 'Products Management'
           },
           {
-            path: 'products/details/:id',
-            loadComponent: () => import('./shared/components/management/products/details/product-details.component').then(m => m.ProductDetailsComponent),
-            title: 'Product Details'
-          },
+  path: 'products/details/:id',
+  loadComponent: () =>
+    import('./shared/components/management/products/details/product-details.component')
+      .then(m => m.ProductDetailsComponent),
+  title: 'Product Details'
+},
           {
             path: 'products/edit/:id',
             component: ProductFormComponent,
@@ -212,10 +215,12 @@ export const routes: Routes = [
         title: 'Add Category'
       },
       {
-        path: 'products/details/:id',
-        loadComponent: () => import('./shared/components/management/products/details/product-details.component').then(m => m.ProductDetailsComponent),
-        title: 'Product Details'
-      },
+  path: 'products/details/:id',
+  loadComponent: () =>
+    import('./shared/components/management/products/details/product-details.component')
+      .then(m => m.ProductDetailsComponent),
+  title: 'Product Details'
+},
       {
         path: 'products',
         component: ProductsMgmtComponent,

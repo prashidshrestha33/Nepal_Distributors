@@ -174,7 +174,6 @@ loadProductForEdit(id: number) {
     next: res => {
       const product: Product = (res as any)?.result ?? res;
       this.form.patchValue(product); // Fill the form with product data
-      debugger;
       // Handle the images
       if (product?.images && product.images.length > 0) {
         // Set the default image (assuming one of the images has isDefault set to true)

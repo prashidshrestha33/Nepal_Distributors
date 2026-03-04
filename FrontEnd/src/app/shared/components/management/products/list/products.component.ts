@@ -176,7 +176,7 @@ loadBrandStaticValues(): void {
   // ----------------------
   // Approve / remove product
   // ----------------------
-  approveProduct(product: Product) {
+approveProduct(product: Product) {
   // Prepare data for the modal
   this.approveProductData = {
     ...product,
