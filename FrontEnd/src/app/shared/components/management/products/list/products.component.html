@@ -8,7 +8,12 @@
 </app-product-list-popup>
 <button (click)="openProductList(2, '', 'list')">Open Product List Popup</button>
 <div class="min-h-screen bg-gray-100 p-6 space-y-6">
-  
+  <div *ngIf="rowsInserted > 0" class="text-green-600 text-sm mt-3">
+  {{ rowsInserted }} rows inserted successfully.
+</div>
+<div *ngIf="uploadMessage" class="mt-3 text-blue-600 text-sm">
+  {{ uploadMessage }}
+</div>
   <!-- HEADER -->
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <div>
@@ -55,7 +60,13 @@
 
 
   <!-- CSV Upload Button -->
-<input #csvInput type="file" accept=".csv" (change)="onFileSelected($event)" class="hidden" />
+<input 
+  #csvInput
+  type="file"
+  accept=".csv"
+  (change)="onFileSelected($event)"
+  class="absolute opacity-0 w-0 h-0"
+/>
 
 <!-- Import CSV Button -->
 <button
@@ -96,6 +107,18 @@
 <button (click)="downloadTemplate()" class="text-blue-600 hover:underline">
   Download Template
 </button>
+<!-- Progress Bar -->
+<!-- <div *ngIf="loading" class="w-full bg-gray-200 rounded-full h-4 mt-3">
+  <div
+    class="bg-emerald-600 h-4 rounded-full transition-all duration-300"
+    [style.width.%]="progress"
+  ></div>
+</div> -->
+
+<!-- Progress Text -->
+<!-- <div *ngIf="loading" class="text-sm text-gray-600 mt-2">
+  Upload Progress: {{ progress }}%
+</div> -->
 
       <!-- Import CSV -->
       <label class="block">

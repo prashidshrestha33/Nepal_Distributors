@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { CategoryService } from '../../../../services/management/management.service';
 import type { Category } from '../../../../services/management/management.service';
 import { CategoryMoveModalComponent } from '../move/category-move-modal.component';
+import { environment } from '../../../../../../environments/environment';
 
 @Component({
   selector: 'app-categories',
@@ -41,39 +42,41 @@ export class CategoriesComponent implements OnInit {
   }
 
   load() {
-    this.loading = true;
-    this.service.getCategories().subscribe({
-      next: (data: Category[]) => {
+  this.loading = true;
+  this.service.getCategories().subscribe({
+    next: (data: Category[]) => {
         
         // Flatten tree structure for table display
-        this.items = this.flattenCategoryTree(data);
-        
+      this.items = this.flattenCategoryTree(data);
+
         // Extract root categories (depth = 1)
         this.rootCategories = this.items.filter(cat => cat.depth === 1);
-        
-        this.filteredItems = this.items;
-        this.currentPage = 1;
-        this.updatePaginatedItems();
-        this.loading = false;
-      },
-      error: (err: any) => {
-        this.loading = false;
-      }
-    });
-  }
+
+      this.filteredItems = this.items;
+      this.currentPage = 1;
+      this.updatePaginatedItems();
+      this.loading = false;
+    },
+    error: (err: any) => {
+      this.loading = false;
+      console.error('Failed to load categories', err);
+    }
+  });
+}
 
   /**
    * Flatten tree structure to flat array for table display
    */
-  flattenCategoryTree(categories: Category[], result: Category[] = []): Category[] {
-    for (const cat of categories) {
+flattenCategoryTree(categories: Category[], depth: number = 0): Category[] {
+  let result: Category[] = [];
+  for (const cat of categories) {
       result.push(cat);
-      if (cat.children && cat.children.length > 0) {
-        this.flattenCategoryTree(cat.children, result);
-      }
+    if (cat.children && cat.children.length) {
+      result.push(...this.flattenCategoryTree(cat.children, depth + 1));
     }
-    return result;
   }
+  return result;
+}
 
   onSearch() {
     this.currentPage = 1; // Reset to page 1 when searching
@@ -97,6 +100,11 @@ export class CategoriesComponent implements OnInit {
     this.filteredItems = filtered;
     this.currentPage = 1; // Reset to page 1
     this.updatePaginatedItems();
+  }
+  getImageUrl(imageName?: string): string {
+    return imageName 
+      ? `${environment.apiBaseUrl}/api/CompanyFile?fileName=${encodeURIComponent(imageName)}`
+      : 'assets/images/no-image.png';
   }
 
   /**

@@ -3,15 +3,19 @@ import { Component, ElementRef, QueryList, ViewChildren, ChangeDetectorRef } fro
 import { SidebarService } from '../../services/sidebar.service';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { SafeHtmlPipe } from '../../pipe/safe-html.pipe';
-import { combineLatest, Subscription } from 'rxjs';
+import { combineLatest, Subscription, firstValueFrom } from 'rxjs';
+import { StaticValueCatalog } from '../../services/management/management.service';
+import { StaticValueService } from '../../services/management/management.service';
 
-type NavItem = {
+// Updated NavItem type to include queryParams
+interface NavItem {
   name: string;
   icon: string;
   path?: string;
   new?: boolean;
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
-};
+  queryParams?: { [key: string]: any };
+}
 
 @Component({
   selector: 'app-sidebar',
@@ -92,7 +96,7 @@ export class AppSidebarComponent {
    },
    ];
 
-  openSubmenu: string | null | number = null;
+  openSubmenu: string | null = null; // Track open submenu
   subMenuHeights: { [key: string]: number } = {};
   @ViewChildren('subMenu') subMenuRefs!: QueryList<ElementRef>;
 
@@ -105,14 +109,15 @@ export class AppSidebarComponent {
   constructor(
     public sidebarService: SidebarService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private staticValueService: StaticValueService // Updated service reference
   ) {
     this.isExpanded$ = this.sidebarService.isExpanded$;
     this.isMobileOpen$ = this.sidebarService.isMobileOpen$;
     this.isHovered$ = this.sidebarService.isHovered$;
   }
 
-  ngOnInit() {
+  async ngOnInit() {
     // Subscribe to router events
     this.subscription.add(
       this.router.events.subscribe(event => {
@@ -121,6 +126,43 @@ export class AppSidebarComponent {
         }
       })
     );
+
+    this.setActiveMenuFromRoute(this.router.url);
+
+    try {
+      const catalogs: StaticValueCatalog[] = await firstValueFrom(this.staticValueService.getStaticValuesCatagory()); // Corrected service reference
+      catalogs.forEach((catalog: StaticValueCatalog) => {
+        if (catalog.catalogName === 'Brand') {
+          this.navItems.push({
+            name: catalog.catalogName,
+            icon: `
+    <svg width="1.5em" height="1.5em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/>
+      <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/>
+      <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/>
+      <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  `,
+            path: '/management/static-values',
+            queryParams: { catalogId: catalog.catalogId }
+          });
+        } else if (catalog.catalogName === 'Manufacture') {
+          this.navItems.push({
+            name: catalog.catalogName,
+              icon: `
+    <svg width="1.5em" height="1.5em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
+      <path d="M4 20C4 16.6863 7.58172 14 12 14C16.4183 14 20 16.6863 20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  `,
+            path: '/management/static-values',
+            queryParams: { catalogId: catalog.catalogId }
+          });
+        }
+      });
+    } catch (error) {
+      console.error('Failed to fetch catalog items', error);
+    }
 
     // Subscribe to combined observables to close submenus when all are false
     this.subscription.add(
@@ -149,27 +191,15 @@ export class AppSidebarComponent {
     this.subscription.unsubscribe();
   }
 
-  isActive(path: string): boolean {
+  isActive(path: string | undefined): boolean {
+    if (!path) {
+      return false; // Return false if the path is undefined
+    }
     return this.router.url === path;
   }
 
-  toggleSubmenu(section: string, index: number) {
-    const key = `${section}-${index}`;
-
-    if (this.openSubmenu === key) {
-      this.openSubmenu = null;
-      this.subMenuHeights[key] = 0;
-    } else {
-      this.openSubmenu = key;
-
-      setTimeout(() => {
-        const el = document.getElementById(key);
-        if (el) {
-          this.subMenuHeights[key] = el.scrollHeight;
-          this.cdr.detectChanges(); // Ensure UI updates
-        }
-      });
-    }
+  toggleSubmenu(name: string): void {
+    this.openSubmenu = this.openSubmenu === name ? null : name;
   }
 
   onSidebarMouseEnter() {

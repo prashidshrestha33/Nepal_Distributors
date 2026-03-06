@@ -16,7 +16,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
         Task<int> CreateAsync(ProductModel product);
         Task<bool> UpdateAsync(ProductModel product);
         Task<bool> DeleteAsync(int id);
-        Task<long> AddCatagoryAsync(CreateCategoryDto dto);
+        Task<long> AddCatagoryAsync(CreateCategoryDto dto, string? imageUrl);
         Task MoveCatagoryAsync(MoveCategoryDto dto);
         Task<string> GetCatagoryTreeJsonAsync();
         Task<IEnumerable<CategoryDto>> GetCatagoryChildrenAsync(long? parentId);

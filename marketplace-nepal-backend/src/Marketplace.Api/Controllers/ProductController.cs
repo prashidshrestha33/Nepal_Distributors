@@ -33,11 +33,39 @@ namespace Marketplace.Api.Controllers
         [HttpGet("GetAllCategorybyparentid")]
         public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAllCategorybyparentid([FromQuery] int parentId) => Ok(await repositorysitory.GetparentChild( parentId));
         [HttpPost("AddCatagory")]
-        public async Task<IActionResult> CreateCatagory([FromBody] CreateCategoryDto dto)
+        public async Task<IActionResult> CreateCatagory([FromForm] CreateCategoryDto dto)
         {
+
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+            
             try
             {
-                var id = await repositorysitory.AddCatagoryAsync(dto);
+                string? imageUrl = null;
+
+                if (dto.Image != null && dto.Image.Length > 0)
+                {
+                    var uploads = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
+
+                    if (!Directory.Exists(uploads))
+                        Directory.CreateDirectory(uploads);
+
+                    var fileName = $"{Guid.NewGuid()}_{dto.Image.FileName}";
+                    var filePath = Path.Combine(uploads, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await dto.Image.CopyToAsync(stream);
+                    }
+
+                    imageUrl = fileName;
+                }
+
+                var id = await repositorysitory.AddCatagoryAsync(dto, imageUrl);
+
                 return CreatedAtAction(nameof(GetCatagoryById), new { id }, new { id });
             }
             catch (Exception ex)

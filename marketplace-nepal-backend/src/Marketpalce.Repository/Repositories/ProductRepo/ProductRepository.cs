@@ -119,27 +119,27 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
         FROM [NepalDistributers].[dbo].[Product_Categories] where 1=1";
 
 
-                if (parentid == 0)
-                {
-                    sql += " AND depth = 0";
-                }
-                else
-                {
-                    sql += " AND parent_id = @ParentId";
-                }
-    
-                sql += " ORDER BY depth ASC"; // make sure parents come first
+            if (parentid == 0)
+            {
+                sql += " AND depth = 0";
+            }
+            else
+            {
+                sql += " AND parent_id = @ParentId";
+            }
+
+            sql += " ORDER BY depth ASC"; // make sure parents come first
 
             // Fetch flat list
             var rootCategories = new List<CategoryDto>();
             rootCategories = (await _db.QueryAsync<CategoryDto>(sql, new { ParentId = parentid })).ToList();
-                     
+
             return rootCategories;
         }
 
         public async Task<ProductModel> GetByIdAsync(int id)
-{
-    var sql = @"
+        {
+            var sql = @"
     SELECT 
         p.id AS Id,
         p.sku AS Sku,
@@ -170,30 +170,30 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
     LEFT JOIN ProductImages pi ON p.id = pi.ProductId
     WHERE p.id = @Id";
 
-    var productDictionary = new Dictionary<int, ProductModel>();
+            var productDictionary = new Dictionary<int, ProductModel>();
 
-    var result = await _db.QueryAsync<ProductModel, ProductImageModel, ProductModel>(
-        sql,
-        (product, image) =>
-        {
-            if (!productDictionary.TryGetValue(product.Id, out var productEntry))
-            {
-                productEntry = product;
-                productEntry.Images = new List<ProductImageModel>();
-                productDictionary.Add(productEntry.Id, productEntry);
-            }
+            var result = await _db.QueryAsync<ProductModel, ProductImageModel, ProductModel>(
+                sql,
+                (product, image) =>
+                {
+                    if (!productDictionary.TryGetValue(product.Id, out var productEntry))
+                    {
+                        productEntry = product;
+                        productEntry.Images = new List<ProductImageModel>();
+                        productDictionary.Add(productEntry.Id, productEntry);
+                    }
 
-            if (image != null)
-                productEntry.Images.Add(image);
+                    if (image != null)
+                        productEntry.Images.Add(image);
 
-            return productEntry;
-        },
-        new { Id = id },
-        splitOn: "Id"
-    );
+                    return productEntry;
+                },
+                new { Id = id },
+                splitOn: "Id"
+            );
 
-    return productDictionary.Values.FirstOrDefault();
-}
+            return productDictionary.Values.FirstOrDefault();
+        }
         public async Task<int> CreateAsync(ProductModel product)
         {
             try
@@ -337,7 +337,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
             var sql = "DELETE FROM [NepalDistributers].[dbo].[products] WHERE id=@Id";
             return (await _db.ExecuteAsync(sql, new { Id = id })) > 0;
         }
-        public async Task<long> AddCatagoryAsync(CreateCategoryDto dto)
+        public async Task<long> AddCatagoryAsync(CreateCategoryDto dto, string? imageUrl)
         {
             // Step 1: Check duplicate name under same parent
             var existingName = await _db.ExecuteScalarAsync<int>(
@@ -350,43 +350,30 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
             if (existingName > 0)
                 throw new Exception("Category already exists under this parent.");
 
-            // Step 2: Build hierarchical slug
-            var slugParts = new List<string>();
-
-            // Add current category name first
-            slugParts.Add(Slugify(dto.Name));
-
             long? parentId = dto.ParentId;
 
             while (parentId != null)
             {
                 var parent = await _db.QueryFirstOrDefaultAsync<CreateCategoryDto>(
-                    "SELECT name FROM product_categories WHERE Id = @Id",
+                    "SELECT name, parent_id FROM product_categories WHERE Id = @Id",
                     new { Id = parentId });
 
                 if (parent == null)
                     break;
-
-                slugParts.Add(Slugify(parent.Name));
                 parentId = parent.ParentId;
             }
 
-            // Reverse to get correct hierarchy order
-            slugParts.Reverse();
-
-            var finalSlug = string.Join("-", slugParts);
-
-            // Step 3: Insert
+            // Step 3: Insert with stored procedure
             var p = new DynamicParameters();
             p.Add("@name", dto.Name);
-            p.Add("@slug", finalSlug);
+            p.Add("@slug", dto.Slug);
             p.Add("@parent_id", dto.ParentId);
+            p.Add("@image_url", imageUrl); // NEW: pass image name to SP
             p.Add("@new_id", dbType: DbType.Int64, direction: ParameterDirection.Output);
 
             await _db.ExecuteAsync("dbo.sp_AddCategory", p, commandType: CommandType.StoredProcedure);
 
             return p.Get<long>("@new_id");
-
         }
 
         // Move (re-parent) a category via sp_MoveCategory

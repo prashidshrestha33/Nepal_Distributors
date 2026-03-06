@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { ApproveProductComponent } from '../approve/approve-product.component';
 import { PaginationComponent } from '../../Pagination/app-pagination.component';
@@ -10,6 +10,7 @@ import type { Product as ProductBase } from '../../../../services/management/man
 import { Category, CategoryService, Users, StaticValueCatalog, StaticValueService, StaticValue } from '../../../../services/management/management.service';
 import { environment } from '../../../../../../environments/environment';
 import { ProductListPopupComponent } from '../../../CustomComponents/ProductList/product-list-popup.component';
+import { HttpEvent, HttpEventType, HttpClient } from '@angular/common/http';
 
 import { UiService, StatusPopupState } from '../../../../../ui.service';
 type Product = ProductBase & { selected?: boolean };
@@ -45,6 +46,10 @@ export class ProductsComponent implements OnInit {
   loadings: boolean = false;
   isPanelOpen: boolean = false;
 
+  progress = 0;
+  rowsInserted = 0;
+  uploadMessage = '';
+
   // Bulk selection flags
   allSelected = false;
   canBulkApprove = false;
@@ -56,6 +61,7 @@ export class ProductsComponent implements OnInit {
   totalPages = 0;
 
   Math = Math;
+  
 
   constructor(
     private productService: ProductService,
@@ -63,7 +69,8 @@ export class ProductsComponent implements OnInit {
     private categoryService: CategoryService,
     private cdr: ChangeDetectorRef,
     private staticValueService: StaticValueService,
-      public ui: UiService           
+      public ui: UiService,
+      private http: HttpClient
   ) {}
 
   ngOnInit() {
@@ -94,9 +101,11 @@ export class ProductsComponent implements OnInit {
       }
     });
   }
+  
   openProductList(companyId: number, keyword: string = '', style: 'table' | 'list' | 'scroll' = 'table') {
   this.ui.openProductList(companyId, keyword, 'table');
 }
+
   // Get brand name by brandId safely
 getBrandName(brandId?: number | null): string {
   if (!brandId) return 'N/A';
@@ -152,14 +161,44 @@ getBrandName(brandId?: number | null): string {
     this.isPanelOpen = !this.isPanelOpen;
   }
 
-    onFileSelected(event: any) {
-    this.selectedFile = event.target.files[0];
-    if (this.selectedFile) this.importCsv();
+onFileSelected(event: any) {
+  debugger;
+    const file: File = event.target.files[0];
+    if (!file) return;
+    this.uploadCSV(file);
+  }
+  
+  uploadCSV(selectedFile: File) {
+  debugger;
+
+  if (!selectedFile) {
+    this.uploadMessage = "Please select a CSV file first.";
+    return;
   }
 
-  // ----------------------
-  // Brand static values
-  // ----------------------
+  this.productService.CSVImporter(selectedFile).subscribe({
+    next: (event: any) => {
+
+      if (event.type === HttpEventType.UploadProgress) {
+        this.progress = Math.round((100 * event.loaded) / event.total);
+      }
+
+      if (event.type === HttpEventType.Response) {
+        this.loading = false;
+        this.rowsInserted = event.body?.rowsInserted || 0;
+        this.uploadMessage = "CSV import completed successfully";
+        this.loadProducts();
+      }
+    this.loadProducts();
+    },
+    error: (err) => {
+      this.loading = false;
+      this.uploadMessage = 'Upload failed. Please try again.';
+      console.error(err);
+    }
+  });
+}
+
 // Load all brand static values once
 loadBrandStaticValues(): void {
   this.staticValueService.getStaticValuesCatagory().subscribe({
@@ -262,21 +301,37 @@ refreshProductList() {
 onApproveCancel() {
   this.showApproveModal = false;
 }
+
   importCsv() {
-    if (!this.selectedFile) return;
-    this.loading = true;
-    this.error = undefined;
-    this.productService.CSVImporter(this.selectedFile).subscribe({
-      next: res => {
-        this.jobId = res.jobId;
-        this.loading = false;
-      },
-      error: err => {
-        this.error = err.error?.error || 'CSV import failed';
-        this.loading = false;
+  if (!this.selectedFile) return;
+  this.loading = true;
+  this.progress = 0;
+  this.uploadMessage = '';
+
+  this.productService.CSVImporter(this.selectedFile).subscribe({
+    next: (event: any) => {
+
+      if (event.type === HttpEventType.UploadProgress) {
+        this.progress = Math.round((100 * event.loaded) / event.total);
       }
-    });
-  }
+
+      if (event.type === HttpEventType.Response) {
+        this.loading = false;
+
+        this.rowsInserted = event.body.rowsInserted || 0;
+        this.uploadMessage = "CSV import completed successfully";
+
+        this.loadProducts();
+      }
+
+    },
+    error: (err) => {
+      this.loading = false;
+      this.uploadMessage = err.error?.message || "CSV import failed";
+    }
+  });
+}
+
 downloadTemplate() {
   const fileUrl = '../../../../../assets/templates/product-template.csv';
 

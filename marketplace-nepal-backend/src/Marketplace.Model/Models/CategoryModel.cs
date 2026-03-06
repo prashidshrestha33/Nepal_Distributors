@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -10,9 +11,11 @@ namespace Marketplace.Model.Models
 {
     public class CreateCategoryDto
     {
+        [Required]
         public string Name { get; set; } = "";
         public string? Slug { get; set; }
         public long? ParentId { get; set; }
+        public IFormFile? Image { get; set; }
     }
     public class MoveCategoryDto
     {
@@ -26,6 +29,7 @@ namespace Marketplace.Model.Models
         public string Slug { get; set; } = "";
         public long? ParentId { get; set; }
         public short Depth { get; set; }
+        public string? Image { get; set; }
         public List<CategoryDto> Children { get; set; } = new List<CategoryDto>();
     }
 }
