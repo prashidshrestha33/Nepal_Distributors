@@ -14,44 +14,61 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
 
         public async Task<IEnumerable<ProductModel>> GetAllAsync()
         {
-            var sql = @"SELECT 
-    p.id AS Id,
-    p.sku AS Sku,
-    p.name AS Name,
-    p.description AS Description,
-    p.short_description AS ShortDescription,
-    p.category_id AS CategoryId,
-    p.company_id AS CompanyId,
-    p.rate AS Rate,
-    p.brand_id AS BrandId,
-    p.manufacturer_id AS ManufacturerId,
-    p.hs_code AS HsCode,
-    p.status AS Status,
-    p.is_featured AS IsFeatured,
-    p.seo_title AS SeoTitle,
-    p.seo_description AS SeoDescription,
-    p.attributes AS Attributes,
-    p.created_by AS CreatedBy,
-    p.created_at AS CreatedAt,
+            var sql = @"
+    SELECT 
+        p.Id,
+        p.Sku,
+        p.Name,
+        p.Description,
+        p.Short_Description AS ShortDescription,
+        p.Category_Id AS CategoryId,
+        p.Company_Id AS CompanyId,
+        p.Rate,
+        p.Brand_Id AS BrandId,
+        p.Manufacturer_Id AS ManufacturerId,
+        p.Hs_Code AS HsCode,
+        p.Status,
+        p.Is_Featured AS IsFeatured,
+        p.Seo_Title AS SeoTitle,
+        p.Seo_Description AS SeoDescription,
+        p.Attributes,
+        p.Created_By AS CreatedBy,
+        p.Created_At AS CreatedAt,
 
-    pi.ProductId,
-    pi.ImageName,
-    pi.IsDefault,
-    pi.CreatedAt AS ImageCreatedAt
+        pi.Id,
+        pi.ProductId,
+        pi.ImageName,
+        pi.IsDefault,
+        pi.CreatedAt
 
-FROM Products p
-LEFT JOIN (
-    SELECT DISTINCT 
-        ProductId,
-        -- Use a subquery to prioritize the default image
-        FIRST_VALUE(Id) OVER (PARTITION BY ProductId ORDER BY IsDefault DESC, CreatedAt ASC) AS ImageId,
-        FIRST_VALUE(ImageName) OVER (PARTITION BY ProductId ORDER BY IsDefault DESC, CreatedAt ASC) AS ImageName,
-        FIRST_VALUE(IsDefault) OVER (PARTITION BY ProductId ORDER BY IsDefault DESC, CreatedAt ASC) AS IsDefault,
-        FIRST_VALUE(CreatedAt) OVER (PARTITION BY ProductId ORDER BY IsDefault DESC, CreatedAt ASC) AS CreatedAt
-    FROM ProductImages
-) pi
-ON p.id = pi.ProductId";
-            return await _db.QueryAsync<ProductModel>(sql);
+    FROM Products p
+    LEFT JOIN ProductImages pi ON p.Id = pi.ProductId
+    ";
+
+            var productDictionary = new Dictionary<int, ProductModel>();
+
+            var products = await _db.QueryAsync<ProductModel, ProductImageModel, ProductModel>(
+                sql,
+                (product, image) =>
+                {
+                    if (!productDictionary.TryGetValue(product.Id, out var currentProduct))
+                    {
+                        currentProduct = product;
+                        currentProduct.Images = new List<ProductImageModel>();
+                        productDictionary.Add(currentProduct.Id, currentProduct);
+                    }
+
+                    if (image != null)
+                    {
+                        currentProduct.Images.Add(image);
+                    }
+
+                    return currentProduct;
+                },
+                splitOn: "Id"
+            );
+
+            return productDictionary.Values;
         }
         public async Task<List<CategoryDto>> GetAllCategoryAsync()
         {
@@ -102,27 +119,27 @@ ON p.id = pi.ProductId";
         FROM [NepalDistributers].[dbo].[Product_Categories] where 1=1";
 
 
-                if (parentid == 0)
-                {
-                    sql += " AND depth = 0";
-                }
-                else
-                {
-                    sql += " AND parent_id = @ParentId";
-                }
-    
-                sql += " ORDER BY depth ASC"; // make sure parents come first
+            if (parentid == 0)
+            {
+                sql += " AND depth = 0";
+            }
+            else
+            {
+                sql += " AND parent_id = @ParentId";
+            }
+
+            sql += " ORDER BY depth ASC"; // make sure parents come first
 
             // Fetch flat list
             var rootCategories = new List<CategoryDto>();
             rootCategories = (await _db.QueryAsync<CategoryDto>(sql, new { ParentId = parentid })).ToList();
-                     
+
             return rootCategories;
         }
 
         public async Task<ProductModel> GetByIdAsync(int id)
-{
-    var sql = @"
+        {
+            var sql = @"
     SELECT 
         p.id AS Id,
         p.sku AS Sku,
@@ -153,30 +170,30 @@ ON p.id = pi.ProductId";
     LEFT JOIN ProductImages pi ON p.id = pi.ProductId
     WHERE p.id = @Id";
 
-    var productDictionary = new Dictionary<int, ProductModel>();
+            var productDictionary = new Dictionary<int, ProductModel>();
 
-    var result = await _db.QueryAsync<ProductModel, ProductImageModel, ProductModel>(
-        sql,
-        (product, image) =>
-        {
-            if (!productDictionary.TryGetValue(product.Id, out var productEntry))
-            {
-                productEntry = product;
-                productEntry.Images = new List<ProductImageModel>();
-                productDictionary.Add(productEntry.Id, productEntry);
-            }
+            var result = await _db.QueryAsync<ProductModel, ProductImageModel, ProductModel>(
+                sql,
+                (product, image) =>
+                {
+                    if (!productDictionary.TryGetValue(product.Id, out var productEntry))
+                    {
+                        productEntry = product;
+                        productEntry.Images = new List<ProductImageModel>();
+                        productDictionary.Add(productEntry.Id, productEntry);
+                    }
 
-            if (image != null)
-                productEntry.Images.Add(image);
+                    if (image != null)
+                        productEntry.Images.Add(image);
 
-            return productEntry;
-        },
-        new { Id = id },
-        splitOn: "Id"
-    );
+                    return productEntry;
+                },
+                new { Id = id },
+                splitOn: "Id"
+            );
 
-    return productDictionary.Values.FirstOrDefault();
-}
+            return productDictionary.Values.FirstOrDefault();
+        }
         public async Task<int> CreateAsync(ProductModel product)
         {
             try
@@ -320,7 +337,7 @@ ON p.id = pi.ProductId";
             var sql = "DELETE FROM [NepalDistributers].[dbo].[products] WHERE id=@Id";
             return (await _db.ExecuteAsync(sql, new { Id = id })) > 0;
         }
-        public async Task<long> AddCatagoryAsync(CreateCategoryDto dto)
+        public async Task<long> AddCatagoryAsync(CreateCategoryDto dto, string? imageUrl)
         {
             // Step 1: Check duplicate name under same parent
             var existingName = await _db.ExecuteScalarAsync<int>(
@@ -333,43 +350,30 @@ ON p.id = pi.ProductId";
             if (existingName > 0)
                 throw new Exception("Category already exists under this parent.");
 
-            // Step 2: Build hierarchical slug
-            var slugParts = new List<string>();
-
-            // Add current category name first
-            slugParts.Add(Slugify(dto.Name));
-
             long? parentId = dto.ParentId;
 
             while (parentId != null)
             {
                 var parent = await _db.QueryFirstOrDefaultAsync<CreateCategoryDto>(
-                    "SELECT name FROM product_categories WHERE Id = @Id",
+                    "SELECT name, parent_id FROM product_categories WHERE Id = @Id",
                     new { Id = parentId });
 
                 if (parent == null)
                     break;
-
-                slugParts.Add(Slugify(parent.Name));
                 parentId = parent.ParentId;
             }
 
-            // Reverse to get correct hierarchy order
-            slugParts.Reverse();
-
-            var finalSlug = string.Join("-", slugParts);
-
-            // Step 3: Insert
+            // Step 3: Insert with stored procedure
             var p = new DynamicParameters();
             p.Add("@name", dto.Name);
-            p.Add("@slug", finalSlug);
+            p.Add("@slug", dto.Slug);
             p.Add("@parent_id", dto.ParentId);
+            p.Add("@image_url", imageUrl); // NEW: pass image name to SP
             p.Add("@new_id", dbType: DbType.Int64, direction: ParameterDirection.Output);
 
             await _db.ExecuteAsync("dbo.sp_AddCategory", p, commandType: CommandType.StoredProcedure);
 
             return p.Get<long>("@new_id");
-
         }
 
         // Move (re-parent) a category via sp_MoveCategory

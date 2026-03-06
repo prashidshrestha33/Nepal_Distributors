@@ -35,64 +35,72 @@ namespace Marketplace.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ImportProducts([FromForm] ImportProductsRequest request)
         {
-            var file = request.File;
-            if (file == null || file.Length == 0)
-                return BadRequest(new { error = "No file uploaded" });
-            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-            if (ext != ".csv" && ext != ".xlsx" && ext != ".xls")
-                return BadRequest(new { error = "Only CSV and Excel files are supported (.csv, .xlsx, .xls)" });
-            var jobId = Guid.NewGuid();
-            var tempFile = Path.Combine(Path.GetTempPath(), $"{jobId}{ext}");
-            await using (var fs = System.IO.File.Create(tempFile))
+            try
             {
-                await file.CopyToAsync(fs);
-            }
-            var job = new ImportJobInfo
-            {
-                Id = jobId,
-                FileName = file.FileName,
-                CreatedAt = DateTimeOffset.UtcNow,
-                Status = ImportStatus.Queued,
-                Errors = new ConcurrentQueue<string>(),
-                Total = 0,
-                Processed = 0
-            };
-            Jobs[jobId] = job;
-            var createdBy = User?.FindFirst("emailaddress")?.Value
-                ?? User?.FindFirst(ClaimTypes.Email)?.Value
-                ?? "system";
-            _ = Task.Run(async () =>
-            {
-                job.Status = ImportStatus.Running;
-                try
+                var file = request.File;
+                if (file == null || file.Length == 0)
+                    return BadRequest(new { error = "No file uploaded" });
+                var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+                if (ext != ".csv" && ext != ".xlsx" && ext != ".xls")
+                    return BadRequest(new { error = "Only CSV and Excel files are supported (.csv, .xlsx, .xls)" });
+                var jobId = Guid.NewGuid();
+                var tempFile = Path.Combine(Path.GetTempPath(), $"{jobId}{ext}");
+                await using (var fs = System.IO.File.Create(tempFile))
                 {
-                    using var scope = _scopeFactory.CreateScope();
-                    var repo = scope.ServiceProvider.GetRequiredService<IProductRepository>();
-                    var db = scope.ServiceProvider.GetRequiredService<IDbConnection>();
-                    if (ext == ".csv")
-                        await ProcessCsvAsync(tempFile, job, repo, db, createdBy);
-                    else
+                    await file.CopyToAsync(fs);
+                }
+                var job = new ImportJobInfo
+                {
+                    Id = jobId,
+                    FileName = file.FileName,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    Status = ImportStatus.Queued,
+                    Errors = new ConcurrentQueue<string>(),
+                    Total = 0,
+                    Processed = 0
+                };
+                Jobs[jobId] = job;
+                var createdBy = User?.FindFirst("emailaddress")?.Value
+                    ?? User?.FindFirst(ClaimTypes.Email)?.Value
+                    ?? "system";
+                _ = Task.Run(async () =>
+                {
+                    job.Status = ImportStatus.Running;
+                    try
                     {
-                        job.Errors.Enqueue("Excel import not implemented yet.");
+                        using var scope = _scopeFactory.CreateScope();
+                        var repo = scope.ServiceProvider.GetRequiredService<IProductRepository>();
+                        var db = scope.ServiceProvider.GetRequiredService<IDbConnection>();
+                        if (ext == ".csv")
+                            await ProcessCsvAsync(tempFile, job, repo, db, createdBy);
+                        else
+                        {
+                            job.Errors.Enqueue("Excel import not implemented yet.");
+                            job.Status = ImportStatus.Failed;
+                        }
+                        if (job.Status != ImportStatus.Failed)
+                            job.Status = ImportStatus.Completed;
+                    }
+                    catch (Exception ex)
+                    {
+                        job.Errors.Enqueue($"Unhandled exception: {ex.Message}");
+                        _logger.LogError(ex, "Import job {JobId} failed", jobId);
                         job.Status = ImportStatus.Failed;
                     }
-                    if (job.Status != ImportStatus.Failed)
-                        job.Status = ImportStatus.Completed;
-                }
-                catch (Exception ex)
-                {
-                    job.Errors.Enqueue($"Unhandled exception: {ex.Message}");
-                    _logger.LogError(ex, "Import job {JobId} failed", jobId);
-                    job.Status = ImportStatus.Failed;
-                }
-                finally
-                {
-                    job.CompletedAt = DateTimeOffset.UtcNow;
-                    try { System.IO.File.Delete(tempFile); } catch { }
-                }
-            });
-            var statusUrl = Url.Action(nameof(GetJobStatus), new { id = jobId });
-            return Accepted(statusUrl!, new { jobId, statusUrl });
+                    finally
+                    {
+                        job.CompletedAt = DateTimeOffset.UtcNow;
+                        try { System.IO.File.Delete(tempFile); } catch { }
+                    }
+                });
+                var statusUrl = Url.Action(nameof(GetJobStatus), new { id = jobId });
+                return Accepted(statusUrl!, new { jobId, statusUrl });
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
         }
         [HttpGet("status/{id:guid}")]
         public IActionResult GetJobStatus([FromRoute] Guid id)
@@ -119,6 +127,11 @@ namespace Marketplace.Api.Controllers
             }
             if (total > 0) total--;
             job.Total = total;
+
+            // Access the company_id from the claims at the start of the request
+            var companyIdClaim = User.Claims.FirstOrDefault(c => c.Type == "company_id")?.Value;
+            int? companyId = companyIdClaim != null ? int.Parse(companyIdClaim) : (int?)null;
+
             using var sr = new StreamReader(filePath);
             var headerLine = await sr.ReadLineAsync();
             if (string.IsNullOrWhiteSpace(headerLine))
@@ -141,7 +154,8 @@ namespace Marketplace.Api.Controllers
                 try
                 {
                     var fields = ParseCsvLine(line);
-                    var record = await MapFields(headers, fields, createdBy, repo, db, job, lineNumber);
+                    // Pass companyId to the MapFields method
+                    var record = await MapFields(headers, fields, createdBy, repo, db, job, lineNumber, companyId);
                     if (record == null)
                         job.Errors.Enqueue($"Line {lineNumber}: missing required fields.");
                     else
@@ -157,7 +171,7 @@ namespace Marketplace.Api.Controllers
                 }
             }
         }
-        private async Task<ProductModel?> MapFields(string[] headers, IList<string> fields, string createdBy, IProductRepository repo, IDbConnection db, ImportJobInfo job, int lineNumber)
+        private async Task<ProductModel?> MapFields(string[] headers, IList<string> fields, string createdBy, IProductRepository repo, IDbConnection db, ImportJobInfo job, int lineNumber, int? companyId)
         {
             var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < headers.Length && i < fields.Count; i++)
@@ -165,35 +179,30 @@ namespace Marketplace.Api.Controllers
             dict[headers[i]] = i < fields.Count ? fields[i] : string.Empty;
             if (!dict.TryGetValue("name", out var name) || string.IsNullOrWhiteSpace(name))
                 return null;
+            
             var product = new ProductModel
             {
-                CompanyId = dict.GetValueOrDefault("company_id") != null
-                  ? int.Parse(dict.GetValueOrDefault("company_id"))
-                  : null,
-                Sku = dict.GetValueOrDefault("sku"),
+                CompanyId = companyId,
+                Sku = $"SKU-{name}",  // Set SKU to be "SKU" - "name"
                 Name = name,
-                Description = dict.GetValueOrDefault("Description"),
-                ShortDescription = dict.GetValueOrDefault("short_description"),
+                Description = dict.GetValueOrDefault("details"),
                 CategoryId = 0,
                 BrandId = 0,
                 ManufacturerId = 0,
                 Rate = decimal.TryParse(dict.GetValueOrDefault("rate"), out var r) ? r : 0,
-                HsCode = dict.GetValueOrDefault("hs_code") ?? "",
-                Status = dict.GetValueOrDefault("status") ?? "pending_approval",
-                IsFeatured = ParseBoolean(dict.GetValueOrDefault("is_featured")),
+                HsCode = dict.GetValueOrDefault("hs code") ?? "",
+                Status = "Pending",
+                IsFeatured = true,
                 SeoTitle = name, // product name
                 SeoDescription = GenerateSeoDescription(dict.GetValueOrDefault("description")),
-                Attributes = dict.GetValueOrDefault("attributes"),
                 CreatedBy = createdBy,
                 CreatedAt = dict.GetValueOrDefault("created_at") != null
                   ? DateTime.Parse(dict.GetValueOrDefault("created_at"))
                   : DateTime.UtcNow,
-                UpdatedAt = dict.GetValueOrDefault("updated_at") != null
-                  ? DateTime.Parse(dict.GetValueOrDefault("updated_at"))
-                  : DateTime.UtcNow
+                UpdatedAt = null
             };
             // Resolve CategoryId
-            var catVal = dict.GetValueOrDefault("category_id");
+            var catVal = dict.GetValueOrDefault("category");
             if (!string.IsNullOrWhiteSpace(catVal))
             {
                 if (int.TryParse(catVal, out var cid))
@@ -218,7 +227,7 @@ namespace Marketplace.Api.Controllers
                 }
             }
             // Resolve BrandId similarly (static_value table under Brand catalog)
-            var brandVal = dict.GetValueOrDefault("brand_id") ?? dict.GetValueOrDefault("brand");
+            var brandVal = dict.GetValueOrDefault("brand") ?? dict.GetValueOrDefault("brand");
             if (!string.IsNullOrWhiteSpace(brandVal))
             {
                 if (int.TryParse(brandVal, out var bid))
@@ -246,7 +255,7 @@ namespace Marketplace.Api.Controllers
                 }
             }
             // Resolve BrandId similarly (static_value table under Brand catalog)
-            var manufactureVal = dict.GetValueOrDefault("manufacture_id") ?? dict.GetValueOrDefault("manufacture");
+            var manufactureVal = dict.GetValueOrDefault("manufacture") ?? dict.GetValueOrDefault("manufacture");
             if (!string.IsNullOrWhiteSpace(manufactureVal))
             {
                 if (int.TryParse(manufactureVal, out var mid))

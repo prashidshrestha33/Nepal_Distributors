@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import type { Product } from '../../../../services/management/management.service';
-
+import { environment } from '../../../../../../environments/environment';
 @Component({
   selector: 'app-approve-product',
   standalone: true,
@@ -36,6 +36,20 @@ export class ApproveProductComponent {
       this.snackbar.show = false;
     }, duration);
   }
+getDefaultImage(): string {
+  if (!this.product?.images?.length) return this.getImageUrl(); // fallback
+
+  const defaultImg =
+    this.product.images.find(img => img.isDefault) ||
+    this.product.images[0];
+
+  return this.getImageUrl(defaultImg.imageName);
+}
+getImageUrl(imageName?: string): string {
+  return imageName
+    ? `${environment.apiBaseUrl}/api/CompanyFile?fileName=${encodeURIComponent(imageName)}`
+    : 'assets/images/no-image.png'; // fallback image if no image exists
+}
 
   // =========================
   // Inputs & Outputs

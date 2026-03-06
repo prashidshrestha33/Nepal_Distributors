@@ -5,22 +5,16 @@ import { Router } from '@angular/router';
 import { NgSelectModule } from '@ng-select/ng-select';
 
 import { CompanyService } from '../../../../services/management/company.service';
-import { CategoryService } from '../../../../services/management/management.service';
+import { Category, CategoryService } from '../../../../services/management/management.service';
+import { FormsModule } from '@angular/forms';
 
 import { CatagoryDynamicComponent } from '../../../../components/CustomComponents/CatagoryDynamic/catagory-dynamic.component'; 
-interface Category {
-  id: number;
-  name: string;
-  slug?: string;
-  parent_id: number | null;
-  children?: Category[];
-  depth?: number;
-}
+
 
 @Component({
   selector: 'app-category-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgSelectModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgSelectModule, CatagoryDynamicComponent],
   templateUrl: './category-form.component.html',
   styleUrls: ['./category-form.component.css']
 })
@@ -60,6 +54,8 @@ export class CategoryFormComponent implements OnInit {
 
   ngOnInit() {
     this.loadCategories();
+    this.setupNameToSlugListener();
+  }
 
   private setupNameToSlugListener(): void {
     this.form.get('name')?.valueChanges.subscribe(name => {
@@ -71,24 +67,26 @@ export class CategoryFormComponent implements OnInit {
       }
     });
   }
-    onCategoryChosen(categoryId: number) {
-      this.form.get('parent_id')?.setValue(categoryId);
-  }
-flattenCategories(categories: Category[], depth = 0): Category[] {
-  const result: Category[] = [];
-
-  private flattenCategories(categories: Category[], depth = 0): Category[] {
-    let result: Category[] = [];
-    for (const cat of categories) {
-      result.push({ ...cat, depth });
-      if (cat.children?.length) {
-        result.push(...this.flattenCategories(cat.children, depth + 1));
+    onCategoryChosen(categoryId: any): void {
+      if (typeof categoryId === 'number') {
+        this.form.get('parent_id')?.setValue(categoryId);
+      } else {
+        console.error('Invalid category ID:', categoryId);
       }
-    }
-    return result;
   }
 
-  private initializeCascadingLevels(): void {
+private flattenCategories(categories: Category[], depth = 0): Category[] {
+  let result: Category[] = [];
+  for (const cat of categories) {
+    result.push({ ...cat, depth });
+    if (cat.children?.length) {
+      result.push(...this.flattenCategories(cat.children, depth + 1));
+    }
+  }
+  return result;
+}
+
+private initializeCascadingLevels(): void {
     this.levelCategories = [];
     this.levelCategories[0] = this.allCategories.filter(c => c.parent_id === null);
 
@@ -142,7 +140,7 @@ flattenCategories(categories: Category[], depth = 0): Category[] {
   }
 
   generateSlug(name: string): string {
-    return `categories/${name
+    return `categories-${name
       .toLowerCase()
       .trim()
       .replace(/\s+/g, '-')
@@ -185,78 +183,74 @@ flattenCategories(categories: Category[], depth = 0): Category[] {
   }
 
   private processFile(file: File): void {
-    if (!file.type.startsWith('image/')) {
-      this.error = 'Only image files are allowed (PNG, JPG, JPEG, WEBP)';
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      this.error = 'Image size must be less than 5MB';
-      return;
-    }
-
-    this.error = null;
-    this.selectedImage = file;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      this.imageUrl = reader.result as string;
-      this.form.patchValue({ image: file });
-      this.form.get('image')?.markAsTouched();
-      this.cdr.detectChanges();
-    };
-    reader.readAsDataURL(file);
+  if (!file.type.startsWith('image/')) {
+    this.error = 'Only image files are allowed (PNG, JPG, JPEG, WEBP)';
+    return;
   }
+
+  if (file.size > 5 * 1024 * 1024) {
+    this.error = 'Image size must be less than 5MB';
+    return;
+  }
+
+  this.error = null;
+  this.selectedImage = file;
+
+  // Update form control
+  this.form.patchValue({
+    image: file
+  });
+
+  this.form.get('image')?.updateValueAndValidity();
+
+  // Preview image
+  const reader = new FileReader();
+  reader.onload = () => {
+    this.imageUrl = reader.result as string;
+    this.cdr.detectChanges();
+  };
+  reader.readAsDataURL(file);
+}
 
   removeImage(event: Event): void {
-    event.stopPropagation();
-    event.preventDefault();
+  event.stopPropagation();
+  event.preventDefault();
 
-    this.selectedImage = null;
-    this.imageUrl = null;
-    this.form.patchValue({ image: null });
-    this.form.get('image')?.markAsTouched();
-    this.error = null;
-    this.cdr.detectChanges();
-  }
+  this.selectedImage = null;
+  this.imageUrl = null;
+
+  this.form.patchValue({
+    image: null
+  });
+
+  this.form.get('image')?.markAsTouched();
+}
 
   // ────────────────────────────────────────────────
   //                   Form Submit
   // ────────────────────────────────────────────────
 
-  onSubmit(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    this.loading = true;
-    this.error = null;
-
-    const formData = new FormData();
-    formData.append('name', (this.form.value.name || '').trim());
-    formData.append('slug', (this.form.value.slug || '').trim());
-
-    const parentId = this.form.value.parent_id;
-    if (parentId) {
-      formData.append('parentId', parentId.toString());
-    }
-
-    if (this.selectedImage) {
-      formData.append('image', this.selectedImage);
-    }
-
-    this.categoryService.createCategory(formData).subscribe({
-      next: () => {
-        this.router.navigate(['/management/categories']);
-      },
-      error: (err) => {
-        this.error = err?.error?.message || 'Failed to create category. Please try again.';
-        this.loading = false;
-        this.cdr.detectChanges();
-      }
-    });
+onSubmit(): void {
+  if (this.form.invalid) {
+    this.form.markAllAsTouched();
+    return;
   }
+
+  const formData = new FormData();
+  formData.append('Name', this.form.value.name);       
+  formData.append('Slug', this.form.value.slug);       
+  if (this.form.value.parent_id) {
+    formData.append('ParentId', this.form.value.parent_id || ''); 
+  }
+  if (this.selectedImage) {
+    formData.append('Image', this.selectedImage);     
+  }
+
+  this.categoryService.createCategory(formData).subscribe({
+    next: () => this.router.navigate(['/management/categories']),
+    error: (err) => console.error('Error', err)
+  });
+}
 
   goBack(): void {
     this.router.navigate(['/management/categories']);
@@ -270,5 +264,19 @@ flattenCategories(categories: Category[], depth = 0): Category[] {
   get currentParentName(): string {
     const lastSelectedId = [...this.selectedParents].reverse().find(id => id !== null);
     return lastSelectedId ? this.findCategoryById(lastSelectedId)?.name || '' : '';
+  }
+
+  private loadCategories(): void {
+    this.categoryService.getTreeCategories().subscribe({
+      next: (categories: Category[]) => {
+        this.allCategories = categories;
+        this.flatCategories = this.flattenCategories(categories);
+        this.initializeCascadingLevels();
+      },
+      error: (err) => {
+        console.error('Error loading categories:', err);
+        this.error = 'Failed to load categories. Please try again later.';
+      }
+    });
   }
 }

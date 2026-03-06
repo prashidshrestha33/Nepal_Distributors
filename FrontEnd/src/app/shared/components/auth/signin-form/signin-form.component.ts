@@ -30,7 +30,8 @@ export class SigninFormComponent implements OnInit {
   isLoading = false;
   isSocialLoading = false;
   returnUrl: string = '';
-   showOtp = true;
+  showOtp = true;
+   
 
   constructor(
     private formBuilder: FormBuilder,
@@ -48,7 +49,11 @@ export class SigninFormComponent implements OnInit {
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
 
     this.loginForm = this. formBuilder.group({
-      email: ['', [Validators.required, Validators.email]],
+      email: ['', [
+        Validators.required,  // Check if email is provided
+        Validators.email,     // Angular built-in email validation
+        Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)  // Custom regex pattern for email validation
+      ]],
       password: [''],
       oTP: [''],
       rememberMe: [false]

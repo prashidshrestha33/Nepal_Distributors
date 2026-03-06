@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+
+import { ApproveProductComponent } from '../approve/approve-product.component';
 import {
   ProductService,
   StaticValueService,
@@ -13,25 +15,42 @@ import {
 } from '../../../../services/management/management.service';
 import { environment } from '../../../../../../environments/environment';
 
+// Define ProductImage interface
+interface ProductImage {
+  id: number;
+  productId: number;
+  imageName: string;
+  isDefault: boolean;
+  createdAt: string;
+}
+
 @Component({
   selector: 'app-product-details',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ApproveProductComponent],
   templateUrl: './product-details.component.html',
-  styleUrl: './product-details.component.css'
+  styleUrls: ['./product-details.component.css']
 })
 export class ProductDetailsComponent implements OnInit {
   product?: Product;
   loading = true;
 
   categories: Category[] = [];
-
   brandMap = new Map<number, string>();
   manufactureMap = new Map<number, string>();
 
-  // ————————— Feedback / Rating —————————
   selectedRating: number = 0;
   commentText: string = '';
+  approveProductData: (Product & { categoryName?: string; brandName?: string }) | null = null;
+
+  // Approve modal properties
+  showApproveModal: boolean = false;
+  approveStatus: string = '';
+
+  // Carousel
+  currentIndex: number = 0;
+  carouselInterval: any; // To clear interval on destroy
+  images?: ProductImage[];
 
   constructor(
     private route: ActivatedRoute,
@@ -42,13 +61,28 @@ export class ProductDetailsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
+    const idParam = this.route.snapshot.paramMap.get('id');
+    const id = Number(idParam);
+    if (!id) {
+      console.error('Invalid product ID from route:', idParam);
+      this.loading = false;
+      return;
+    }
+
     this.loadProduct(id);
     this.loadCategories();
     this.loadStaticValues();
   }
 
-  // ————— Ratings & Feedback —————
+  ngOnDestroy(): void {
+    if (this.carouselInterval) {
+      clearInterval(this.carouselInterval);
+    }
+  }
+
+  // ----------------------
+  // Feedback Section
+  // ----------------------
   setRating(rating: number) {
     this.selectedRating = rating;
   }
@@ -66,28 +100,47 @@ export class ProductDetailsComponent implements OnInit {
       createdAt: new Date()
     };
 
-    // TODO: Save to backend
+    // TODO: Save feedback to backend
     alert('Thank you for your feedback!');
-
     this.selectedRating = 0;
     this.commentText = '';
   }
 
-  // ————— Loading Product & Lookups —————
-
+  // ----------------------
+  // Product Load
+  // ----------------------
   private loadProduct(id: number) {
+    this.loading = true;
     this.productService.getProductById(id).subscribe({
       next: (res: any) => {
-        this.product = res.result;
-        if (this.product) {
-          this.product.imageUrl = this.product.imageName
-            ? this.getImageUrl(this.product.imageName)
-            : 'assets/images/no-image.png';
+        debugger;
+        const data = res.result ?? res;
+        if (data) {
+          // Assign product and ensure images array exists
+          this.product = {
+            ...data,
+            images: data.images ?? []  // ← make sure images array is not undefined
+          };
+
+          // Start carousel only if images exist
+          if (this.product?.images && this.product.images.length > 0) {
+            // Find initial default image index
+            const defaultIndex = this.product.images.findIndex(img => img.isDefault);
+            this.currentIndex = defaultIndex !== -1 ? defaultIndex : 0;
+          }
         }
+
         this.loading = false;
       },
-      error: () => (this.loading = false)
+      error: (err) => {
+        console.error('Error loading product:', err);
+        this.loading = false;
+      }
     });
+  }
+  // Manual index change (if you add thumbnails/buttons in HTML)
+  setCurrentIndex(index: number) {
+    this.currentIndex = index;
   }
 
   private loadCategories() {
@@ -102,24 +155,29 @@ export class ProductDetailsComponent implements OnInit {
       next: (catalogs: StaticValueCatalog[]) => {
         if (!catalogs) return;
 
-        // Brand
         const brandCat = catalogs.find(c => c.catalogName === 'Brand');
         if (brandCat) {
           this.staticValueService.getStaticValues(brandCat.catalogId)
-            .subscribe({ next: (vals: StaticValue[]) => vals.forEach(v => this.brandMap.set(Number(v.staticId), v.staticValueKey)) });
+            .subscribe({
+              next: (vals: StaticValue[]) => vals.forEach(v => this.brandMap.set(Number(v.staticId), v.staticValueKey))
+            });
         }
 
-        // Manufacture
         const manuCat = catalogs.find(c => c.catalogName === 'Manufacture');
         if (manuCat) {
           this.staticValueService.getStaticValues(manuCat.catalogId)
-            .subscribe({ next: (vals: StaticValue[]) => vals.forEach(v => this.manufactureMap.set(Number(v.staticId), v.staticValueKey)) });
+            .subscribe({
+              next: (vals: StaticValue[]) => vals.forEach(v => this.manufactureMap.set(Number(v.staticId), v.staticValueKey))
+            });
         }
       },
       error: (err) => console.error('Error loading static value catalog', err)
     });
   }
 
+  // ----------------------
+  // Getters
+  // ----------------------
   getBrandName(brandId?: number | null): string {
     return !brandId ? 'N/A' : this.brandMap.get(Number(brandId)) ?? 'N/A';
   }
@@ -135,11 +193,57 @@ export class ProductDetailsComponent implements OnInit {
   }
 
   getImageUrl(imageName?: string): string {
+    debugger;
     if (!imageName) return 'assets/images/no-image.png';
-    return `${environment.apiBaseUrl}/api/CompanyFile/${imageName}`;
+    return `${environment.apiBaseUrl}/api/CompanyFile/${encodeURIComponent(imageName)}`;
   }
 
   goBack() {
     this.router.navigate(['/products']);
+  }
+
+  // ----------------------
+  // Approve Product
+  // ----------------------
+  approveProduct(product: Product) {
+    this.approveProductData = {
+      ...product,
+      categoryName: this.getCategoryName(product.categoryId),
+      brandName: this.getBrandName(product.brandId),
+    };
+    this.approveStatus = product.status || 'Pending';
+    this.showApproveModal = true;
+  }
+
+  onApproveCancel() {
+    this.showApproveModal = false;
+  }
+
+  onApproveSave(event: { status: string; reason?: string }) {
+    if (!this.approveProductData) return;
+
+    // Prepare payload for approval or removal
+    const payload = {
+      id: this.approveProductData.id,
+      action: event.status,
+      remarks: event.reason || '',
+    };
+
+    this.productService.ApprovedProductById(this.approveProductData.id, payload).subscribe({
+      next: (updatedProduct: Product) => {
+        if (this.product && this.product.id === updatedProduct.id) {
+          this.product.status = updatedProduct.status;
+        }
+        this.showApproveModal = false;
+      },
+      error: (err) => {
+        console.error('Error updating product status:', err);
+      },
+    });
+  }
+
+  // Handle image load error
+  handleImageError(event: any) {
+    event.target.src = 'assets/images/no-image.png';
   }
 }

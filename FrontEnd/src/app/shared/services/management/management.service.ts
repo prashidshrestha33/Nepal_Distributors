@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiGatewayService } from '../api-gateway.service';
 import { ApiResponse } from '../../models/api-response.model';
+import { HttpEvent } from '@angular/common/http';
 
 // ============================================
 // INTERFACES
@@ -13,6 +14,7 @@ export interface Category {
   name: string;
   slug: string;
   parent_id?: number | null;
+  imageUrl?: string;  
   depth?: number;
   children?: Category[];
   createdAt?: string;
@@ -148,12 +150,13 @@ export class CategoryService {
   getCategories(): Observable<Category[]> {
     return this.getTreeCategories();
   }
-
 createCategory(formData: FormData): Observable<Category> {
-  return this.apiGateway.postWithResult<Category>(
-    '/api/Product/AddCatagory',  // Your backend endpoint
-    formData,  // Send FormData instead of the regular Category object
-    { requiresAuth: true }  // Add any necessary headers
+  return this.apiGateway.post<Category>(
+    '/api/Product/AddCatagory',
+    formData,
+     { 
+       requiresAuth: true // make sure apiGateway attaches Authorization header
+     }
   );
 }
 
@@ -197,7 +200,7 @@ SearchProducts(keyword:string,page: number = 1, pageSize: number = 20): Observab
     );
   }
   getProductById(id: number): Observable<Product> {
-    return this.apiGateway.get<Product>(
+    return this.apiGateway.get<any>(
       `/api/Product/Update/${id}`,
       { requiresAuth: true }
     )
@@ -310,9 +313,9 @@ updateProduct(id: number, product: Product, images?: { file: File, isDefault: bo
       { requiresAuth: true }
     );
   }
-CSVImporter(file: File): Observable<any> {
+CSVImporter(file: File): Observable<HttpEvent<any>> {
   const formData = new FormData();
-  formData.append('File', file, file.name); // MUST be "File"
+  formData.append('File', file, file.name);
 
   return this.apiGateway.post<any>(
     '/api/Import/products',

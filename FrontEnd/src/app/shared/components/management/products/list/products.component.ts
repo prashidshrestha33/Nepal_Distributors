@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { ApproveProductComponent } from '../approve/approve-product.component';
 import { PaginationComponent } from '../../Pagination/app-pagination.component';
@@ -10,6 +10,7 @@ import type { Product as ProductBase } from '../../../../services/management/man
 import { Category, CategoryService, Users, StaticValueCatalog, StaticValueService, StaticValue } from '../../../../services/management/management.service';
 import { environment } from '../../../../../../environments/environment';
 import { ProductListPopupComponent } from '../../../CustomComponents/ProductList/product-list-popup.component';
+import { HttpEvent, HttpEventType, HttpClient } from '@angular/common/http';
 
 import { UiService, StatusPopupState } from '../../../../../ui.service';
 type Product = ProductBase & { selected?: boolean };
@@ -42,6 +43,12 @@ export class ProductsComponent implements OnInit {
   staticValueCatalogs: StaticValueCatalog[] = [];
   staticValues: StaticValue[] = [];
   brandMap = new Map<number, string>();
+  loadings: boolean = false;
+  isPanelOpen: boolean = false;
+
+  progress = 0;
+  rowsInserted = 0;
+  uploadMessage = '';
 
   // Bulk selection flags
   allSelected = false;
@@ -54,6 +61,7 @@ export class ProductsComponent implements OnInit {
   totalPages = 0;
 
   Math = Math;
+  
 
   constructor(
     private productService: ProductService,
@@ -61,7 +69,8 @@ export class ProductsComponent implements OnInit {
     private categoryService: CategoryService,
     private cdr: ChangeDetectorRef,
     private staticValueService: StaticValueService,
-      public ui: UiService           
+      public ui: UiService,
+      private http: HttpClient
   ) {}
 
   ngOnInit() {
@@ -92,9 +101,11 @@ export class ProductsComponent implements OnInit {
       }
     });
   }
+  
   openProductList(companyId: number, keyword: string = '', style: 'table' | 'list' | 'scroll' = 'table') {
   this.ui.openProductList(companyId, keyword, 'table');
 }
+
   // Get brand name by brandId safely
 getBrandName(brandId?: number | null): string {
   if (!brandId) return 'N/A';
@@ -145,10 +156,49 @@ getBrandName(brandId?: number | null): string {
     };
     return findCat(this.treeCategories) || 'N/A';
   }
+  // Toggle the right panel
+  togglePanel(): void {
+    this.isPanelOpen = !this.isPanelOpen;
+  }
 
-  // ----------------------
-  // Brand static values
-  // ----------------------
+onFileSelected(event: any) {
+  debugger;
+    const file: File = event.target.files[0];
+    if (!file) return;
+    this.uploadCSV(file);
+  }
+  
+  uploadCSV(selectedFile: File) {
+  debugger;
+
+  if (!selectedFile) {
+    this.uploadMessage = "Please select a CSV file first.";
+    return;
+  }
+
+  this.productService.CSVImporter(selectedFile).subscribe({
+    next: (event: any) => {
+
+      if (event.type === HttpEventType.UploadProgress) {
+        this.progress = Math.round((100 * event.loaded) / event.total);
+      }
+
+      if (event.type === HttpEventType.Response) {
+        this.loading = false;
+        this.rowsInserted = event.body?.rowsInserted || 0;
+        this.uploadMessage = "CSV import completed successfully";
+        this.loadProducts();
+      }
+    this.loadProducts();
+    },
+    error: (err) => {
+      this.loading = false;
+      this.uploadMessage = 'Upload failed. Please try again.';
+      console.error(err);
+    }
+  });
+}
+
 // Load all brand static values once
 loadBrandStaticValues(): void {
   this.staticValueService.getStaticValuesCatagory().subscribe({
@@ -176,7 +226,7 @@ loadBrandStaticValues(): void {
   // ----------------------
   // Approve / remove product
   // ----------------------
-  approveProduct(product: Product) {
+approveProduct(product: Product) {
   // Prepare data for the modal
   this.approveProductData = {
     ...product,
@@ -251,29 +301,51 @@ refreshProductList() {
 onApproveCancel() {
   this.showApproveModal = false;
 }
-  // ----------------------
-  // File upload
-  // ----------------------
-  onFileSelected(event: any) {
-    this.selectedFile = event.target.files[0];
-    if (this.selectedFile) this.importCsv();
-  }
 
   importCsv() {
-    if (!this.selectedFile) return;
-    this.loading = true;
-    this.error = undefined;
-    this.productService.CSVImporter(this.selectedFile).subscribe({
-      next: res => {
-        this.jobId = res.jobId;
-        this.loading = false;
-      },
-      error: err => {
-        this.error = err.error?.error || 'CSV import failed';
-        this.loading = false;
+  if (!this.selectedFile) return;
+  this.loading = true;
+  this.progress = 0;
+  this.uploadMessage = '';
+
+  this.productService.CSVImporter(this.selectedFile).subscribe({
+    next: (event: any) => {
+
+      if (event.type === HttpEventType.UploadProgress) {
+        this.progress = Math.round((100 * event.loaded) / event.total);
       }
-    });
-  }
+
+      if (event.type === HttpEventType.Response) {
+        this.loading = false;
+
+        this.rowsInserted = event.body.rowsInserted || 0;
+        this.uploadMessage = "CSV import completed successfully";
+
+        this.loadProducts();
+      }
+
+    },
+    error: (err) => {
+      this.loading = false;
+      this.uploadMessage = err.error?.message || "CSV import failed";
+    }
+  });
+}
+
+downloadTemplate() {
+  const fileUrl = '../../../../../assets/templates/product-template.csv';
+
+  // Create a Blob from the URL
+  fetch(fileUrl)
+    .then(response => response.blob())
+    .then(blob => {
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = 'product-template.csv';
+      link.click();  // Trigger the download
+    })
+    .catch(err => console.error('Failed to download file:', err));
+}
 
   // ----------------------
   // Bulk selection
@@ -342,6 +414,10 @@ getImageUrl(imageName?: string): string {
   viewProduct(product: Product) {
     if (product?.id) this.router.navigate(['/products', product.id]);
   }
+  getDefaultImage(product: Product) {
+  return product.images?.find(i => i.isDefault) 
+      || product.images?.[0];
+}
 
   goToEditProduct(id: number) {
     this.router.navigate(['/management/products/edit', id]);

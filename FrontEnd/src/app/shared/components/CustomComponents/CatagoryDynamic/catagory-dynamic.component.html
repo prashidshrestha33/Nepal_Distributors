@@ -1,6 +1,7 @@
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
   <div *ngFor="let level of categoryLevels; let i = index">
     <ng-select
+    class="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
       [items]="level.categories"
       bindLabel="name"
       bindValue="id"

@@ -86,7 +86,7 @@
         <!-- Full Name -->
         <div class="sm:col-span-1">
           <app-label>
-            Full Name <span class="text-error-500">*</span>
+            Full Name <span class="text-red-500">*</span>
           </app-label>
           <input
             type="text"
@@ -108,7 +108,7 @@
         <!-- Phone Number -->
         <div class="sm:col-span-1">
           <app-label>
-            Phone Number <span *ngIf="returnUrl==null" class="text-error-500">*</span>
+            Phone Number <span *ngIf="returnUrl==null" class="text-red-500">*</span>
           </app-label>
           <input
             type="text"
@@ -131,7 +131,7 @@
       <!-- Email -->
       <div *ngIf="returnUrl == null">
         <app-label>
-          Email <span class="text-error-500">*</span>
+          Email <span class="text-red-500">*</span>
         </app-label>
 
         <div class="flex items-center gap-2">

@@ -441,7 +441,7 @@ if (decryptedData && decryptedData.CompanyEmail) {
         // Hide success message after 4 seconds
         setTimeout(() => {
           this.showSuccessMessage = false;
-        }, 1000);
+        }, 6000);
 
         // Navigate to signin after 4 seconds
         setTimeout(() => {

@@ -17,9 +17,9 @@ namespace Marketpalce.Repository.Repositories.ComponyRepo
             try
             {
                 const string sql = @"
-                INSERT INTO dbo.companies (name, contact_person, mobile_phone, landline_phone, registration_document, company_type, status, user_type, credits, tier, location, google_map_location, created_at, updated_at, approve_dt, approve_ts)
+                INSERT INTO dbo.companies (name, contact_person, mobile_phone, landline_phone, registration_document, company_type, status, user_type, credits, tier, location, google_map_location, created_at, approve_dt)
                 OUTPUT INSERTED.id
-                VALUES (@Name, @ContactPerson, @MobilePhone, @LandlinePhone, @RegistrationDocument, @CompanyType, @Status, @UserType, @Credits, @Tier, @Location, @GoogleMapLocation, SYSUTCDATETIME(), SYSUTCDATETIME(), @ApproveDt, SYSUTCDATETIME());";
+                VALUES (@Name, @ContactPerson, @MobilePhone, @LandlinePhone, @RegistrationDocument, @CompanyType, @Status, @UserType, @Credits, @Tier, @Location, @GoogleMapLocation, SYSUTCDATETIME(), @ApproveDt);";
 
                 var id = await _db.QuerySingleAsync<long>(sql, new
                 {

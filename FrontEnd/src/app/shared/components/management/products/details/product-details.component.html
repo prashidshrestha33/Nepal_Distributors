@@ -1,121 +1,114 @@
-<div *ngIf="!loading && product" class="product-wrapper max-w-6xl mx-auto p-6">
-
-  <!-- Product Card -->
-  <div class="product-card flex flex-col md:flex-row gap-8 bg-white rounded-xl shadow-lg p-6 min-h-[700px]">
-
-    <!-- LEFT: Main Image -->
-    <div class="flex flex-col items-center md:w-1/2 w-full">
-      <div class="image-zoom mb-4">
-        <img
-          [src]="product.imageUrl"
-          [alt]="product?.imageName"
-          class="w-96 h-96 object-cover rounded-lg border shadow hover:scale-105 transition-transform duration-300"
-        />
-      </div>
-    </div>
-
-    <!-- RIGHT: Info -->
-    <div class="info-section flex-1 flex flex-col gap-3">
-      <h1 class="text-4xl font-extrabold text-gray-900 mb-2">{{ product?.name }}</h1>
-
-      <!-- Price -->
-      <div class="flex flex-col mb-2">
-        <span class="text-2xl font-bold text-orange-600">Rs. {{ product?.rate }}</span>
-      </div>
-
-      <!-- Details -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-gray-700">
-        <div>
-          <span class="font-semibold">Status:</span>
-          <span
-            [ngClass]="{
-              'bg-green-100 text-green-800 px-3 py-1 rounded-full': product?.status === 'Approved',
-              'bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full': product?.status !== 'Approved'
-            }"
-            class="ml-2"
-          >
-            {{ product?.status || 'Pending' }}
-          </span>
-        </div>
-
-        <div>
-          <span class="font-semibold">Manufacturer:</span> {{ product?.manufacturerId }}
-        </div>
-
-        <div class="flex items-center gap-2">
-          <span class="font-semibold">Category:</span>
-          <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
-            {{ getCategoryName(product?.categoryId) }}
-          </span>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <span class="font-semibold">Brand:</span>
-          <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
-            {{ getBrandName(product?.brandId) }}
-          </span>
-        </div>
-      </div>
-
-      <div><span class="font-semibold">Created By:</span> {{ product?.createdBy }}</div>
-
-      <button
-        (click)="goBack()"
-        class="mt-6 px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded shadow w-max transition"
-      >
-        ← Back
-      </button>
-    </div>
-  </div>
-
-  <!-- Product Description Card -->
-  <div class="description-card bg-white rounded-xl shadow-md p-6 mt-6">
-    <h2 class="text-2xl font-bold text-gray-900 mb-3">Product Description</h2>
-    <p class="text-gray-700 leading-relaxed">
-      {{ product?.description || 'No description available.' }}
-    </p>
-  </div>
-
-  <!-- ⭐ Feedback & Rating Section -->
-  <div class="feedback-card bg-white rounded-xl shadow-md p-6 mt-6">
-    <h2 class="text-2xl font-bold text-gray-900 mb-4">Leave a Review</h2>
-
-    <!-- Dynamic 5 Star Rating -->
-    <div class="flex gap-1 text-3xl">
-      <ng-container *ngFor="let star of [1,2,3,4,5]; let i = index">
-        <i
-          class="cursor-pointer transition-colors"
-          [ngClass]="{
-            'text-yellow-400': i < selectedRating,
-            'text-gray-300 hover:text-yellow-400': i >= selectedRating
-          }"
-          (click)="setRating(i + 1)"
-        >
-          ★
-        </i>
-      </ng-container>
-    </div>
-
-    <div class="text-sm text-gray-600 mt-1">
-      {{ selectedRating ? (selectedRating + ' star' + (selectedRating > 1 ? 's' : '')) : 'Tap to rate' }}
-    </div>
-
-    <!-- Comment Box -->
-    <textarea
-      [(ngModel)]="commentText"
-      class="mt-4 w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      rows="4"
-      placeholder="Write your review here..."
-    ></textarea>
-
-    <button
-      (click)="submitFeedback()"
-      class="mt-4 bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-blue-700 transition"
-    >
-      Submit Review
-    </button>
-  </div>
-
+<div *ngIf="loading" class="loading text-center text-lg text-gray-500">
+  Loading...
 </div>
 
-<div *ngIf="loading" class="loading text-center text-lg text-gray-500">Loading...</div>
+<div *ngIf="!loading && product" class="product-wrapper max-w-6xl mx-auto p-6">
+
+  <!-- Product Card: Left Image + Right Info -->
+  <div class="flex flex-col md:flex-row gap-8 bg-white rounded-xl shadow-sm p-6">
+
+    <!-- LEFT: Product Images Slideshow -->
+<div *ngIf="product?.images?.length" class="flex justify-center md:w-1/2 w-full overflow-hidden rounded-lg shadow">
+  <div class="flex animate-slide w-full">
+    <img
+      *ngFor="let img of product.images"
+      [src]="getImageUrl(img.imageName)"
+      [alt]="product?.name"
+      class="w-full flex-shrink-0 object-cover h-64 md:h-96"
+    />
+  </div>
+</div>
+
+    <!-- RIGHT: Info Section -->
+    <div class="md:w-1/2 flex flex-col gap-4">
+      <h1 class="text-4xl font-extrabold text-gray-900 mb-2">{{ product?.name }}</h1>
+
+      <!-- Price & Status -->
+      <div class="flex gap-4 items-center">
+        <span class="text-2xl font-bold text-orange-600">Rs. {{ product?.rate }}</span>
+        <span
+          [ngClass]="{
+            'bg-green-100 text-green-800 px-3 py-1 rounded-full': product?.status === 'Approved',
+            'bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full': product?.status !== 'Approved'
+          }"
+        >
+          {{ product?.status || 'Pending' }}
+        </span>
+      </div>
+
+      <!-- Category, Brand, Manufacturer, Created By -->
+      <div class="grid grid-cols-1 gap-2 text-gray-700">
+        <div><strong>Manufacturer:</strong> {{ getManufactureName(product?.manufacturerId) }}</div>
+        <div><strong>Category:</strong> {{ getCategoryName(product?.categoryId) }}</div>
+        <div><strong>Brand:</strong> {{ getBrandName(product?.brandId) }}</div>
+        <div><strong>Created By:</strong> {{ product?.createdBy }}</div>
+        <!-- Approve Button at the bottom of the card -->
+<!-- Approve Button at the bottom of the card -->
+<div class="mt-4" style="text-align-last: right;">
+  <button
+    (click)="approveProduct(product)"
+    class="bg-green-600 text-white font-semibold px-4 py-2 rounded mt-6"
+    title="Approve"
+  >
+    Approve
+  </button>
+</div>
+      </div>
+
+      
+
+    </div>
+  </div>
+  
+</div> <br/>
+<!-- Product Description -->
+      <div class="product-wrapper max-w-6xl mx-auto">
+        <h2 class="text-xl font-bold mb-2">Product Description</h2>
+        <p class="text-gray-700">{{ product?.description || 'No description available.' }}</p>
+      </div> <br/>
+    <!-- Feedback Section -->
+      <div class="product-wrapper max-w-6xl mx-auto">
+        <h2 class="text-xl font-bold mb-2">Leave a Review</h2>
+
+        <div class="flex gap-1 text-2xl mb-2">
+          <ng-container *ngFor="let star of [1,2,3,4,5]; let i = index">
+            <i
+              class="cursor-pointer transition-colors"
+              [ngClass]="{
+                'text-yellow-400': i < selectedRating,
+                'text-gray-300 hover:text-yellow-400': i >= selectedRating
+              }"
+              (click)="setRating(i + 1)"
+            >
+              ★
+            </i>
+          </ng-container>
+        </div>
+        <div class="text-sm text-gray-600 mb-2">
+          {{ selectedRating ? selectedRating + ' star' + (selectedRating > 1 ? 's' : '') : 'Tap to rate' }}
+        </div>
+
+        <textarea
+          [(ngModel)]="commentText"
+          class="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+          rows="3"
+          placeholder="Write your review here..."
+        ></textarea>
+
+        <button
+          (click)="submitFeedback()"
+          class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+        >
+          Submit Review
+        </button>
+      </div>
+      <!-- APPROVE MODAL -->
+  <ng-container *ngIf="showApproveModal">
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <app-approve-product
+        [product]="approveProductData"
+        (approve)="onApproveSave($event)"
+        (cancel)="onApproveCancel()"
+      ></app-approve-product>
+    </div>
+  </ng-container>

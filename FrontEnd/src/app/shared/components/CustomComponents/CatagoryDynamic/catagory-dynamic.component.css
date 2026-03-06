@@ -119,3 +119,54 @@
   padding: 16px;
   font-style: italic;
 }
+/* Remove ng-select inner border */
+::ng-deep .ng-select .ng-select-container {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Remove focus border inside */
+::ng-deep .ng-select.ng-select-focused .ng-select-container {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure the outer wrapper styling works */
+::ng-deep .ng-select {
+  border-radius: 0.5rem;
+  border: none;
+}
+
+/* Optional: remove separator before clear (x) icon */
+::ng-deep .ng-select .ng-clear-wrapper {
+  border-left: none !important;
+}
+::ng-deep .ng-select .ng-select-container {
+  border: 0 !important;
+}
+/* Remove inner ng-select border */
+::ng-deep .ng-select .ng-select-container {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Apply outer border properly */
+::ng-deep .ng-select {
+  border: 1px solid #d1d5db;   /* same as Tailwind border-gray-300 */
+  border-radius: 0.5rem;       /* same as rounded-lg */
+  background: #f3f4f6;         /* same as bg-gray-100 */
+  padding: 2px 6px;
+}
+
+/* Focus effect */
+::ng-deep .ng-select.ng-select-focused {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
+}
+
+/* Remove separator before clear icon */
+::ng-deep .ng-select .ng-clear-wrapper {
+  border-left: none !important;
+}
