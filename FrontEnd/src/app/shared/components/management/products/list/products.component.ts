@@ -11,6 +11,8 @@ import { Category, CategoryService, Users, StaticValueCatalog, StaticValueServic
 import { environment } from '../../../../../../environments/environment';
 import { ProductListPopupComponent } from '../../../CustomComponents/ProductList/product-list-popup.component';
 import { HttpEvent, HttpEventType, HttpClient } from '@angular/common/http';
+import { interval } from 'rxjs';
+import { switchMap, takeWhile } from 'rxjs/operators';
 
 import { UiService, StatusPopupState } from '../../../../../ui.service';
 type Product = ProductBase & { selected?: boolean };
@@ -61,6 +63,8 @@ export class ProductsComponent implements OnInit {
   totalPages = 0;
 
   Math = Math;
+  alertMessage = '';
+  alertType: 'success' | 'error' | null = null;
   
 
   constructor(
@@ -161,44 +165,58 @@ getBrandName(brandId?: number | null): string {
     this.isPanelOpen = !this.isPanelOpen;
   }
 
+// ----------------------
+// CSV Upload
+// ----------------------
 onFileSelected(event: any) {
-  debugger;
-    const file: File = event.target.files[0];
-    if (!file) return;
-    this.uploadCSV(file);
-  }
-  
-  uploadCSV(selectedFile: File) {
-  debugger;
+  const file: File = event.target.files[0];
+  if (!file) return;
+
+  this.uploadCSV(file);
+}
+
+uploadCSV(selectedFile: File) {
 
   if (!selectedFile) {
-    this.uploadMessage = "Please select a CSV file first.";
+    this.alertType = 'error';
+    this.alertMessage = 'CSV upload failed.';
     return;
   }
 
+  this.loading = true;
+
   this.productService.CSVImporter(selectedFile).subscribe({
-    next: (event: any) => {
+    next: (response: any) => {
 
-      if (event.type === HttpEventType.UploadProgress) {
-        this.progress = Math.round((100 * event.loaded) / event.total);
-      }
-
-      if (event.type === HttpEventType.Response) {
-        this.loading = false;
-        this.rowsInserted = event.body?.rowsInserted || 0;
-        this.uploadMessage = "CSV import completed successfully";
-        this.loadProducts();
-      }
-    this.loadProducts();
-    },
-    error: (err) => {
       this.loading = false;
-      this.uploadMessage = 'Upload failed. Please try again.';
+
+      const statusUrl = response?.result?.statusUrl;
+
+      if (!statusUrl) {
+        this.alertType = 'success';
+        this.alertMessage = 'File uploaded successfully.';
+        return;
+      }
+
+      this.alertType = 'success';
+      this.alertMessage = 'CSV uploaded. Processing started...';
+
+      this.isPanelOpen = false;
+
+      // Start checking job status
+      this.checkImportStatus(statusUrl);
+    },
+
+    error: (err) => {
       console.error(err);
+
+      this.loading = false;
+      this.alertType = 'error';
+      this.alertMessage = 'CSV upload failed.';
+      this.isPanelOpen = false;
     }
   });
 }
-
 // Load all brand static values once
 loadBrandStaticValues(): void {
   this.staticValueService.getStaticValuesCatagory().subscribe({
@@ -302,49 +320,30 @@ onApproveCancel() {
   this.showApproveModal = false;
 }
 
-  importCsv() {
-  if (!this.selectedFile) return;
-  this.loading = true;
-  this.progress = 0;
-  this.uploadMessage = '';
-
-  this.productService.CSVImporter(this.selectedFile).subscribe({
-    next: (event: any) => {
-
-      if (event.type === HttpEventType.UploadProgress) {
-        this.progress = Math.round((100 * event.loaded) / event.total);
-      }
-
-      if (event.type === HttpEventType.Response) {
-        this.loading = false;
-
-        this.rowsInserted = event.body.rowsInserted || 0;
-        this.uploadMessage = "CSV import completed successfully";
-
-        this.loadProducts();
-      }
-
-    },
-    error: (err) => {
-      this.loading = false;
-      this.uploadMessage = err.error?.message || "CSV import failed";
-    }
-  });
-}
-
 downloadTemplate() {
-  const fileUrl = '../../../../../assets/templates/product-template.csv';
+  const fileUrl = 'assets/templates/product-template.csv';
+  debugger;
 
-  // Create a Blob from the URL
   fetch(fileUrl)
-    .then(response => response.blob())
+    .then(response => {
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (!response.ok) {
+        throw new Error('File not found');
+      }
+
+      return response.blob();
+    })
     .then(blob => {
       const link = document.createElement('a');
       link.href = window.URL.createObjectURL(blob);
       link.download = 'product-template.csv';
-      link.click();  // Trigger the download
+      link.click();
+      this.togglePanel();
     })
-    .catch(err => console.error('Failed to download file:', err));
+    .catch(err => console.error('Download error:', err));
+    
 }
 
   // ----------------------
@@ -428,5 +427,56 @@ getImageUrl(imageName?: string): string {
     product.name || '',
     'list' // or 'table' or 'scroll'
   );
+}
+closeAlert() {
+  this.alertType = null;
+  this.alertMessage = '';
+}
+checkImportStatus(statusUrl: string) {
+debugger;
+  const fullUrl = environment.apiBaseUrl + statusUrl;
+
+  const timer = setInterval(() => {
+
+    this.http.get<any>(fullUrl).subscribe({
+
+      next: (res) => {
+debugger;
+        console.log('Status response:', res);
+
+        // Check message or statusCode from API
+        if (res.message === 'Completed' || res.statusCode === 200) {
+
+          clearInterval(timer);
+
+          this.alertType = 'success';
+          this.alertMessage = 'CSV import completed successfully.';
+          this.loadProducts();
+        }
+
+        if (res.message === 'Failed') {
+
+          clearInterval(timer);
+
+          this.alertType = 'error';
+          this.alertMessage = 'CSV import failed.';
+        }
+
+      },
+
+      error: (err) => {
+
+        console.error('Status check error:', err);
+
+        clearInterval(timer);
+
+        this.alertType = 'error';
+        this.alertMessage = 'Error checking import status.';
+      }
+
+    });
+
+  }, 3000);
+
 }
 }

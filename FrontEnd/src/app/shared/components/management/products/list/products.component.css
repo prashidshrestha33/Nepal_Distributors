@@ -19,4 +19,20 @@
 }.custom.model-body1 {
     min-height: 20vh;
 }
+.snackbar-success {
+  background-color: #16a34a; /* Tailwind green-600 */
+  color: white;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
 
+.snackbar-error {
+  background-color: #dc2626; /* Tailwind red-600 */
+  color: white;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}

@@ -63,6 +63,8 @@ namespace Marketplace.Api.Controllers
                 var createdBy = User?.FindFirst("emailaddress")?.Value
                     ?? User?.FindFirst(ClaimTypes.Email)?.Value
                     ?? "system";
+                var companyIdClaim = User?.FindFirst("company_id")?.Value;
+                int? companyId = companyIdClaim != null ? int.Parse(companyIdClaim) : null;
                 _ = Task.Run(async () =>
                 {
                     job.Status = ImportStatus.Running;
@@ -72,7 +74,7 @@ namespace Marketplace.Api.Controllers
                         var repo = scope.ServiceProvider.GetRequiredService<IProductRepository>();
                         var db = scope.ServiceProvider.GetRequiredService<IDbConnection>();
                         if (ext == ".csv")
-                            await ProcessCsvAsync(tempFile, job, repo, db, createdBy);
+                            await ProcessCsvAsync(tempFile, job, repo, db, createdBy, companyId);
                         else
                         {
                             job.Errors.Enqueue("Excel import not implemented yet.");
@@ -118,7 +120,7 @@ namespace Marketplace.Api.Controllers
                 job.CompletedAt
             });
         }
-        private async Task ProcessCsvAsync(string filePath, ImportJobInfo job, IProductRepository repo, IDbConnection db, string createdBy)
+        private async Task ProcessCsvAsync(string filePath, ImportJobInfo job, IProductRepository repo, IDbConnection db, string createdBy, int? companyId)
         {
             int total = 0;
             using (var srCount = new StreamReader(filePath))
@@ -127,10 +129,6 @@ namespace Marketplace.Api.Controllers
             }
             if (total > 0) total--;
             job.Total = total;
-
-            // Access the company_id from the claims at the start of the request
-            var companyIdClaim = User.Claims.FirstOrDefault(c => c.Type == "company_id")?.Value;
-            int? companyId = companyIdClaim != null ? int.Parse(companyIdClaim) : (int?)null;
 
             using var sr = new StreamReader(filePath);
             var headerLine = await sr.ReadLineAsync();

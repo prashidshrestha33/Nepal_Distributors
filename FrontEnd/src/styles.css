@@ -128,3 +128,13 @@
 
 /* Full page height */
 html, body { height: 100%; margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+/* Success Snackbar */
+.snackbar-success {
+  @apply bg-green-600 text-white font-medium rounded-lg shadow-lg px-4 py-2;
+}
+
+/* Error Snackbar */
+.snackbar-error {
+  @apply bg-red-600 text-white font-medium rounded-lg shadow-lg px-4 py-2;
+}
