@@ -125,6 +125,13 @@ interface Toast {
   message: string;
   type: 'success' | 'error';
 }
+export interface ImportStatusResponse {
+  statusCode: number;
+  success: boolean;
+  message: string;
+  result?: any;
+  errors?: any;
+}
 
 
 @Injectable({ providedIn: 'root' })
@@ -313,6 +320,12 @@ updateProduct(id: number, product: Product, images?: { file: File, isDefault: bo
       { requiresAuth: true }
     );
   }
+importStatus(id: string): Observable<ImportStatusResponse> {
+  return this.apiGateway.get<ImportStatusResponse>(
+    `/api/Import/status/${id}`,
+    { requiresAuth: true }
+  );
+}
 CSVImporter(file: File): Observable<HttpEvent<any>> {
   const formData = new FormData();
   formData.append('File', file, file.name);

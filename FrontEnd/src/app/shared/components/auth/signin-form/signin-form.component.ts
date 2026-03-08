@@ -78,9 +78,34 @@ this.isLoading=true;
       
 this.isLoading=false;
       },
-      error: (error: any) => {   
-         this.errorMessage = error;
-      }
+      error: (error: any) => {
+  if (error?.status === 0) {
+    // Network error
+    
+debugger;
+    this.errorMessage = 'Unable to connect to server';
+  } else if (error?.status === 400 || error?.status === 401) {
+    // Bad request / Unauthorized
+    this.errorMessage = error?.error?.result.error || 'Invalid email or OTP';
+  } else if (error?.status === 403) {
+    this.errorMessage = error?.error?.result.error || 'Your account is under review. Please contact administrator';
+  } else if (error?.status === 409) {
+    this.errorMessage = error?.error?.result.error || 'Email already in use';
+  } else if (error?.error?.message) {
+    // Backend returned a message
+    this.errorMessage = error.error.result.error;
+  } else {
+    // Fallback
+    this.errorMessage = 'Something went wrong. Please try again';
+  }
+// Stop the loading spinner
+  this.isLoading = false;
+  this.isSocialLoading = false;
+  // Optionally auto-hide after 5 seconds
+  setTimeout(() => this.errorMessage = '', 5000);
+
+  console.error('HTTP Error:', error);
+}
     });
     } 
 
@@ -107,7 +132,6 @@ this.isLoading=true;
       },
       error: (error: any) => {
         this.isLoading = false;
-        this. handleError(error);
       }
     });
   }
@@ -197,19 +221,6 @@ this.isLoading=true;
       ? this.returnUrl 
       : '/' + this.returnUrl;
     this.router.navigate([navigationPath], { replaceUrl: true });
-  }
-
-  private handleError(error:  any) {
-    if (error?.status === 401 || error?.status === 400) {
-      this.errorMessage = 'Invalid OTP';
-    } else if (error?.status === 403) {
-      this.errorMessage = 'Your account is under Review please contact Administrator';
-    } else if (error?.status === 0) {
-      this.errorMessage = 'Unable to connect to server';
-    } else {
-      this.errorMessage = error?.error?.message || 'Login failed';
-    }
-    console.error('Login error:', error);
   }
 
   // Form control getters

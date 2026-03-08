@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, FormGroup } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { ProductService } from '../../../../services/management/management.service';
-import type { Product as ProductBase } from '../../../../services/management/management.service';
+import type { ImportStatusResponse, Product as ProductBase } from '../../../../services/management/management.service';
 import { Category, CategoryService, Users, StaticValueCatalog, StaticValueService, StaticValue } from '../../../../services/management/management.service';
 import { environment } from '../../../../../../environments/environment';
 import { ProductListPopupComponent } from '../../../CustomComponents/ProductList/product-list-popup.component';
@@ -189,8 +189,8 @@ uploadCSV(selectedFile: File) {
     next: (response: any) => {
 
       this.loading = false;
-
-      const statusUrl = response?.result?.statusUrl;
+debugger;
+      const statusUrl = response?.result?.jobId;
 
       if (!statusUrl) {
         this.alertType = 'success';
@@ -432,51 +432,77 @@ closeAlert() {
   this.alertType = null;
   this.alertMessage = '';
 }
-checkImportStatus(statusUrl: string) {
-debugger;
-  const fullUrl = environment.apiBaseUrl + statusUrl;
 
-  const timer = setInterval(() => {
+checkImportStatus(jobId: string) {
+  const pollInterval = 3000; // 3 seconds
+  const timer$ = interval(pollInterval);
 
-    this.http.get<any>(fullUrl).subscribe({
-
-      next: (res) => {
-debugger;
+  const subscription = timer$
+    .pipe(
+      switchMap(() => this.productService.importStatus(jobId)),
+      takeWhile(
+        (res: ImportStatusResponse) =>
+          res.result?.status !== 'Completed' && res.result?.status !== 'Failed',
+        true
+      )
+    )
+    .subscribe({
+      next: (res: ImportStatusResponse) => {
         console.log('Status response:', res);
 
-        // Check message or statusCode from API
-        if (res.message === 'Completed' || res.statusCode === 200) {
+        const errors: string[] = res.result?.errors || [];
 
-          clearInterval(timer);
+        // Separate warnings (duplicates) vs real errors
+        const warnings: string[] = errors.filter((e: string) =>
+          e.includes('already exists')
+        );
+        const realErrors: string[] = errors.filter((e: string) =>
+          !e.includes('already exists')
+        );
 
+        if (res.result?.status === 'Completed') {
           this.alertType = 'success';
-          this.alertMessage = 'CSV import completed successfully.';
+          this.alertMessage = `CSV import completed successfully. Processed: ${res.result?.processed ?? 0}/${res.result?.total ?? 0}`;
+
+          // Append warnings to alert message
+if (warnings.length > 0) {
+  this.alertMessage += ` Warnings: ${warnings.join('; ')}`;
+}
+
+// Show real errors if there are any
+if (realErrors.length > 0) {
+  this.alertType = 'error';
+  this.alertMessage = `CSV import failed. Errors: ${realErrors.join('; ')}`;
+}
+          subscription.unsubscribe();
           this.loadProducts();
         }
 
-        if (res.message === 'Failed') {
-
-          clearInterval(timer);
-
+        if (res.result?.status === 'Failed') {
           this.alertType = 'error';
-          this.alertMessage = 'CSV import failed.';
+          this.alertMessage = `CSV import failed.`;
+
+          if (realErrors.length) {
+            this.alertMessage += ` Errors: ${realErrors.join('; ')}`;
+          }
+
+          if (warnings.length > 0) {
+  const cleanedWarnings = warnings.map(w => {
+    const index = w.indexOf(':');
+    return index !== -1 ? w.substring(index + 1).trim() : w;
+  });
+
+  this.alertMessage += ` Warnings: ${cleanedWarnings.join('; ')}`;
+}
+          subscription.unsubscribe();
         }
-
       },
-
-      error: (err) => {
-
+      error: (err: any) => {
         console.error('Status check error:', err);
-
-        clearInterval(timer);
-
         this.alertType = 'error';
         this.alertMessage = 'Error checking import status.';
+        subscription.unsubscribe();
       }
-
     });
-
-  }, 3000);
-
 }
 }

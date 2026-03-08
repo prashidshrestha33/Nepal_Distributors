@@ -196,10 +196,8 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
         }
         public async Task<int> CreateAsync(ProductModel product)
         {
-            try
-            {
-                // 🔹 Check for duplicate: Name + Manufacturer + Brand + Category
-                var duplicate = await _db.ExecuteScalarAsync<int>(@"
+            // 🔹 Check for duplicate: Name + Manufacturer + Brand + Category
+            var duplicate = await _db.ExecuteScalarAsync<int>(@"
         SELECT COUNT(1)
         FROM [NepalDistributers].[dbo].[products]
         WHERE Name = @Name
@@ -208,14 +206,14 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
           AND Category_Id = @CategoryId
     ", product);
 
-                if (duplicate > 0)
-                    throw new Exception("A product with the same name, manufacturer, brand, and category already exists.");
+            if (duplicate > 0)
+                throw new Exception("A product with the same name, manufacturer, brand, and category already exists.");
 
-                // 🔹 Generate SKU and SEO
-                await GenerateSkuAndSeoAsync(product);
+            // 🔹 Generate SKU and SEO
+            await GenerateSkuAndSeoAsync(product);
 
-                // 🔹 Insert product
-                var sql = @"
+            // 🔹 Insert product
+            var sql = @"
         INSERT INTO [NepalDistributers].[dbo].[products]
         (company_id, sku, name, description, short_description, category_id, brand_id, manufacturer_id,
          rate, hs_code, status, is_featured, seo_title, seo_description, attributes,
@@ -225,15 +223,10 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
          @Rate, @HsCode, @Status, @IsFeatured, @SeoTitle, @SeoDescription, @Attributes,
          @CreatedBy, SYSDATETIME(), SYSDATETIME());
 
-        SELECT CAST(SCOPE_IDENTITY() AS int);
+        SELECT CAST(SCOPE_IDENTITY() AS INT);
     ";
-                return await _db.ExecuteScalarAsync<int>(sql, product);
-            }
-            catch (Exception ex)
-            {
 
-                throw;
-            }
+            return await _db.ExecuteScalarAsync<int>(sql, product);
         }
 
         public async Task<bool> UpdateAsync(ProductModel product)

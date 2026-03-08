@@ -160,7 +160,7 @@ namespace Marketplace.Api.Controllers
         {
             var existing = await _users.GetByEmailAsync(email);
             if (existing == null)
-                return Conflict(new { error = "Account Not Exist" });
+                return Conflict(new { error = "Email Not Exist" });
             string otp = Generate6DigitAlphaNumeric().ToString();
             await _users.UpdateAuthTokenAsync(existing.Id, otp, email);
             var encryptedData = EncryptionHelper.Encrypt(otp);
