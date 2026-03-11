@@ -23,6 +23,8 @@ export interface company {
   location?: string;
   googleMapLocation?: string;
   createdAt?: string;
+  approveFg?: string;
+  approveTs?: string | null;
 }
 
 export interface ApproveCompanyRequest {
@@ -101,21 +103,23 @@ export class CompanyService {
           return [];
         }
 
-        return companies.map((Company: any) => ({
-          id: Company.id,
-          name: Company.name || '',
-          email: Company.email || '',
-          mobilePhone: Company.mobilePhone || Company.MobilePhone || '',
-          contactPerson: Company.contactPerson || Company.ContactPerson || '',
-          landlinePhone: Company.landlinePhone || Company.LandlinePhone || '',
-          registrationDocument: Company.registrationDocument || Company.RegistrationDocument || '',
-          companyType: Company.companyType || Company.CompanyType || '',
-          status: Company.status || Company.Status || 'inactive',
-          userType: Company.userType || Company.UserType || '',
-          credits: Number(Company.credits ?? 0),
-          location: Company.location || Company.Location || '',
-          googleMapLocation: Company.googleMapLocation || Company.GoogleMapLocation || '',
-          createdAt: Company.createdAt || Company.created_at
+          return companies.map((Company: any) => ({
+              id: Company.id,
+              name: Company.name || '',
+              email: Company.email || '',
+              mobilePhone: Company.mobilePhone || Company.MobilePhone || '',
+              contactPerson: Company.contactPerson || Company.ContactPerson || '',
+              landlinePhone: Company.landlinePhone || Company.LandlinePhone || '',
+              registrationDocument: Company.registrationDocument || Company.RegistrationDocument || '',
+              companyType: Company.companyType || Company.CompanyType || '',
+              status: Company.status || Company.Status || 'inactive',
+              userType: Company.userType || Company.UserType || '',
+              credits: Number(Company.credits ?? 0),
+              location: Company.location || Company.Location || '',
+              googleMapLocation: Company.googleMapLocation || Company.GoogleMapLocation || '',
+              createdAt: Company.createdAt || Company.created_at,
+              approveFg: Company.approveFg || Company.approveFg,
+              approveTs: Company.approveTs || Company.apaproveTs, 
         })) as company[];
       })
     );

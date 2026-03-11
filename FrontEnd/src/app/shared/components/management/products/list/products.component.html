@@ -1,376 +1,218 @@
-<app-product-list-popup
-  *ngIf="(ui.showProductList$ | async) as state"
-  [companyId]="state?.companyId ?? 2"
-  [productListStyle]="state?.style ?? 'table'"
-  [keyWord]="state?.keyword ?? ''"
-  [displayMode]="'popup'"
-  (close)="ui.closeProductList()">
-</app-product-list-popup>
-<button (click)="openProductList(2, '', 'list')">Open Product List Popup</button>
-<div class="min-h-screen bg-gray-100 p-6 space-y-6">
-  <div *ngIf="rowsInserted > 0" class="text-green-600 text-sm mt-3">
-  {{ rowsInserted }} rows inserted successfully.
-</div>
-<div *ngIf="uploadMessage" class="mt-3 text-blue-600 text-sm">
-  {{ uploadMessage }}
-</div>
-<!-- Error Alert -->
-<div *ngIf="alertType === 'error'"
-     class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
-     role="alert">
-  <strong class="font-bold">Error! </strong>
-  <span class="block sm:inline">{{ alertMessage }}</span>
+<div class="min-h-screen bg-gray-50 p-8 space-y-6">
 
-  <span
-    (click)="closeAlert()"
-    class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer">
-
-    <svg class="fill-current h-6 w-6 text-red-500"
-         xmlns="http://www.w3.org/2000/svg"
-         viewBox="0 0 20 20">
-
-      <path
-        d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10
-        11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697
-        l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1
-        1.697-1.697L10 8.183l2.651-3.031a1.2
-        1.2 0 1 1 1.697 1.697l-2.758
-        3.152 2.758 3.15a1.2 1.2 0 0 1
-        0 1.698z"/>
-    </svg>
-
-  </span>
-</div>
-
-
-<!-- Success Alert -->
-<div *ngIf="alertType === 'success'"
-     class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4"
-     role="alert">
-
-  <strong class="font-bold">Success! </strong>
-  <span class="block sm:inline">{{ alertMessage }}</span>
-
-  <span
-    (click)="closeAlert()"
-    class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer">
-
-    <svg class="fill-current h-6 w-6 text-green-500"
-         xmlns="http://www.w3.org/2000/svg"
-         viewBox="0 0 20 20">
-
-      <path
-        d="M14.348 14.849a1.2 1.2 0 0
-        1-1.697 0L10 11.819l-2.651
-        3.029a1.2 1.2 0 1 1-1.697-1.697
-        l2.758-3.15-2.759-3.152a1.2
-        1.2 0 1 1 1.697-1.697L10
-        8.183l2.651-3.031a1.2 1.2
-        0 1 1 1.697 1.697l-2.758
-        3.152 2.758 3.15a1.2
-        1.2 0 0 1 0 1.698z"/>
-    </svg>
-
-  </span>
-</div>
-  <!-- HEADER -->
+  <!-- Header -->
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <div>
-      <h1 class="text-3xl font-extrabold text-gray-800">Products</h1>
+      <h1 class="text-3xl font-extrabold text-gray-900">Products</h1>
       <p class="text-sm text-gray-500">Manage and approve products</p>
     </div>
 
     <div class="flex flex-wrap gap-3">
-  <!-- Approve Button -->
-  <button
-    type="button"
-    (click)="bulkApprove()"
-    [disabled]="!canBulkApprove"
-    class="flex items-center gap-2 px-2 py-2 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400 transition"
-  >
-    <!-- Check Icon -->
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
-         viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round"
-            stroke-width="2"
-            d="M5 13l4 4L19 7" />
-    </svg>
-    Approve Selected
-  </button>
-
-  <!-- CSV Upload Button -->
-  <!-- <input #csvInput type="file" accept=".csv" (change)="onFileSelected($event)" class="hidden" />
-  <button
-    type="button"
-    (click)="csvInput.click()"
-    [disabled]="loading"
-    class="flex items-center gap-2 px-2 py-2 rounded-lg font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-gray-400 transition"
-  >
-    
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
-         fill="none" viewBox="0 0 24 24"
-         stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 12v-9m0 0l-3 3m3-3l3 3"/>
-    </svg>
-    {{ loading ? 'Importing...' : 'Import CSV' }}
-  </button> -->
-
-
-  <!-- CSV Upload Button -->
-<input 
-  #csvInput
-  type="file"
-  accept=".csv"
-  (change)="onFileSelected($event)"
-  class="absolute opacity-0 w-0 h-0"
-/>
-
-<!-- Import CSV Button -->
-<button
-  type="button"
-  (click)="togglePanel()"
-  [disabled]="loading"
-  class="flex items-center gap-2 px-2 py-2 rounded-lg font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-gray-400 transition"
->
-  <!-- Upload Icon -->
-  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 12v-9m0 0l-3 3m3-3l3 3"/>
-  </svg>
-  {{ loading ? 'Importing...' : 'Import CSV' }}
-</button>
-
-<!-- Right Panel for CSV Options -->
-<div 
-  *ngIf="isPanelOpen"
-  class="fixed inset-0 z-50 bg-black/50 flex justify-end"
->
-  <!-- Panel -->
-  <div class="w-80 bg-white p-6 shadow-lg rounded-l-lg transition-transform transform duration-300"
-       [ngClass]="{'translate-x-0': isPanelOpen, 'translate-x-full': !isPanelOpen}">
-    
-    <!-- Panel Header -->
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-semibold text-gray-800">Import CSV</h2>
-      <button (click)="togglePanel()" class="text-gray-500 hover:text-gray-700">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      <button
+        type="button"
+        (click)="bulkApprove()"
+        [disabled]="!canBulkApprove"
+        class="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-300 transition"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+          viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            stroke-width="2" d="M5 13l4 4L19 7" />
         </svg>
+        Approve Selected
       </button>
+
+      <input
+        #csvInput
+        type="file"
+        accept=".csv"
+        (change)="onFileSelected($event)"
+        class="hidden"
+      />
+      <button
+        type="button"
+        (click)="csvInput.click()"
+        [disabled]="loading"
+        class="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-gray-300 transition"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+          viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 12v-9m0 0l-3 3m3-3l3 3"/>
+        </svg>
+        {{ loading ? 'Importing...' : 'Import CSV' }}
+      </button>
+
+      <a
+        routerLink="/products/add"
+        class="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
+          fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Add Product
+      </a>
     </div>
-    <!-- Panel Content -->
-    <div class="space-y-4">
-      <!-- Download Template -->
-<button (click)="downloadTemplate()" class="text-blue-600 hover:underline">
-  Download Template
-</button>
-<!-- Progress Bar -->
-<!-- <div *ngIf="loading" class="w-full bg-gray-200 rounded-full h-4 mt-3">
-  <div
-    class="bg-emerald-600 h-4 rounded-full transition-all duration-300"
-    [style.width.%]="progress"
-  ></div>
-</div> -->
-
-<!-- Progress Text -->
-<!-- <div *ngIf="loading" class="text-sm text-gray-600 mt-2">
-  Upload Progress: {{ progress }}%
-</div> -->
-
-      <!-- Import CSV -->
-      <label class="block">
-        <button
-          type="button"
-          (click)="csvInput.click()"
-          class="w-full bg-emerald-600 text-white px-4 py-2 rounded-md text-center hover:bg-emerald-700"
-        >
-          Import CSV
-        </button>
-      </label>
-    </div>
-  </div>
-</div>
-
-  <!-- Add Product Button -->
-  <a
-    routerLink="/products/add"
-    class="flex items-center gap-2 px-2 py-2 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
-  >
-    <!-- Plus Icon -->
-    <svg xmlns="http://www.w3.org/2000/svg"
-         class="w-5 h-5"
-         fill="none"
-         viewBox="0 0 24 24"
-         stroke="currentColor">
-      <path stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 4v16m8-8H4" />
-    </svg>
-    Add Product
-  </a>
-
-</div>
-
   </div>
 
-  <!-- STATUS MESSAGES -->
-  <div *ngIf="jobId" class="bg-green-50 border border-green-200 text-green-700 p-3 rounded-lg">
-    Import started successfully. Job ID: <b>{{ jobId }}</b>
+  <!-- Alerts -->
+  <div *ngIf="rowsInserted > 0" class="text-green-700 bg-green-50 rounded-md p-3 text-sm">
+    {{ rowsInserted }} rows inserted successfully.
   </div>
 
-  <div *ngIf="error" class="bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg">
-    {{ error }}
+  <div *ngIf="uploadMessage" class="text-blue-700 bg-blue-50 rounded-md p-3 text-sm">
+    {{ uploadMessage }}
   </div>
 
-  <!-- SEARCH INPUT -->
-  <div class="bg-white rounded-xl shadow p-4">
+  <div *ngIf="alertType === 'error'"
+       class="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-md relative mb-4"
+       role="alert">
+    <strong class="font-semibold">Error!</strong>
+    <span class="block">{{ alertMessage }}</span>
+    <button (click)="closeAlert()" class="absolute top-2 right-2 text-red-600 hover:text-red-800">
+      ✕
+    </button>
+  </div>
+
+  <div *ngIf="alertType === 'success'"
+       class="bg-green-50 border border-green-300 text-green-700 px-4 py-3 rounded-md relative mb-4"
+       role="alert">
+    <strong class="font-semibold">Success!</strong>
+    <span class="block">{{ alertMessage }}</span>
+    <button (click)="closeAlert()" class="absolute top-2 right-2 text-green-600 hover:text-green-800">
+      ✕
+    </button>
+  </div>
+
+  <!-- Search Box -->
+  <div class="bg-white rounded-xl shadow-sm p-4">
     <input
       type="text"
       placeholder="Search products by name..."
       [(ngModel)]="searchTerm"
       (input)="onSearch()"
-      class="w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+      class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
     />
   </div>
 
-  <!-- LOADING MESSAGE -->
-  <div *ngIf="loading" class="bg-blue-50 text-blue-700 p-4 rounded-lg">
+  <!-- Loading / Empty States -->
+  <div *ngIf="loading" class="bg-blue-50 text-blue-700 p-4 rounded-lg text-center font-medium">
     Loading products...
   </div>
 
-  <!-- EMPTY STATE MESSAGE -->
-  <div
-    *ngIf="!loading && filteredProducts?.length === 0"
-    class="bg-yellow-50 text-yellow-700 p-4 rounded-lg text-center"
-  >
-    {{ searchTerm ? 'No products found matching your search' : 'No products available' }}
+  <div *ngIf="!loading && filteredProducts?.length === 0"
+       class="bg-yellow-50 text-yellow-700 p-6 rounded-lg text-center font-semibold">
+    {{ searchTerm ? 'No products found matching your search.' : 'No products available.' }}
   </div>
 
-  <!-- TABLE -->
-  <div
-    *ngIf="!loading && filteredProducts.length > 0"
-    class="bg-white rounded-xl shadow overflow-hidden flex flex-col min-h-[520px]"
-  >
-    <table class="min-w-full">
-      <thead class="bg-gray-50 border-b">
-        <tr class="text-xs font-bold text-gray-600 uppercase">
+  <!-- Product Table -->
+  <div *ngIf="!loading && filteredProducts.length > 0"
+       class="bg-white rounded-xl shadow-sm overflow-hidden">
+
+    <table class="min-w-full text-left text-gray-700">
+      <thead class="bg-gray-50 border-b border-gray-200">
+        <tr class="text-xs font-semibold uppercase tracking-wide text-gray-600">
           <th class="px-4 py-3">
             <input type="checkbox" [checked]="allSelected" (change)="toggleSelectAll($event)" />
           </th>
-          <th class="px-3 py-3 text-left">S.N</th>
-          <th class="px-6 py-3 text-left">Name</th>
-          <th class="px-6 py-3 text-left">Category</th>
-          <th class="px-6 py-3 text-left">Brand</th>
-          <th class="px-6 py-3 text-left">Rate</th>
-          <th class="px-6 py-3 text-left">Created By</th>
-          <th class="px-6 py-3 text-left">Status</th>
-          <th class="px-6 py-3 text-left">Image</th>
-          <th class="px-6 py-3 text-left">Actions</th>
+          <th class="px-3 py-3">S.N</th>
+          <th class="px-6 py-3">Name</th>
+          <th class="px-6 py-3">Category</th>
+          <th class="px-6 py-3">Brand</th>
+          <th class="px-6 py-3">Rate</th>
+          <th class="px-6 py-3">Created By</th>
+          <th class="px-6 py-3">Status</th>
+          <th class="px-6 py-3">Image</th>
+          <th class="px-6 py-3">Actions</th>
         </tr>
       </thead>
 
-      <tbody class="divide-y">
-        <tr
-          *ngFor="let product of filteredProducts; let i = index"
-          class="hover:bg-gray-50 transition-all"
-        >
-          <!-- Select Checkbox -->
+      <tbody class="divide-y divide-gray-100">
+        <tr *ngFor="let product of filteredProducts; let i = index" class="hover:bg-gray-50 transition">
           <td class="px-4 py-3">
             <input
               type="checkbox"
               [(ngModel)]="product.selected"
               (change)="updateBulkButtonState()"
-              class="transition-colors duration-300 hover:scale-105"
+              class="cursor-pointer"
             />
           </td>
 
-          <!-- Serial Number -->
-          <td class="px-4 py-3 text-sm">
+          <td class="px-4 py-3 text-sm font-medium text-gray-900">
             {{ (currentPage - 1) * pageSize + i + 1 }}
           </td>
 
-          <!-- Product Name -->
-          <td class="px-6 py-3 text-sm font-medium text-gray-800">
+          <td class="px-6 py-3 text-sm font-semibold text-gray-800">
             {{ product.name }}
           </td>
 
-          <!-- Category Name -->
-          <td class="px-6 py-3 text-sm">
+          <td class="px-6 py-3 text-sm text-gray-600">
             {{ getCategoryName(product.categoryId) }}
           </td>
 
-          <!-- Brand Name -->
-          <td class="px-6 py-3 text-sm">
+          <td class="px-6 py-3 text-sm text-gray-600">
             {{ getBrandName(product.brandId) }}
           </td>
 
-          <!-- Rate -->
-          <td class="px-6 py-3 text-sm font-semibold">
+          <td class="px-6 py-3 text-sm font-semibold text-gray-900">
             Rs. {{ product.rate | number:'1.2-2' }}
           </td>
 
-          <!-- Created By -->
-          <td class="px-6 py-3 text-sm">
+          <td class="px-6 py-3 text-sm text-gray-700">
             {{ product.createdBy }}
           </td>
 
-          <!-- Status -->
           <td class="px-6 py-3 text-sm">
             <span
-              class="px-2 py-1 rounded-full text-xs font-semibold"
-              [ngClass]="product.status === 'Approved'
-                ? 'bg-green-100 text-green-700'
-                : 'bg-yellow-100 text-yellow-700'"
+              class="px-3 py-1 rounded-full text-xs font-semibold"
+              [ngClass]="{
+                'bg-green-100 text-green-700': product.status === 'Approved',
+                'bg-yellow-100 text-yellow-700': product.status !== 'Approved'
+              }"
             >
               {{ product.status || 'Pending' }}
             </span>
           </td>
-          <!-- Image -->
-          <td class="px-6 py-3 text-sm">
-  <img 
-    *ngIf="getDefaultImage(product) as img"
-    [src]="getImageUrl(img.imageName)"
-    class="w-12 h-12 object-cover rounded-lg"
-  />
-  <span *ngIf="!getDefaultImage(product)" class="text-gray-500">
-    No Image
-  </span>
-</td>
 
-          <!-- ACTIONS -->
+          <td class="px-6 py-3">
+            <img
+              *ngIf="getDefaultImage(product) as img"
+              [src]="getImageUrl(img.imageName)"
+              class="w-12 h-12 object-cover rounded-md"
+              alt="Product image"
+            />
+            <span *ngIf="!getDefaultImage(product)" class="text-gray-400 text-xs">
+              No Image
+            </span>
+          </td>
+
           <td class="px-6 py-3">
             <div class="flex gap-3">
-              <!-- Approve Button -->
               <button
                 (click)="approveProduct(product)"
-                class="w-9 h-9 rounded-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-all hover:scale-110"
                 title="Approve"
+                class="cursor-pointer w-9 h-9 rounded-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition transform hover:scale-110 flex items-center justify-center"
               >
                 ✔
               </button>
 
-              <!-- View Button -->
               <a
                 [routerLink]="['/products/details', product.id]"
-                class="w-9 h-9 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all hover:scale-110 flex items-center justify-center"
                 title="View"
+                class="cursor-pointer w-9 h-9 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition transform hover:scale-110 flex items-center justify-center"
               >
                 👁
               </a>
 
-              <!-- Edit Button -->
-<button
-  (click)="goToEditProduct(product.id)"
-  class="w-9 h-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all hover:scale-110 flex items-center justify-center"
-  title="Edit"
->
-  <span class="inline-block rotate-[135deg]">
-    ✏
-  </span>
-</button>
-
+              <button
+                (click)="goToEditProduct(product.id)"
+                title="Edit"
+                class="cursor-pointer w-9 h-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition transform hover:scale-110 flex items-center justify-center"
+              >
+                <span class="inline-block rotate-[135deg]">✏</span>
+              </button>
             </div>
           </td>
         </tr>
@@ -378,15 +220,19 @@
     </table>
   </div>
 
-  <!-- APPROVE MODAL -->
+  <!-- Approve Modal -->
   <ng-container *ngIf="showApproveModal">
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+      (click)="onApproveCancel()"
+    >
       <app-approve-product
         [product]="approveProductData"
         (approve)="onApproveSave($event)"
         (cancel)="onApproveCancel()"
+        (click)="$event.stopPropagation()"
+        class="bg-white rounded-lg shadow-xl p-6 max-w-lg w-full"
       ></app-approve-product>
     </div>
   </ng-container>
-
 </div>

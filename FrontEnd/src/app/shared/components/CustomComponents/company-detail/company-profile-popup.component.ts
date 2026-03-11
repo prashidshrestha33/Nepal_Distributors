@@ -43,24 +43,26 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
     if (this.companyId) this.loadCompany();
   }
 
-  loadCompany(): void {
-    this.loading = true;
-    this.companyService.getById(this.companyId).subscribe({
-      next: res => {
-        this.company = { ...res };
+  registrationDocuments?: string;
+
+loadCompany(): void {
+  this.loading = true;
+  this.companyService.getById(this.companyId).subscribe({
+    next: res => {
+      this.company = { ...res };
         this.loading = false;
 
         if (this.company.registrationDocument && this.isImage(this.company.registrationDocument)) {
           this.filePreview = this.getFileUrl(this.company.registrationDocument);
         }
-
-      },
-      error: () => {
-        this.loading = false;
-        this.ui.showStatus('Failed to load company profile', 'error');
-      }
-    });
-  }
+      
+    },
+    error: () => {
+      this.loading = false;
+      this.ui.showStatus('Failed to load company profile', 'error');
+    }
+  });
+}
 
   enableEdit(): void {
     this.editMode = true;
@@ -235,6 +237,14 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
     const lat = match[2];
     return this.sanitizer.bypassSecurityTrustResourceUrl(`https://www.google.com/maps?q=${lat},${lng}&output=embed`);
   }
+  openDocument(doc?: string): void {
+  if (!doc) return;
+
+  const url = this.getFileUrl(doc);
+
+  // Open PDF or image in a new browser tab
+  window.open(url, '_blank');
+}
 
   ngOnDestroy() { try { if (this.map) { this.map.off(); this.map.remove(); } } catch {} }
 }

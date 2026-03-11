@@ -72,6 +72,11 @@ export class ProductDetailsComponent implements OnInit {
     this.loadProduct(id);
     this.loadCategories();
     this.loadStaticValues();
+    setInterval(() => {
+    if (this.product?.images?.length) {
+      this.selectedImageIndex = (this.selectedImageIndex + 1) % this.product.images.length;
+    }
+  }, 5000); // change image every 3 seconds
   }
 
   ngOnDestroy(): void {
@@ -109,12 +114,45 @@ export class ProductDetailsComponent implements OnInit {
   // ----------------------
   // Product Load
   // ----------------------
-  private loadProduct(id: number) {
+  // private loadProduct(id: number) {
+  //   this.loading = true;
+  //   this.productService.getProductById(id).subscribe({
+  //     next: (res: any) => {
+  //       debugger;
+  //       const data = res.result ?? res;
+  //       if (data) {
+  //         // Assign product and ensure images array exists
+  //         this.product = {
+  //           ...data,
+  //           images: data.images ?? []  // ← make sure images array is not undefined
+  //         };
+
+  //         // Start carousel only if images exist
+  //         if (this.product?.images && this.product.images.length > 0) {
+  //           // Find initial default image index
+  //           const defaultIndex = this.product.images.findIndex(img => img.isDefault);
+  //           this.currentIndex = defaultIndex !== -1 ? defaultIndex : 0;
+  //         }
+  //       }
+
+  //       this.loading = false;
+  //     },
+  //     error: (err) => {
+  //       console.error('Error loading product:', err);
+  //       this.loading = false;
+  //     }
+  //   });
+  // }
+
+  loadProduct(id: number) {
     this.loading = true;
     this.productService.getProductById(id).subscribe({
-      next: (res: any) => {
-        debugger;
-        const data = res.result ?? res;
+      next: (response: any) => {
+        // this.product = response.result.map((p: Product) => ({
+        //   ...p,
+        //   imageUrl: this.getImageUrl(p.imageName)
+        // }));
+        const data = response.result ?? response;
         if (data) {
           // Assign product and ensure images array exists
           this.product = {
@@ -129,15 +167,21 @@ export class ProductDetailsComponent implements OnInit {
             this.currentIndex = defaultIndex !== -1 ? defaultIndex : 0;
           }
         }
-
         this.loading = false;
       },
-      error: (err) => {
-        console.error('Error loading product:', err);
+      
+      error: err => {
+        console.error('Error loading products:', err);
         this.loading = false;
       }
     });
   }
+
+    getDefaultImage(product: Product) {
+      debugger;
+  return product.images?.find(i => i.isDefault) 
+      || product.images?.[0];
+}
   // Manual index change (if you add thumbnails/buttons in HTML)
   setCurrentIndex(index: number) {
     this.currentIndex = index;
@@ -193,9 +237,11 @@ export class ProductDetailsComponent implements OnInit {
   }
 
   getImageUrl(imageName?: string): string {
-    debugger;
-    if (!imageName) return 'assets/images/no-image.png';
-    return `${environment.apiBaseUrl}/api/CompanyFile/${encodeURIComponent(imageName)}`;
+
+    return imageName
+      ? `${environment.apiBaseUrl}/api/CompanyFile?fileName=${encodeURIComponent(imageName)}`
+      : 'assets/images/no-image.png';
+
   }
 
   goBack() {
@@ -241,9 +287,31 @@ export class ProductDetailsComponent implements OnInit {
       },
     });
   }
+selectedImageIndex = 0;
 
+prevImage() {
+  if (!this.product?.images?.length) return;
+  this.selectedImageIndex =
+    (this.selectedImageIndex - 1 + this.product.images.length) % this.product.images.length;
+}
+
+nextImage() {
+  if (!this.product?.images?.length) return;
+  this.selectedImageIndex = (this.selectedImageIndex + 1) % this.product.images.length;
+}
+
+selectImage(index: number) {
+  if (!this.product?.images?.length) return;
+  this.selectedImageIndex = index;
+}
   // Handle image load error
   handleImageError(event: any) {
     event.target.src = 'assets/images/no-image.png';
   }
+  get currentImageUrl(): string | null {
+  if (this.product?.images?.length && this.product.images[this.selectedImageIndex]) {
+    return this.getImageUrl(this.product.images[this.selectedImageIndex].imageName);
+  }
+  return null;
+}
 }

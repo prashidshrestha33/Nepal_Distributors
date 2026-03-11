@@ -1,127 +1,124 @@
-<!-- Snackbar Notification -->
-<div *ngIf="snackbar.show"
-     [ngStyle]="{
-       'background-color': snackbar.success ? 'rgba(16, 185, 129, 0.85)' : 'rgba(220, 38, 38, 0.85)'
-     }"
-     class="fixed top-6 right-6 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-semibold transition-all duration-300 animate-fade-in">
-  {{ snackbar.message }}
-</div>
-<div class="approve-modal-container p-4 w-full max-w-7xl mx-auto bg-white rounded-lg shadow-lg">
-  <!-- Header -->
-  <div class="text-2xl font-semibold mb-4 text-gray-800 ">
-    Approve Product
-  </div>
-  <!-- Status -->
-  <div class="flex items-center mb-4">
-    <span class="font-medium">Current Status:</span>
-    <span
-      class="ml-3 px-3 py-1 text-sm font-semibold rounded-full animate-pulse"
-      [ngClass]="{
-        'bg-green-100 text-green-700': product?.status === 'Approved',
-        'bg-yellow-100 text-yellow-700': product?.status === 'Pending',
-        'bg-red-100 text-red-700': product?.status === 'Rejected'
-      }"
-    >
-      {{ product?.status || 'Pending' }}
-    </span>
-  </div>
-  <!-- Basic Info -->
-  <div class="bg-gray-50 rounded-lg p-4 mb-4">
-    <div class="font-semibold mb-2 text-gray-800 ">Basic Information</div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-700 ">
-      <div><span class="font-medium">SKU:</span> {{ product?.sku }}</div>
-      <div><span class="font-medium">Name:</span> {{ product?.name }}</div>
-      <div><span class="font-medium">Category:</span> {{ product?.categoryName }}</div>
-      <div><span class="font-medium">Brand:</span> {{ product?.brandName }}</div>
-      <div><span class="font-medium">Rate:</span> {{ product?.rate }}</div>
-      <div><span class="font-medium">Is Featured:</span> {{ product?.isFeatured ? 'Yes' : 'No' }}</div>
+<div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-6" *ngIf="product">
+  <div class="bg-white max-w-4xl w-full rounded-3xl shadow-lg p-8 relative overflow-auto max-h-[90vh]">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="font-extrabold text-xl text-gray-900">Approve Product</h2>
+      <button (click)="onCancel()" class="text-gray-400 hover:text-gray-600 rounded-full w-8 h-8 flex items-center justify-center" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
     </div>
-  </div>
-  <!-- Product Image -->
-  <div class="bg-gray-50 rounded-lg p-4 mb-4 flex items-center gap-6">
-    <div class="font-semibold text-gray-800 ">Product Image</div>
-    <div class="relative group w-fit">
-      <ng-container *ngIf="getDefaultImage() as defaultImage; else noImg">
-        <img [src]="defaultImage"
-             class="w-32 h-32 object-cover rounded border cursor-zoom-in" />
-        <div class="absolute hidden group-hover:block left-40 top-0 z-50">
+
+    <!-- Status Badge -->
+    <div class="mb-4 flex items-center gap-3">
+      <span class="font-medium">Current Status:</span>
+      <span class="px-3 py-1 text-sm font-semibold rounded-full"
+            [ngClass]="{
+              'bg-green-100 text-green-700': product?.status === 'Approved',
+              'bg-yellow-100 text-yellow-700': product?.status === 'Pending',
+              'bg-red-100 text-red-700': product?.status === 'Rejected'
+            }">
+        {{ product?.status || 'Pending' }}
+      </span>
+    </div>
+
+    <!-- Basic Info -->
+    <div class="bg-gray-50 rounded-xl p-6 mb-6 space-y-4">
+      <div class="font-semibold text-gray-800 text-lg">Basic Information</div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-700">
+        <div><span class="font-medium">SKU:</span> {{ product?.sku }}</div>
+        <div><span class="font-medium">Name:</span> {{ product?.name }}</div>
+        <div><span class="font-medium">Category:</span> {{ product?.categoryName }}</div>
+        <div><span class="font-medium">Brand:</span> {{ product?.brandName }}</div>
+        <div><span class="font-medium">Rate:</span> {{ product?.rate }}</div>
+        <div><span class="font-medium">Is Featured:</span> {{ product?.isFeatured ? 'Yes' : 'No' }}</div>
+      </div>
+    </div>
+
+    <!-- Product Image -->
+    <div class="bg-gray-50 rounded-xl p-6 mb-6 flex items-center gap-6">
+      <div class="font-semibold text-gray-800">Product Image</div>
+      <div class="relative group w-fit">
+        <ng-container *ngIf="getDefaultImage() as defaultImage; else noImg">
           <img [src]="defaultImage"
-               class="w-64 h-64 object-cover rounded-lg shadow-xl" />
-        </div>
-      </ng-container>
-      <ng-template #noImg>N/A</ng-template>
+               class="w-32 h-32 object-cover rounded border cursor-zoom-in"/>
+          <div class="absolute hidden group-hover:block left-40 top-0 z-50">
+            <img [src]="defaultImage"
+                 class="w-64 h-64 object-cover rounded-lg shadow-xl"/>
+          </div>
+        </ng-container>
+        <ng-template #noImg>N/A</ng-template>
+      </div>
     </div>
-  </div>
-  <!-- Actions -->
-  <div class="flex justify-end gap-3 mb-4">
-    <button (click)="onCancel()"
-            class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition">
-      Cancel
-    </button>
-    <button (click)="openReason('Rejected')"
-            class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">
-      Reject
-    </button>
-    <button (click)="openReason('Approved')"
-            [disabled]="product?.status === 'Approved'"
-            class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition disabled:opacity-50">
-      Approve
-    </button>
-  </div>
-  <!-- Reason Modal -->
-  <div *ngIf="showReasonModal"
-       class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-    <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6">
-      <!-- Modal Header -->
-      <h2 class="text-lg font-semibold text-gray-800 mb-4"
-          *ngIf="actionType === 'Approved'">
-        Approve Product
-      </h2>
-      <h2 class="text-lg font-semibold text-white mb-4 bg-red-500 p-2 rounded"
-          *ngIf="actionType === 'Rejected'">
-        Reject Product
-      </h2>
-      <!-- Modal Body -->
-      <div class="space-y-4">
-        <!-- Approval Section -->
-        <div *ngIf="actionType === 'Approved'">
-          <label class="block text-sm font-medium mb-1">Optional Note</label>
+
+    <!-- Action Buttons -->
+    <div class="flex justify-end gap-3 mb-6">
+      <button (click)="onCancel()"
+              class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition">
+        Cancel
+      </button>
+      <button (click)="openReason('Rejected')"
+              class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">
+        Reject
+      </button>
+      <button (click)="openReason('Approved')"
+              [disabled]="product?.status === 'Approved'"
+              class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition disabled:opacity-50">
+        Approve
+      </button>
+    </div>
+
+    <!-- Reason Modal -->
+    <div *ngIf="showReasonModal"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+      <div class="bg-white rounded-3xl shadow-lg w-full max-w-2xl p-6">
+        <!-- Modal Header -->
+        <h2 class="text-lg font-semibold text-gray-800 mb-4"
+            *ngIf="actionType === 'Approved'">
+          Approve Product
+        </h2>
+        <h2 class="text-lg font-semibold text-white mb-4 bg-red-500 p-2 rounded"
+            *ngIf="actionType === 'Rejected'">
+          Reject Product
+        </h2>
+
+        <!-- Modal Body -->
+        <div class="space-y-4">
+          <label class="block text-sm font-medium mb-1">
+            {{ actionType === 'Approved' ? 'Optional Note' : 'Reason or Note' }}
+          </label>
           <textarea [(ngModel)]="reason"
                     rows="3"
                     maxlength="250"
-                    placeholder="Add a note for approval..."
-                    class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"></textarea>
+                    placeholder="{{ actionType === 'Approved' ? 'Add a note for approval...' : 'Enter reason or note' }}"
+                    class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2"
+                    [ngClass]="{'focus:ring-green-400': actionType==='Approved', 'focus:ring-red-400': actionType==='Rejected'}">
+          </textarea>
           <p class="text-xs text-gray-500 mt-1">{{ reason.length }}/250</p>
         </div>
-        <!-- Rejection Section -->
-        <div *ngIf="actionType === 'Rejected'">
-          <label class="block text-sm font-medium mb-1">Reason or Note</label>
-          <textarea [(ngModel)]="reason"
-                    rows="3"
-                    maxlength="250"
-                    placeholder="Enter reason or note"
-                    class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"></textarea>
-          <p class="text-xs text-gray-500 mt-1">{{ reason.length }}/250</p>
+
+        <!-- Modal Footer -->
+        <div class="flex justify-end gap-3 mt-4">
+          <button (click)="closeReason()"
+                  class="px-4 py-2 rounded-lg border hover:bg-gray-100 transition">
+            Cancel
+          </button>
+          <button *ngIf="actionType === 'Rejected'"
+                  (click)="confirmAction(reason, 'Rejected')"
+                  [disabled]="!reason?.trim()"
+                  class="px-4 py-2 rounded-lg text-white bg-red-500 hover:bg-red-600">
+            Reject
+          </button>
+          <button *ngIf="actionType === 'Approved'"
+                  (click)="confirmAction(reason, 'Approved')"
+                  class="px-4 py-2 rounded-lg text-white bg-green-500 hover:bg-green-600">
+            Approve
+          </button>
         </div>
-      </div>
-      <!-- Modal Footer -->
-      <div class="flex justify-end gap-3 mt-4">
-        <button (click)="closeReason()"
-                class="px-4 py-2 rounded-lg border hover:bg-gray-100 transition">
-          Cancel
-        </button>
-        <button *ngIf="actionType === 'Rejected'"
-                (click)="confirmAction(reason, 'Rejected')"
-                [disabled]="!reason?.trim()"
-                class="px-4 py-2 rounded-lg text-white bg-red-500 hover:bg-red-600">
-          Reject
-        </button>
-        <button *ngIf="actionType === 'Approved'"
-                (click)="confirmAction(reason, 'Approved')"
-                class="px-4 py-2 rounded-lg text-white bg-green-500 hover:bg-green-600">
-          Approve
-        </button>
       </div>
     </div>
+
   </div>
 </div>

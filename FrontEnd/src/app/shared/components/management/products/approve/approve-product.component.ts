@@ -110,7 +110,6 @@ getImageUrl(imageName?: string): string {
       this.closeReason();
     }, 500);
   }
-
   /** Cancel modal */
   onCancel() {
     this.cancel.emit();

@@ -53,7 +53,9 @@ successMessage2: string = '';
     credits: 0,
     location: '',
     googleMapLocation: '',
-    createdAt: undefined
+    createdAt: undefined,
+    approveFg: '',
+    approveTs: ''
   };
 
   constructor(private ui: UiService,private CompanyService: CompanyService, private lightbox: Lightbox,
@@ -135,19 +137,24 @@ flattenCategories(categories: Category[], depth = 0): Category[] {
   }
 
   // ===================== COMPANY MODAL =====================
-  openApproveModal(id: number) {
-    this.CompanyService.getCompanyById(id).subscribe({
-      next: (data: company) => {
-        this.companylst = data;
-        this.selectedCompanyId = id;
-        this.showApproveModal = true;
+openApproveModal(id: number) {
+
+  this.selectedCategoryIds = [];
+  this.rejectReason = '';
+  this.isreject = false;
+
+  this.CompanyService.getCompanyById(id).subscribe({
+    next: (data: company) => {
+      this.companylst = data;
+      this.selectedCompanyId = id;
+      this.showApproveModal = true;
       },
       error: (err) => {
         console.error('Failed to load Company:', err);
         this.error = 'Failed to load Company. Please try again.';
-      }
-    });
-  }
+    }
+  });
+}
     openRegisterUser(id: number) {
       
     this.ui.openRegisterLink(id);

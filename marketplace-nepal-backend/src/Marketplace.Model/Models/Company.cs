@@ -24,7 +24,7 @@ namespace Marketplace.Models
         public DateTimeOffset? CreatedAt { get; set; }
         public DateTimeOffset? UpdatedAt { get; set; }
         public DateTimeOffset? ApproveDt { get; set; }
-        public TimeSpan? ApproveTs { get; set; }
+        public DateTime? ApproveTs { get; set; }
         public string ApproveFg { get; set; }
         public string RejectComment { get; set; }
     }

@@ -80,9 +80,22 @@ WHERE id = @Id;";
         {
             try
             {
-                const string sql = @"SELECT id AS Id, name AS Name,Contact_Person as ContactPerson,Mobile_Phone as MobilePhone,Landline_Phone as LandlinePhone,
-        company_type AS CompanyType, registration_document AS RegistrationDocument,user_type as UserType,Credits,
-       location AS Location, status AS status, created_at AS CreatedAt, updated_at AS UpdatedAt
+                const string sql = @"SELECT 
+    id AS Id,
+    name AS Name,
+    Contact_Person AS ContactPerson,
+    Mobile_Phone AS MobilePhone,
+    Landline_Phone AS LandlinePhone,
+    company_type AS CompanyType,
+    registration_document AS RegistrationDocument,
+    user_type AS UserType,
+    Credits,
+    location AS Location,
+    status AS status,
+    created_at AS CreatedAt,
+    updated_at AS UpdatedAt,
+    approve_fg AS ApproveFg,
+    CAST(approve_ts AS datetime) AS ApproveTs  
 FROM dbo.companies
 ORDER BY id 
 OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";

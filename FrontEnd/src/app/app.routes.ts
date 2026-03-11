@@ -262,6 +262,14 @@ export const routes: Routes = [
         title: 'Static Values'
       },
       {
+  path: 'categories/add',
+  component: CategoryFormComponent
+},
+{
+  path: 'categories/edit/:id',
+  component: CategoryFormComponent
+},
+      {
         path: 'static-values-Catalog',
         component: StaticValuesCatalogComponent,
         title: 'Static Values Catalog'

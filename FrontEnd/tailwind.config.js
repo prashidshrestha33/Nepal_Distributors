@@ -37,6 +37,13 @@ module.exports = {
         99999: '99999',
         999999: '999999',
       },
+      content: [
+  "./src/**/*.{html,ts}",
+],
+theme: {
+  extend: {},
+},
+plugins: [],
     },
   },
   plugins: [],

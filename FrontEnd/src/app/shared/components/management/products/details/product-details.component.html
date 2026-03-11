@@ -8,16 +8,48 @@
   <div class="flex flex-col md:flex-row gap-8 bg-white rounded-xl shadow-sm p-6">
 
     <!-- LEFT: Product Images Slideshow -->
-<div *ngIf="product?.images?.length" class="flex justify-center md:w-1/2 w-full overflow-hidden rounded-lg shadow">
-  <div class="flex animate-slide w-full">
-    <img
-      *ngFor="let img of product.images"
-      [src]="getImageUrl(img.imageName)"
-      [alt]="product?.name"
-      class="w-full flex-shrink-0 object-cover h-64 md:h-96"
-    />
-  </div>
+    <div class="w-full md:w-1/2 rounded-lg shadow">
+
+      <!-- Main Image Container -->
+      <div class="relative w-full h-64 overflow-hidden rounded-lg">
+        <div class="slideshow-container">
+  <img *ngFor="let img of product.images; let i = index"
+       [src]="getImageUrl(img.imageName)"
+       [class.active]="i === selectedImageIndex"
+       class="slide-image" />
 </div>
+
+        <!-- Prev Button -->
+        <!-- <button
+          (click)="prevImage()"
+          class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-40 text-white rounded-full p-2 hover:bg-opacity-60"
+          aria-label="Previous Image"
+        >
+          &#8592;
+        </button> -->
+
+        <!-- Next Button -->
+        <!-- <button
+          (click)="nextImage()"
+          class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-40 text-white rounded-full p-2 hover:bg-opacity-60"
+          aria-label="Next Image"
+        >
+          &#8594;
+        </button> -->
+      </div>
+
+      <!-- Thumbnail Gallery -->
+      <div class="flex gap-2 mt-4 overflow-x-auto">
+        <img
+          *ngFor="let img of product.images; let i = index"
+          [src]="getImageUrl(img.imageName)"
+          (click)="selectImage(i)"
+          [class.border-4]="i === selectedImageIndex"
+          class="w-16 h-16 object-cover rounded cursor-pointer border-transparent hover:border-blue-500 transition"
+          alt="Thumbnail image"
+        />
+      </div>
+    </div>
 
     <!-- RIGHT: Info Section -->
     <div class="md:w-1/2 flex flex-col gap-4">
@@ -42,73 +74,76 @@
         <div><strong>Category:</strong> {{ getCategoryName(product?.categoryId) }}</div>
         <div><strong>Brand:</strong> {{ getBrandName(product?.brandId) }}</div>
         <div><strong>Created By:</strong> {{ product?.createdBy }}</div>
-        <!-- Approve Button at the bottom of the card -->
-<!-- Approve Button at the bottom of the card -->
-<div class="mt-4" style="text-align-last: right;">
+        <div class="mt-4 text-right">
+          <button
+            (click)="approveProduct(product)"
+            class="bg-green-600 text-white font-semibold px-4 py-2 rounded"
+            title="Approve"
+          >
+            Approve
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<br />
+
+<!-- Product Description -->
+<div class="product-wrapper max-w-6xl mx-auto">
+  <h2 class="text-xl font-bold mb-2">Product Description</h2>
+  <p class="text-gray-700">{{ product?.description || 'No description available.' }}</p>
+</div>
+
+<br />
+
+<!-- Feedback Section -->
+<div class="product-wrapper max-w-6xl mx-auto">
+  <h2 class="text-xl font-bold mb-2">Leave a Review</h2>
+
+  <div class="flex gap-1 text-2xl mb-2">
+    <ng-container *ngFor="let star of [1, 2, 3, 4, 5]; let i = index">
+      <i
+        class="cursor-pointer transition-colors"
+        [ngClass]="{
+          'text-yellow-400': i < selectedRating,
+          'text-gray-300 hover:text-yellow-400': i >= selectedRating
+        }"
+        (click)="setRating(i + 1)"
+      >
+        ★
+      </i>
+    </ng-container>
+  </div>
+  <div class="text-sm text-gray-600 mb-2">
+    {{ selectedRating ? selectedRating + ' star' + (selectedRating > 1 ? 's' : '') : 'Tap to rate' }}
+  </div>
+
+  <textarea
+    [(ngModel)]="commentText"
+    class="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+    rows="3"
+    placeholder="Write your review here..."
+  ></textarea>
+
   <button
-    (click)="approveProduct(product)"
-    class="bg-green-600 text-white font-semibold px-4 py-2 rounded mt-6"
-    title="Approve"
+    (click)="submitFeedback()"
+    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
   >
-    Approve
+    Submit Review
   </button>
 </div>
-      </div>
 
-      
-
-    </div>
+<!-- APPROVE MODAL -->
+<ng-container *ngIf="showApproveModal">
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <app-approve-product
+      [product]="approveProductData"
+      (approve)="onApproveSave($event)"
+      (cancel)="onApproveCancel()"
+    ></app-approve-product>
   </div>
-  
-</div> <br/>
-<!-- Product Description -->
-      <div class="product-wrapper max-w-6xl mx-auto">
-        <h2 class="text-xl font-bold mb-2">Product Description</h2>
-        <p class="text-gray-700">{{ product?.description || 'No description available.' }}</p>
-      </div> <br/>
-    <!-- Feedback Section -->
-      <div class="product-wrapper max-w-6xl mx-auto">
-        <h2 class="text-xl font-bold mb-2">Leave a Review</h2>
-
-        <div class="flex gap-1 text-2xl mb-2">
-          <ng-container *ngFor="let star of [1,2,3,4,5]; let i = index">
-            <i
-              class="cursor-pointer transition-colors"
-              [ngClass]="{
-                'text-yellow-400': i < selectedRating,
-                'text-gray-300 hover:text-yellow-400': i >= selectedRating
-              }"
-              (click)="setRating(i + 1)"
-            >
-              ★
-            </i>
-          </ng-container>
-        </div>
-        <div class="text-sm text-gray-600 mb-2">
-          {{ selectedRating ? selectedRating + ' star' + (selectedRating > 1 ? 's' : '') : 'Tap to rate' }}
-        </div>
-
-        <textarea
-          [(ngModel)]="commentText"
-          class="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
-          rows="3"
-          placeholder="Write your review here..."
-        ></textarea>
-
-        <button
-          (click)="submitFeedback()"
-          class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-        >
-          Submit Review
-        </button>
-      </div>
-      <!-- APPROVE MODAL -->
-  <ng-container *ngIf="showApproveModal">
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <app-approve-product
-        [product]="approveProductData"
-        (approve)="onApproveSave($event)"
-        (cancel)="onApproveCancel()"
-      ></app-approve-product>
-    </div>
-  </ng-container>
+</ng-container>

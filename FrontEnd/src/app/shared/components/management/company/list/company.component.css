@@ -70,3 +70,63 @@
 .success-popup button:hover {
   background-color: #059669; /* Darker green on hover */
 }
+
+/* Popup container */
+.custompopupmodel {
+  max-height: 80vh;
+}
+
+.custompopupmodel1 {
+  max-height: 60vh;
+}
+
+/* Modal body scroll */
+.model-body {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.model-body1 {
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+/* ng-select styling */
+.Selectorcustom .ng-select-container {
+  border-radius: 8px;
+  min-height: 42px;
+  border: 1px solid #d1d5db;
+}
+
+.Selectorcustom .ng-select-container:hover {
+  border-color: #3b82f6;
+}
+
+.Selectorcustom .ng-select-container:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+}
+
+/* Dropdown panel */
+.Selectorcustom .ng-dropdown-panel {
+  border-radius: 8px;
+}
+
+/* Selected items */
+.Selectorcustom .ng-value {
+  background: #e5e7eb;
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+/* Scrollbar styling */
+.model-body::-webkit-scrollbar,
+.model-body1::-webkit-scrollbar {
+  width: 6px;
+}
+
+.model-body::-webkit-scrollbar-thumb,
+.model-body1::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 6px;
+}
