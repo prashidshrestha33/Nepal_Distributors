@@ -531,19 +531,24 @@ export class ProductFormComponent implements OnInit {
     );
 
   }
+  removeImage(url: string) {
+    debugger;
+  this.productImages = this.productImages.filter(img => img.previewUrl !== url);
+}
 
 
-  removeImage(index: number) {
+  // removeImage(removeImagename: string) {
+  //   debugger;
 
-    const wasDefault = this.productImages[index].isDefault;
+  //   // const wasDefault = this.productImages[removeImagename].isDefault;
 
-    this.productImages.splice(index, 1);
+  //   // this.productImages.splice(index, 1);
 
-    if (wasDefault && this.productImages.length) {
-      this.productImages[0].isDefault = true;
-    }
+  //   // if (wasDefault && this.productImages.length) {
+  //   //   this.productImages[0].isDefault = true;
+  //   // }
 
-  }
+  // }
 
 
   /* =========================================================

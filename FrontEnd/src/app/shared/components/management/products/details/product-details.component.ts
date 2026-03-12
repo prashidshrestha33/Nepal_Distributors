@@ -92,66 +92,36 @@ export class ProductDetailsComponent implements OnInit {
     this.selectedRating = rating;
   }
 
-  submitFeedback() {
-    if (!this.commentText.trim() || this.selectedRating === 0) {
-      alert('Please select a rating and enter a comment.');
-      return;
-    }
-
-    const feedback = {
-      productId: this.product?.id,
-      rating: this.selectedRating,
-      comment: this.commentText.trim(),
-      createdAt: new Date()
-    };
-
-    // TODO: Save feedback to backend
-    alert('Thank you for your feedback!');
-    this.selectedRating = 0;
-    this.commentText = '';
+ submitFeedback() {
+  if (!this.commentText.trim() || this.selectedRating === 0) {
+    alert('Please select a rating and enter a comment.');
+    return;
   }
 
-  // ----------------------
-  // Product Load
-  // ----------------------
-  // private loadProduct(id: number) {
-  //   this.loading = true;
-  //   this.productService.getProductById(id).subscribe({
-  //     next: (res: any) => {
-  //       debugger;
-  //       const data = res.result ?? res;
-  //       if (data) {
-  //         // Assign product and ensure images array exists
-  //         this.product = {
-  //           ...data,
-  //           images: data.images ?? []  // ← make sure images array is not undefined
-  //         };
+  const payload = {
+    productId: this.product?.id,
+    rating: this.selectedRating,
+    comment: this.commentText.trim()
+  };
+debugger;
+  this.productService.submitReview(payload).subscribe({
+    next: (res) => {
+      alert('Review submitted successfully');
 
-  //         // Start carousel only if images exist
-  //         if (this.product?.images && this.product.images.length > 0) {
-  //           // Find initial default image index
-  //           const defaultIndex = this.product.images.findIndex(img => img.isDefault);
-  //           this.currentIndex = defaultIndex !== -1 ? defaultIndex : 0;
-  //         }
-  //       }
-
-  //       this.loading = false;
-  //     },
-  //     error: (err) => {
-  //       console.error('Error loading product:', err);
-  //       this.loading = false;
-  //     }
-  //   });
-  // }
-
+      // reset form
+      this.selectedRating = 0;
+      this.commentText = '';
+    },
+    error: (err) => {
+      console.error('Error saving review', err);
+      alert('Failed to submit review');
+    }
+  });
+}
   loadProduct(id: number) {
     this.loading = true;
     this.productService.getProductById(id).subscribe({
       next: (response: any) => {
-        // this.product = response.result.map((p: Product) => ({
-        //   ...p,
-        //   imageUrl: this.getImageUrl(p.imageName)
-        // }));
         const data = response.result ?? response;
         if (data) {
           // Assign product and ensure images array exists

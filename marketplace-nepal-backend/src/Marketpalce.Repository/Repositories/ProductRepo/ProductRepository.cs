@@ -107,6 +107,26 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
 
             return rootCategories;
         }
+        public async Task<int> AddReviewAsync(ProductReview review)
+        {
+            string sql = @"
+        INSERT INTO ProductReviews
+        (
+            ProductId,
+            Rating,
+            Comment
+        )
+        VALUES
+        (
+            @ProductId,
+            @Rating,
+            @Comment
+        )";
+
+            var result = await _db.ExecuteAsync(sql, review);
+
+            return result;
+        }
         public async Task<List<CategoryDto>> GetparentChild(int parentid = 0)
         {
             string sql = @"

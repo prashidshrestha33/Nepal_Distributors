@@ -130,11 +130,12 @@
   ></textarea>
 
   <button
-    (click)="submitFeedback()"
-    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-  >
-    Submit Review
-  </button>
+  (click)="submitFeedback()"
+  [disabled]="!selectedRating || !commentText"
+  class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+>
+  Submit Review
+</button>
 </div>
 
 <!-- APPROVE MODAL -->

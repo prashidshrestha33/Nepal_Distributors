@@ -213,6 +213,12 @@ SearchProducts(keyword:string,page: number = 1, pageSize: number = 20): Observab
     )
     .pipe(map(res => res.result));
 }
+submitReview(payload: any): Observable<any> {
+  return this.apiGateway.post<any>(
+    `api/Product/Review`,
+    payload
+  );
+}
 ApprovedProductById(id: number, payload: ApproveProduct): Observable<Product> {
   return this.apiGateway.post<Product>(
     `api/Product/ApproveProduct/${id}`,
@@ -287,11 +293,7 @@ updateProduct(id: number, product: Product, images?: { file: File, isDefault: bo
 
     formData.append('DefaultImageIndex', defaultIndex.toString()); // append default image index
   }
-
-  // Log the FormData content manually
-  console.log('FormData contents:');
   formData.forEach((value, key) => {
-    console.log(key, value);
   });
 
   return formData;

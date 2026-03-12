@@ -1,60 +1,79 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
 
-<div 
-     class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-  <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 custompopupmodel1">
-    <h2 class="text-lg font-semibold text-gray-800  mb-4" >
+  <div class="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-8">
+
+    <!-- Close Icon -->
+    <button
+      (click)="closePopup()"
+      class="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition text-xl font-bold">
+      ✕
+    </button>
+
+    <!-- Header -->
+    <h2 class="text-2xl font-semibold text-gray-800 mb-6 border-b pb-3">
       Send Register Link
-    </h2>  
-<div class="custom model-body1">
+    </h2>
 
-<div class="w-full">
-  <label class="block text-sm font-medium mb-1">Select Roles</label>
+    <div class="space-y-5">
 
-<ng-select
-  [items]="StaticValue"
-  bindLabel="staticValueKey"   
-  bindValue="staticData"      
-  placeholder="Select Roles"
-  [(ngModel)]="selectedStaticValueId"
-  class="Selectorcustom w-full">
+      <!-- Role Select -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-2">
+          Select Roles
+        </label>
 
-  <ng-template ng-label-tmp let-item="item">
-    {{ item.staticValueKey  }}
-  </ng-template>
+        <ng-select
+          [items]="StaticValue"
+          bindLabel="staticValueKey"
+          bindValue="staticData"
+          placeholder="Select Roles"
+          [(ngModel)]="selectedStaticValueId"
+          class="w-full rounded-lg border border-gray-300">
+          
+          <ng-template ng-label-tmp let-item="item">
+            {{ item.staticValueKey }}
+          </ng-template>
 
-  <ng-template ng-option-tmp let-item="item">
-    {{ item.staticValueKey}}
-  </ng-template>
+          <ng-template ng-option-tmp let-item="item">
+            {{ item.staticValueKey }}
+          </ng-template>
 
-</ng-select>
+        </ng-select>
+      </div>
 
-</div>
-<div class="w-full" >
-  <label class="block text-sm font-medium mb-1">
-    Email ID
-  </label>
-<input 
-      type="text" 
-      placeholder="Enter Register Email ID............." 
-    [(ngModel)]="RegisterEmailID"
-    name="RegisterEmailID" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
-    />
-    
-  
-</div>
-</div>
-    <div class="flex justify-end gap-3">
+      <!-- Email Input -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-2">
+          Email ID
+        </label>
+
+        <input
+          type="text"
+          placeholder="Enter Register Email ID..."
+          [(ngModel)]="RegisterEmailID"
+          name="RegisterEmailID"
+          class="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
+        />
+      </div>
+
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex justify-end gap-3 mt-8">
+
       <button
         (click)="closePopup()"
-        class="px-4 py-2 rounded-lg border">
+        class="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition">
         Cancel
-      </button> 
- <button
-        (click)="RegisterNewUserLink()"
-        class="px-4 py-2 rounded-lg bg-green-500 text-white">
-        <span>Send Email</span>
       </button>
-    
+
+      <button
+        (click)="RegisterNewUserLink()"
+        class="px-5 py-2.5 rounded-lg bg-green-500 text-white font-medium hover:bg-green-600 active:scale-95 transition shadow-md">
+        Send Email
+      </button>
+
     </div>
+
   </div>
 </div>

@@ -4,6 +4,8 @@ using Marketplace.Api.Services.Helper;
 using Marketplace.Model.Models;
 using Marketplace.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -22,6 +24,18 @@ namespace Marketplace.Api.Controllers
         {
             repositorysitory = repo;
             _db = db ?? throw new ArgumentNullException(nameof(db));
+        }
+        [HttpPost("Review")]
+        public async Task<IActionResult> AddReview([FromBody] ProductReview review)
+        {
+            var result = await repositorysitory.AddReviewAsync(review);
+
+            if (result > 0)
+            {
+                return Ok(new { message = "Review saved successfully" });
+            }
+
+            return BadRequest("Failed to save review");
         }
 
         [HttpGet]
@@ -371,4 +385,5 @@ namespace Marketplace.Api.Controllers
             });
         }
     }
+
 }
