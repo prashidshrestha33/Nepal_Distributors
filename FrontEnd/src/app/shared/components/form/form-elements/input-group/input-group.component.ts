@@ -27,6 +27,5 @@ export class InputGroupComponent {
   ];
 
   handlePhoneNumberChange(phoneNumber: string) {
-    console.log('Updated phone number:', phoneNumber);
   }
 }

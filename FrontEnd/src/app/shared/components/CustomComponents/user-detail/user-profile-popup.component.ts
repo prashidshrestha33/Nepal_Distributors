@@ -38,7 +38,6 @@ export class UserProfilePopupComponent implements OnInit {
     this.userService.getById(this.userId).subscribe({
       next: res => {
         this.user = { ...res };
-        debugger;
         this.loading = false;
       },
       error: () => {

@@ -54,7 +54,6 @@ export class FaqsTwoComponent {
   }
 
   toggleFirstGroup(index: number): void {
-    console.log(index,'index')
     this.openIndexFirstGroup = this.openIndexFirstGroup === index ? null : index;
   }
 

@@ -80,9 +80,6 @@ this.isLoading=false;
       },
       error: (error: any) => {
   if (error?.status === 0) {
-    // Network error
-    
-debugger;
     this.errorMessage = 'Unable to connect to server';
   } else if (error?.status === 400 || error?.status === 401) {
     // Bad request / Unauthorized

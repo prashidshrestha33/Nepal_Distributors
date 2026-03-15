@@ -33,7 +33,6 @@ export class StaticValuesComponent implements OnInit {
       
       if (id) {
         this.catalogId = +id; // Convert to number
-        console.log('📋 Catalog ID received:', this.catalogId);
         this.load();
       } else {
      this.router.navigate(['/management/static-values-catalog']);
@@ -79,7 +78,6 @@ export class StaticValuesComponent implements OnInit {
     }
 
     if (confirm('Are you sure you want to delete this static value?')) {
-      console.log('🗑️ Deleting static value:', id);
       
       this.service.deleteStaticValue(id).subscribe({
         next: () => {

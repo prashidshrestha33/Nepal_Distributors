@@ -66,7 +66,6 @@ export class ForgetPasswordRequestFormComponent implements OnInit {
   });
   }
   async onSubmit(): Promise<void> {
-    debugger;
     if (this.signupForm.invalid) {
       this.errorMessage = 'Please fill in all required fields correctly';
       return;
@@ -82,7 +81,6 @@ export class ForgetPasswordRequestFormComponent implements OnInit {
 
     this.authService.forgetPasswordrequest(email).subscribe({
       next: (response: any) => {
-        debugger;
         this.isLoading = false;
         const token = response?.token;
         if (token) {
@@ -103,7 +101,6 @@ export class ForgetPasswordRequestFormComponent implements OnInit {
         }, 6000);
       },
       error: (error: any) => {
-        debugger;
         this.isLoading = false;
         if (error?.status === 409) {
           this.errorMessage = 'Please try again with valid email id the provided email doesent exist with us';

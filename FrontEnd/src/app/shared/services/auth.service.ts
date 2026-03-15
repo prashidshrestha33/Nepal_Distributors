@@ -92,7 +92,6 @@ export class AuthService {
    */
   getToken(): string | null {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    console.log('AuthService.getToken():', token ? 'Token found (' + token.substring(0, 20) + '...)' : 'No token found');
     return token;
   }
 
@@ -176,11 +175,8 @@ export class AuthService {
         tap(res => {
           // Backend returns token inside result object: { result: { token: '...' } }
           const token = res?.result?.token || res?.token;
-          console.log('Login response received. Token found:', !!token);
           if (token) {
-            console.log('Saving token to storage. RememberMe:', rememberMe);
             this.saveToken(token, rememberMe);
-            console.log('Token saved successfully');
           }
         })
       );
@@ -311,8 +307,6 @@ export class AuthService {
           const storage = rememberMe ? localStorage : sessionStorage;
           storage.setItem('currentUser', JSON.stringify(user));
         }
-        
-        console.log('✅ Social login token stored');
       }
     })
   );

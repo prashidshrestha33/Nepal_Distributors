@@ -137,7 +137,6 @@ export class ForgetPasswordFormComponent implements OnInit {
    const sSocialUser = localStorage.getItem('socialUser');
 let socialUser: SocialUser | null = null;
 let isSocialSignup = false;
-debugger;
    
   // Regular signup (no social user)
   this.signupForm = this.formBuilder.group({
@@ -170,7 +169,6 @@ debugger;
   }
 
   async onSignUp(): Promise<void> {
-    debugger;
     if (this.signupForm.invalid) {
       this.errorMessage = 'Please fill in all required fields correctly';
       return;
@@ -188,7 +186,6 @@ debugger;
     this.errorMessage = '';
 
     const formData = new FormData();
-debugger;
     // Company fields (use backend expected keys; include the misspelled `CompamyPerson`)
   const body = {
   Password: password || '',
@@ -218,7 +215,6 @@ debugger;
         }, 6000);
       },
       error: (error: any) => {
-        debugger;
         this.isLoading = false;
         if (error?.status === 409) {
           this.errorMessage = 'Token already Expired Please Re-Generate the link again';

@@ -28,7 +28,6 @@ export class CatalogService {
   ];
 
   constructor(private http: HttpClient) {
-    console.log('CatalogService initialized with API:', this.catalogEndpoint);
   }
 
   /**
@@ -36,8 +35,6 @@ export class CatalogService {
    */
   getAllCatalog(): Observable<any> {
     const url = `${this.catalogEndpoint}/GetAllCatalog`;
-    console.log('Fetching catalogs from:', url);
-    console.log('This endpoint is public - no authorization required');
     return this.http.get<any>(url).pipe(
       catchError(error => {
         console.error('Error fetching catalogs from API:', error);
@@ -59,7 +56,6 @@ export class CatalogService {
    */
   getCatalogById(id: number): Observable<any> {
     const url = `${this.catalogEndpoint}/GetAllCatalog/${id}`;
-    console.log('Fetching catalog by ID from:', url);
     return this.http.get<any>(url);
   }
 }

@@ -14,6 +14,5 @@ import { ComponentCardComponent } from '../../../common/component-card/component
 export class ToggleSwitchComponent {
 
   handleSwitchChange(checked: boolean) {
-    console.log('Switch is now:', checked ? 'ON' : 'OFF');
   }
 }

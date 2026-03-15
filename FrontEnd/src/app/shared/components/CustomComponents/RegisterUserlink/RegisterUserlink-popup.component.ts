@@ -36,10 +36,8 @@ export class RegisterUserlinkPopupComponent implements OnInit {
     }
   }
   getStaticValuesrole(){
-  debugger;
       this.CompanyService.getStaticValuesrole().subscribe({
-       next: (res: any) => { // API wrapper
-      debugger;
+       next: (res: any) => { 
       this.StaticValue = res || [];
       },
       error: (err) => {
@@ -52,7 +50,6 @@ RegisterNewUserLink() {
   const role = this.selectedStaticValueId;
   const email = this.RegisterEmailID;
   const companyId = this.companyId;
-debugger;
   if (!role || !email || !companyId) {
     this.errorModal2 = "Please enter all required fields"; 
     return;
@@ -60,7 +57,6 @@ debugger;
 
   this.CompanyService.sendRegisterLink(email, role, companyId.toString()).subscribe({
     next: (response) => {
-      console.log('Registration link sent successfully:', response);
       this.closePopup();
         this.ui.showStatus('Registration link sent successfully!', 'success');
     },

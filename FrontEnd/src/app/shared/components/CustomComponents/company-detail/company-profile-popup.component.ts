@@ -164,7 +164,6 @@ loadCompany(): void {
 
   // --------------------- UPDATED SAVE METHOD ---------------------
   save() {
-    debugger;
     if (!this.company) return;
 
     const formData = new FormData();

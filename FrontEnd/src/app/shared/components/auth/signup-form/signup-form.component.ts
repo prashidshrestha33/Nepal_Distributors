@@ -185,8 +185,6 @@ if (sSocialUser) {
         token: socialUser.token
       });
       
-      console.log('✅ Social user values set:', this.signupForm. value);
-      
     } else {
       // Non-Google/Facebook provider
       this.signupForm = this.formBuilder.group({
@@ -214,8 +212,6 @@ if (sSocialUser) {
     }
     
     }
-    
-    console.log('✅ Social user detected:', socialUser);
     
   } catch (error) {
     console.error('❌ Error parsing socialUser:', error);
@@ -304,7 +300,6 @@ if (decryptedData && decryptedData.CompanyEmail) {
       const fileFromIDB = await this.flow.getCompanyFileFromIDB();
       if (fileFromIDB) {
         this.companyFileName = fileFromIDB.name;
-        console.log('Company document loaded from IndexDB:', this.companyFileName);
       }
     } catch (e) {
       console.warn('Error loading company file from IndexDB:', e);
@@ -578,10 +573,7 @@ verifyOtp(otp: string) {
 
       // Optionally, you could reset error messages upon successful validation
       this.emailConflictError = '';
-      this.errorMessage = ''; // Clear any previous error messages
-
-      // Handle success if needed
-      console.log('OTP validated successfully:', response.message);
+      this.errorMessage = '';
     },
     error: (error: any) => {
       // On error, set the appropriate error message

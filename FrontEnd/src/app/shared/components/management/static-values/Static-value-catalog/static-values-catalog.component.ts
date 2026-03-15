@@ -31,7 +31,6 @@ export class StaticValuesCatalogComponent implements OnInit {
     });
   }
   viewStaticValues(catalogId: number): void {
-    console.log('Navigating to static values for catalog:', catalogId);
     this.router.navigate(['/management/static-values'], {
       queryParams: { catalogId:  catalogId }
     });

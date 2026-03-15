@@ -41,7 +41,6 @@ export class ProductListPopupComponent implements OnInit {
   // Init
   // ===============================
   ngOnInit(): void {
-    debugger;
     if (this.companyId) {
       this.loadProducts();
     } else {

@@ -189,7 +189,6 @@ uploadCSV(selectedFile: File) {
     next: (response: any) => {
 
       this.loading = false;
-debugger;
       const statusUrl = response?.result?.jobId;
 
       if (!statusUrl) {
@@ -307,8 +306,6 @@ refreshProductList() {
       // Recalculate pagination
       this.totalCount = this.products.length;
       this.totalPages = Math.ceil(this.totalCount / this.pageSize);
-
-      console.log('Product list refreshed');
     },
     error: (err) => {
       console.error('Error refreshing product list:', err);
@@ -322,13 +319,9 @@ onApproveCancel() {
 
 downloadTemplate() {
   const fileUrl = 'assets/templates/product-template.csv';
-  debugger;
 
   fetch(fileUrl)
     .then(response => {
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
-
       if (!response.ok) {
         throw new Error('File not found');
       }
@@ -448,8 +441,6 @@ checkImportStatus(jobId: string) {
     )
     .subscribe({
       next: (res: ImportStatusResponse) => {
-        console.log('Status response:', res);
-
         const errors: string[] = res.result?.errors || [];
 
         // Separate warnings (duplicates) vs real errors

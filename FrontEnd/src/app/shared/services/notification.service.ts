@@ -62,7 +62,6 @@ export class NotificationService {
   }
  saveFcmTokenToBackend(token: string) {
   try {
-    debugger;
     const apiUrl = `${environment.apiBaseUrl}/api/Users/setFCM?fciid=${token}`;
 
     return  this.apiGateway.post(

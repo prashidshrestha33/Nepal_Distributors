@@ -48,7 +48,6 @@ export class SelectInputsComponent {
 
   handleSelectChange(value: string) {
     this.selectedValue = value;
-    console.log('Selected value:', value);
   }
 
   handleMultiSelectChange(values: string[]) {

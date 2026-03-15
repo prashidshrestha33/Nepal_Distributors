@@ -39,9 +39,7 @@ export class RegisteUserFormComponent implements OnInit {
   }
 
   ngOnInit() {
-    debugger;
    this.route.queryParams.subscribe(params => {
-    debugger;
       const token = params['token'];
       if((token||token !=undefined)){
         this.returnUrl = token;
@@ -56,7 +54,6 @@ export class RegisteUserFormComponent implements OnInit {
       console.warn('⚠️ Social login already in progress');
       return;
     }
-debugger;
     this.isSocialLoading = true;
     this. errorMessage = '';
     console. log('🔵 Initiating Google sign-in...');
@@ -86,11 +83,9 @@ SignInWithEmail() {
 
     this.isSocialLoading = true;
     this.errorMessage = '';
-    console.log('🔵 Initiating Facebook sign-in...');
 
     this.socialAuthService.signInWithFacebook()
       .then(user => {
-        console.log('Facebook sign-in successful:', user);
         this.handleSocialLogin(user,'FACEBOOK');  // Pass entire user object
       })
       .catch(error => {
@@ -101,8 +96,6 @@ SignInWithEmail() {
   }
 
   private handleSocialLogin(socialUser: SocialUser,SignIn : string ) {
-    console.log('📤 Sending social user data to backend... ', socialUser);
-debugger;
 
     this.authService.socialLogin(socialUser,false).subscribe({
       next: (response: any) => {

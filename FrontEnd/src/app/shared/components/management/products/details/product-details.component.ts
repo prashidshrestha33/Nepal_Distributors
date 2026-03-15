@@ -103,7 +103,6 @@ export class ProductDetailsComponent implements OnInit {
     rating: this.selectedRating,
     comment: this.commentText.trim()
   };
-debugger;
   this.productService.submitReview(payload).subscribe({
     next: (res) => {
       alert('Review submitted successfully');
@@ -148,7 +147,6 @@ debugger;
   }
 
     getDefaultImage(product: Product) {
-      debugger;
   return product.images?.find(i => i.isDefault) 
       || product.images?.[0];
 }
