@@ -66,7 +66,6 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
   isComingFromSignup = false;
   filteredTypes: any[] = [];
   companyType: any = null;
-  fileInput: any;
 
   constructor(
     private fb: FormBuilder,
@@ -147,6 +146,7 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
     const apiUrl = `${this.api}/api/public/companyType`
     this.http.get<any>(apiUrl).subscribe({
       next: (response: any) => {
+        console.log('Company Types API Response:', response);
         this.companyTypes = [];
         
         // Helper function to extract CatalogType/name from an item
@@ -161,7 +161,8 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
         } catch (e) {
           console.error('Error processing response:', e);
         }
-
+        
+        console.log('Processed company types:', this.companyTypes);
         this.loadingCompanyTypes = false;
       },
       error: (err: any) => {
@@ -374,7 +375,7 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
       this.fileName = file.name;
-      
+      debugger;
       // Set file value to form control (registrationDocument)
       this.form.get('registrationDocument')?.setValue(file);
 
@@ -429,7 +430,11 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
   }
     onDragOver(event: DragEvent) { event.preventDefault(); }
   onDragLeave(event: DragEvent) { event.preventDefault(); }
-  
+  onDrop(event: DragEvent) {
+    event.preventDefault();
+    const file = event.dataTransfer?.files[0];
+    if (file) this.previewFile(file);
+  }
   previewFile(file: File) {
     if (!file.type.startsWith('image/')) return;
     const reader = new FileReader();
@@ -443,71 +448,59 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
     }
   }
     onProductImageChange(event: any) {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  debugger;
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { alert('Only image files are allowed'); return; }
 
-  // Allow images and PDFs
-  if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
-    alert('Only image and PDF files are allowed');
-    return;
-  }
-
-  // Set file in the form
-  this.form.get('registrationDocument')?.setValue(file);
-
-  if (file.type.startsWith('image/')) {
-    // Preview image
+    this.form.get('registrationDocument')?.setValue(file);
     const reader = new FileReader();
     reader.onload = () => this.imagePreview = reader.result;
     reader.readAsDataURL(file);
-  } else {
-    // PDF: clear image preview and store filename if needed
-    this.imagePreview = null;
-    this.imagePreview = file.name; // you can use this in your template
   }
-}
 
   // Form submit handler
   onSubmit() {
-  if (this.form.invalid) {
-    this.form.markAllAsTouched(); // Mark all form controls as touched to trigger validation
-    return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched(); // Mark all form controls as touched to trigger validation
+      return;
+    }
+
+    // Save step1 data locally and navigate to step2 without calling backend yet
+    this.loading = true;
+    this.error = null;
+
+    const companyData: any = {
+      name: (this.form.get('name')?.value || '').toString(),
+      companyPerson: (this.form.get('companyPerson')?.value || '').toString().trim(),
+      mobilePhone: this.form.get('mobilePhone')?.value || '',
+      landLinePhone: this.form.get('landLinePhone')?.value || '',
+      companyType: this.form.get('companyType')?.value || '',
+      address: this.form.get('address')?.value || '',
+      googleMapLocation: this.form.get('googleMapLocation')?.value || '',
+    };
+
+    const file: File | null = this.form.get('registrationDocument')?.value || null;
+    if (file) {
+      companyData.registrationDocument = file; // keep the File object in memory
+      this.fileName = file.name;
+    }
+
+    // Persist company data via FormDataService
+    this.formDataService.saveCompanyData(companyData);
+
+    // Also persist in the flow service for backward compatibility
+    this.flow.setCompanyForm(companyData);
+
+    // Update registration flow state for next step
+    this.registrationFlowService.setStep(2);
+    this.registrationFlowService.setFormData(companyData);
+
+    // Small UX pause so button shows loading state briefly
+    setTimeout(() => {
+      this.loading = false;
+      this.router.navigate(['/signup']);
+    }, 200);
   }
-
-  this.loading = true;
-  this.error = null;
-
-  const companyData: any = {
-    name: (this.form.get('name')?.value || '').toString(),
-    companyPerson: (this.form.get('companyPerson')?.value || '').toString().trim(),
-    mobilePhone: this.form.get('mobilePhone')?.value || '',
-    landLinePhone: this.form.get('landLinePhone')?.value || '',
-    companyType: this.form.get('companyType')?.value || '',
-    address: this.form.get('address')?.value || '',
-    googleMapLocation: this.form.get('googleMapLocation')?.value || '',
-  };
-
-  // **Handle multiple files**
-  const files: File[] = this.form.get('registrationDocument')?.value || [];
-  if (files.length) {
-    companyData.registrationDocument = files; // array of files
-    this.fileName = files.map(f => f.name).join(', '); // optional: display all filenames
-  }
-
-  // Persist company data
-  this.formDataService.saveCompanyData(companyData);
-  this.flow.setCompanyForm(companyData);
-
-  // Update registration flow state for next step
-  this.registrationFlowService.setStep(2);
-  this.registrationFlowService.setFormData(companyData);
-
-  setTimeout(() => {
-    this.loading = false;
-    this.router.navigate(['/signup']);
-  }, 200);
-}
   // Method to filter company types based on search query
   filteredCompanyTypes() {
     if (!this.searchQuery) {
@@ -516,52 +509,8 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
     return this.companyTypes.filter((type) =>
       type.staticValueKey.toLowerCase().includes(this.searchQuery.toLowerCase())
     );
-  }filePreviews: (string | null)[] = []; // DataURL for images, file names for PDFs
-files: File[] = []; // array of uploaded files
-
-// Handle file input change (multiple)
-onFilesChange(event: Event) {
-  const input = event.target as HTMLInputElement;
-  if (!input.files || input.files.length === 0) return;
-
-  const newFiles: File[] = Array.from(input.files);
-  newFiles.forEach(file => {
-    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
-      alert(`File "${file.name}" is not allowed. Only images and PDFs.`);
-      return;
-    }
-    this.files.push(file);
-
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = () => this.filePreviews.push(reader.result as string);
-      reader.readAsDataURL(file);
-    } else {
-      this.filePreviews.push(file.name);
-    }
-  });
-
-  this.form.get('registrationDocument')?.setValue(this.files);
-  this.form.get('registrationDocument')?.markAsTouched();
-  this.form.get('registrationDocument')?.updateValueAndValidity();
-}
-
-// Drag & drop handler for multiple files
-onDrop(event: DragEvent) {
-  event.preventDefault();
-  const droppedFiles = event.dataTransfer?.files;
-  if (droppedFiles) {
-    const inputEvent = { target: { files: droppedFiles } } as unknown as Event;
-    this.onFilesChange(inputEvent);
   }
-}
 
-// Remove one file
-removeFile(index: number) {
-  this.files.splice(index, 1);
-  this.filePreviews.splice(index, 1);
-  this.form.get('registrationDocument')?.setValue(this.files.length ? this.files : null);
-}
   // convenience getters for template validation checks
   get name() {
     return this.form.get('name');

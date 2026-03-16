@@ -206,7 +206,7 @@
         <th class="px-6 py-4 text-left">Type</th>
         <th class="px-6 py-4 text-left">Credits</th>
         <th class="px-6 py-4 text-left">Status</th>
-        <th class="px-6 py-4 text-left">Onboarding</th>
+        <th class="px-6 py-4 text-left">Approved on</th>
         <th class="px-6 py-4 text-center">Actions</th>
       </tr>
     </thead>
@@ -267,8 +267,17 @@
             {{ Company.credits }}
           </div>
 
-          <div class="text-xs text-green-600 font-medium">
-            PREMIUM TIER
+          <div class="text-xs font-medium"
+               [ngClass]="{
+                 'text-blue-600': (Company.credits ?? 0) <= 3,
+                 'text-gray-600': (Company.credits ?? 0) > 3 && (Company.credits ?? 0) <= 4,
+                 'text-yellow-600': (Company.credits ?? 0) > 4
+               }">
+            {{
+              (Company.credits ?? 0) <= 3 ? 'BASIC TIER' :
+              (Company.credits ?? 0) > 3 && (Company.credits ?? 0) <= 4 ? 'SILVER TIER' :
+              'GOLD TIER'
+            }}
           </div>
 
         </td>

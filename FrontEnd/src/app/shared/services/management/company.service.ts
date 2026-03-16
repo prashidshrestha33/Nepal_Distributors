@@ -118,8 +118,8 @@ export class CompanyService {
               location: Company.location || Company.Location || '',
               googleMapLocation: Company.googleMapLocation || Company.GoogleMapLocation || '',
               createdAt: Company.createdAt || Company.created_at,
-              approveFg: Company.approveFg || Company.approveFg,
-              approveTs: Company.approveTs || Company.apaproveTs, 
+              approveFg: Company.approveFg || Company.ApproveFg,
+              approveTs: Company.approveTs || Company.ApproveTs, 
         })) as company[];
       })
     );

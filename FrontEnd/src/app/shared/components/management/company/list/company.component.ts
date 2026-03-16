@@ -124,15 +124,20 @@ flattenCategories(categories: Category[], depth = 0): Category[] {
     return !!fileUrl && /\.pdf$/i.test(fileUrl);
   }
 
-  getFileUrl(fileName?: string): string {
-    if (!fileName) return '';
-    fileName = fileName.replace(/^\/+/, '');
-    return `${environment.apiBaseUrl}/api/CompanyFile/${fileName}`;
-  }
+  // getFileUrl(fileName?: string): string {
+  //   if (!fileName) return '';
+  //   fileName = fileName.replace(/^\/+/, '');
+  //   return `${environment.apiBaseUrl}/api/CompanyFile/${fileName}`;
+  // }
+  getImageUrl(imageName?: string): string {
+  return imageName 
+    ? `${environment.apiBaseUrl}/api/CompanyFile?fileName=${encodeURIComponent(imageName)}`
+    : 'assets/images/no-image.png';
+}
 
   openImage(fileName?: string): void {
     if (!fileName) return;
-    const src = this.getFileUrl(fileName);
+    const src = this.getImageUrl(fileName);
     this.ui.openImage(fileName);
   }
 

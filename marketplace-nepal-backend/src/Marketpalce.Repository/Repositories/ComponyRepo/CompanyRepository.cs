@@ -69,7 +69,9 @@ SELECT TOP (1)
   location AS Location,
    CAST(google_map_location AS NVARCHAR(MAX)) AS GoogleMapLocation,
   created_at AS CreatedAt,
-  updated_at AS UpdatedAt
+  updated_at AS UpdatedAt,
+approve_fg AS ApproveFg,
+CAST(approve_ts AS datetime) AS ApproveTs
 FROM dbo.companies
 WHERE id = @Id;";
 

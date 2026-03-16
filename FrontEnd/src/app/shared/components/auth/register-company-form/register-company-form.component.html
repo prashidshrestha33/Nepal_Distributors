@@ -24,6 +24,13 @@
               <input formControlName="name" placeholder="Enter company name" required class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 text-gray-800 border-gray-300" />
               <p *ngIf="name?.invalid && name?.touched" class="mt-1 text-sm text-red-600">Company name is required</p>
             </div>
+
+            <!-- Company Person -->
+            <!-- <div>
+              <label class="block text-xs font-medium mb-1 text-gray-700">Company Person</label>
+              <input formControlName="companyPerson" placeholder="Company person name" class="h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-none focus:ring-3 text-gray-800 border-gray-300" />
+            </div> -->
+            <!-- Company Type -->
         <div>
           <label class="block text-xs font-medium mb-1 text-gray-700">Company Type <span class="text-red-500">*</span></label>
           <select formControlName="companyType" aria-placeholder="Select Company Type" aria-readonly="true" [disabled]="loadingCompanyTypes || companyTypes.length === 0"
@@ -38,47 +45,44 @@
 
         <!-- COMPANY DETAILS -->
         <section class="mb-3">
-  <h3 class="text-sm font-semibold mb-2" style="color: var(--color-gray-700);">
-    Company Details
-  </h3>
+          <h3 class="text-sm font-semibold mb-2" style="color: var(--color-gray-700);">Company Details</h3>
+          <div class="grid grid-cols-1">
+            <div class="space-y-1">
+              <!-- Registration Document Upload -->
+              <div class="space-y-1">
+                <label class="block text-xs font-medium mb-1 text-gray-700">Registration Document <span class="text-red-500">*</span></label>
 
-  <div class="grid grid-cols-1">
-    <div class="space-y-1">
-      <!-- Registration Document Upload -->
-      <label class="block text-xs font-medium mb-1 text-gray-700">
-        Registration Document <span class="text-red-500">*</span>
-      </label>
+                <!-- Upload Box with Button -->
+                <div class="relative flex items-center justify-center h-44 w-full border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 bg-gray-50 border-gray-300 hover:border-blue-500 hover:bg-blue-50/40"
+                  (click)="fileInput.click()" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+                  <!-- Image Preview -->
+                  <ng-container *ngIf="filePreview; else uploadPlaceholder">
+                    <img [src]="filePreview" class="absolute inset-0 h-full w-full object-cover rounded-xl" />
+                    <button type="button" (click)="removeImage($event)" class="absolute top-2 right-2 bg-black/60 text-white rounded-full h-7 w-7 flex items-center justify-center hover:bg-black">
+                      ✕
+                    </button>
+                  </ng-container>
 
-      <!-- Upload Box -->
-      <div class="relative flex flex-wrap gap-2 items-center justify-start h-44 w-full border-2 border-dashed rounded-xl cursor-pointer bg-gray-50 border-gray-300 hover:border-blue-500 hover:bg-blue-50/40"
-     (click)="fileInput.click()" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
-     
-  <!-- Show uploaded files -->
-  <ng-container *ngIf="filePreviews.length; else uploadPlaceholder">
-    <div *ngFor="let preview of filePreviews; let i = index" class="relative w-24 h-24 border rounded overflow-hidden">
-      <img *ngIf="files[i]?.type?.startsWith('image/')" [src]="preview" class="object-cover w-full h-full" />
-      <p *ngIf="files[i]?.type === 'application/pdf'" class="text-xs text-gray-700 p-1 truncate">{{ preview }}</p>
-      <button type="button" (click)="removeFile(i)" class="absolute top-0 right-0 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-black">✕</button>
-    </div>
-  </ng-container>
+                  <!-- Placeholder Text and Icon when no Image -->
+                  <ng-template #uploadPlaceholder>
+                    <div class="text-center pointer-events-none">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-10 w-10 text-blue-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 12v6m0 0l-3-3m3 3l3-3" />
+                      </svg>
+                      <p class="text-sm text-gray-600 ">
+                        <span class="font-medium text-blue-600">Click to upload</span> or drag and drop
+                      </p>
+                      <p class="text-xs text-gray-400 mt-1">PNG, JPG up to 5MB</p>
+                    </div>
+                  </ng-template>
 
-  <!-- Placeholder -->
-  <ng-template #uploadPlaceholder>
-    <div class="text-center pointer-events-none">
-      <svg class="mx-auto h-10 w-10 text-blue-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M12 12v6m0 0l-3-3m3 3l3-3"/>
-      </svg>
-      <p class="text-sm text-gray-600"><span class="font-medium text-blue-600">Click to upload</span> or drag and drop</p>
-      <p class="text-xs text-gray-400 mt-1">PNG, JPG, PDF up to 5MB each</p>
-    </div>
-  </ng-template>
-
-  <!-- Hidden input -->
-  <input #fileInput type="file" multiple accept="image/*,application/pdf" class="hidden" (change)="onFilesChange($event)" />
-</div>
-    </div>
-  </div>
-</section>
+                  <!-- Hidden File Input -->
+                  <input #fileInput type="file" accept="image/*" class="hidden" (change)="onFileChange($event)" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
         <hr class="border-gray-200">
 
         <!-- ADDITIONAL INFORMATION -->
