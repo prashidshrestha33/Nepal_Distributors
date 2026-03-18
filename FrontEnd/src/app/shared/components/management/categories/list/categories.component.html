@@ -1,9 +1,14 @@
-<div class="space-y-6 px-4 md:px-6">
-  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-    <h1 class="text-xl md:text-2xl font-bold text-gray-800 ">Categories</h1>
+<div class="min-h-screen bg-gray-50 p-4 space-y-6">
+    <div _ngcontent-ng-c2881434967 class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div _ngcontent-ng-c2881434967>
+    <h1 _ngcontent-ng-c2881434967 class="text-3xl font-extrabold text-gray-900">Categories</h1>
+    <p _ngcontent-ng-c2881434967 class="text-sm text-gray-500">Manage categories & sub-categories.</p>
+    </div>
+    <div _ngcontent-ng-c2881434967 class="flex flex-wrap gap-3">
     <a routerLink="/management/categories/add" class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg dark:bg-blue-600 dark:hover:bg-blue-700 text-center">
       + Add Category
     </a>
+    </div>
   </div>
 
   <!-- Search Bar -->
@@ -86,17 +91,17 @@
   </ng-template>
 </td>
           <td class="px-6 py-4 text-center space-x-3 flex items-center justify-center">
-           <button
+  <button
   (click)="openMoveModal(cat)"
   title="Move"
-  class="relative inline-flex items-center justify-center w-10 h-10 rounded-lg
-         bg-blue-100 dark:bg-blue-900/30
-         text-blue-600 dark:text-blue-400
-         hover:bg-blue-200 dark:hover:bg-blue-900/50
-         transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
+  class="w-9 h-9 rounded-full 
+         bg-green-50 text-green-600 
+         hover:bg-green-600 hover:text-white 
+         transition-all hover:scale-110 
+         flex items-center justify-center"
 >
   <svg xmlns="http://www.w3.org/2000/svg"
-       class="h-5 w-5"
+       class="h-4 w-4"
        fill="none"
        viewBox="0 0 24 24"
        stroke="currentColor"
