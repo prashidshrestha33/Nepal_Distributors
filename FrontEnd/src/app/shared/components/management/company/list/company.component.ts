@@ -123,12 +123,6 @@ flattenCategories(categories: Category[], depth = 0): Category[] {
   isPDF(fileUrl?: string): boolean {
     return !!fileUrl && /\.pdf$/i.test(fileUrl);
   }
-
-  // getFileUrl(fileName?: string): string {
-  //   if (!fileName) return '';
-  //   fileName = fileName.replace(/^\/+/, '');
-  //   return `${environment.apiBaseUrl}/api/CompanyFile/${fileName}`;
-  // }
   getImageUrl(imageName?: string): string {
   return imageName 
     ? `${environment.apiBaseUrl}/api/CompanyFile?fileName=${encodeURIComponent(imageName)}`

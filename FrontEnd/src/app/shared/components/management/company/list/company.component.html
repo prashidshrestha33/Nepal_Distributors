@@ -144,14 +144,14 @@
 
               <img
                 *ngIf="isImage(companylst.registrationDocument)"
-                [src]="getFileUrl(companylst.registrationDocument)"
+                [src]="getImageUrl(companylst.registrationDocument)"
                 class="max-w-xs max-h-40 rounded border cursor-pointer"
                 (click)="openImage(companylst.registrationDocument)"
               />
 
               <a
                 *ngIf="isPDF(companylst.registrationDocument)"
-                [href]="getFileUrl(companylst.registrationDocument)"
+                [href]="getImageUrl(companylst.registrationDocument)"
                 target="_blank"
                 class="text-blue-600 underline">
                 View PDF
