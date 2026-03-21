@@ -53,7 +53,8 @@ export class UserProfilePopupComponent implements OnInit {
     Id: this.userId,
     FullName: this.user.fullName ?? '',
     Email: this.user.email ?? '',
-    Phone: this.user.phone ?? ''
+    Phone: this.user.phone ?? '',
+    Status: this.user.status ?? 'inactive'
   };
 
   this.uploading = true;

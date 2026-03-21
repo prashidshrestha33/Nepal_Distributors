@@ -201,7 +201,8 @@ VALUES (@CompanyId, @Email, @PasswordHash, @FullName, @Phone, @Role, @Status, @C
                     full_name     = @FullName,
                     phone         = @Phone,
                     role          = @Role,
-                    updated_at    = SYSUTCDATETIME()
+                    updated_at    = SYSUTCDATETIME(),
+                    status        = @status
                 WHERE
                     id = @Id;
                 ";
@@ -212,7 +213,8 @@ VALUES (@CompanyId, @Email, @PasswordHash, @FullName, @Phone, @Role, @Status, @C
                     user.FullName,
                     user.Phone,
                     user.Role,
-                    user.Id
+                    user.Id,
+                    user.Status
                 }, transaction: transaction);
 
                 return rowsAffected > 0;
