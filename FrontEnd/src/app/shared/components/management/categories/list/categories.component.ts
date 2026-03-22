@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CategoryService } from '../../../../services/management/management.service';
 import type { Category } from '../../../../services/management/management.service';
 import { CategoryMoveModalComponent } from '../move/category-move-modal.component';
@@ -35,7 +35,8 @@ export class CategoriesComponent implements OnInit {
   // Export Math for template
   Math = Math;
 
-  constructor(private service: CategoryService) {}
+  constructor(private service: CategoryService,
+  private router: Router) {}
 
   ngOnInit() {
     this.load();
@@ -45,6 +46,7 @@ export class CategoriesComponent implements OnInit {
   this.loading = true;
   this.service.getAllCategories().subscribe({
     next: (data: Category[]) => {
+      debugger;
         
         // Flatten tree structure for table display
       this.items = this.flattenCategoryTree(data);
@@ -236,4 +238,8 @@ flattenCategoryTree(categories: Category[], depth: number = 0): Category[] {
     
     return path;
   }
+  goToEdit(id: number) {
+  console.log('Navigating to edit category with ID:', id); // ✅ logs
+  this.router.navigate(['/management/categories/edit', id]);
+}
 }

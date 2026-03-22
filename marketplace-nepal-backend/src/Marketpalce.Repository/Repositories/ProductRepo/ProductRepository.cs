@@ -72,33 +72,40 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
         }
         public async Task<List<CategoryDto>> GetAllCategoryAsync()
         {
-            const string sql = @"
+            try
+            {
+                const string sql = @"
     SELECT id AS Id, name AS Name, slug AS Slug, parent_id AS ParentId, depth AS Depth, imageUrl as Image
     FROM dbo.Product_Categories
     ORDER BY depth ASC";
 
-            var flatList = (await _db.QueryAsync<CategoryDto>(sql)).ToList();
+                var flatList = (await _db.QueryAsync<CategoryDto>(sql)).ToList();
 
-            var lookup = flatList.ToDictionary(c => c.Id);
+                var lookup = flatList.ToDictionary(c => c.Id);
 
-            foreach (var cat in flatList)
-                cat.Children = new List<CategoryDto>();
+                foreach (var cat in flatList)
+                    cat.Children = new List<CategoryDto>();
 
-            var roots = new List<CategoryDto>();
+                var roots = new List<CategoryDto>();
 
-            foreach (var cat in flatList)
-            {
-                if (cat.ParentId.HasValue && lookup.ContainsKey(cat.ParentId.Value))
+                foreach (var cat in flatList)
                 {
-                    lookup[cat.ParentId.Value].Children.Add(cat);
+                    if (cat.ParentId.HasValue && cat.ParentId.Value != 0 && lookup.ContainsKey(cat.ParentId.Value))
+                    {
+                        lookup[cat.ParentId.Value].Children.Add(cat); // <--- NullReferenceException can happen here
+                    }
+                    else
+                    {
+                        roots.Add(cat);
+                    }
                 }
-                else
-                {
-                    roots.Add(cat);
-                }
+
+                return roots;
             }
-
-            return roots;
+            catch (Exception ex)
+            {
+                throw new Exception("Failed to load categories from database.", ex);
+            }
         }
         public async Task<int> AddReviewAsync(ProductReview review)
         {
@@ -418,77 +425,86 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
         }
         public async Task<bool> UpdateCategoryAsync(int id, CreateCategoryDto dto, string? imageUrl)
         {
-            // 🔹 Check exists
-            var exists = await _db.ExecuteScalarAsync<int>(
-                "SELECT COUNT(1) FROM dbo.Product_Categories WHERE id = @Id",
-                new { Id = id });
-
-            if (exists == 0)
-                throw new Exception("Category not found");
-
-            // 🔹 Duplicate check
-            if (!string.IsNullOrEmpty(dto.Name))
+            try
             {
-                var duplicate = await _db.ExecuteScalarAsync<int>(
-                    @"SELECT COUNT(1)
+
+                // 🔹 Check exists
+                var exists = await _db.ExecuteScalarAsync<int>(
+                    "SELECT COUNT(1) FROM dbo.Product_Categories WHERE id = @Id",
+                    new { Id = id });
+
+                if (exists == 0)
+                    throw new Exception("Category not found");
+
+                // 🔹 Duplicate check
+                if (!string.IsNullOrEmpty(dto.Name))
+                {
+                    var duplicate = await _db.ExecuteScalarAsync<int>(
+                        @"SELECT COUNT(1)
               FROM dbo.Product_Categories
               WHERE name = @Name
               AND ISNULL(parent_id,0) = ISNULL(@ParentId,0)
               AND id <> @Id",
-                    new
-                    {
-                        Name = dto.Name,
-                        ParentId = dto.ParentId,
-                        Id = id
-                    });
+                        new
+                        {
+                            Name = dto.Name,
+                            ParentId = dto.ParentId,
+                            Id = id
+                        });
 
-                if (duplicate > 0)
-                    throw new Exception("Category already exists under same parent");
-            }
+                    if (duplicate > 0)
+                        throw new Exception("Category already exists under same parent");
+                }
 
-            // 🔹 Build update
-            var parameters = new DynamicParameters();
-            var setClauses = new List<string>();
+                // 🔹 Build update
+                var parameters = new DynamicParameters();
+                var setClauses = new List<string>();
 
-            if (!string.IsNullOrEmpty(dto.Name))
-            {
-                setClauses.Add("name = @Name");
-                parameters.Add("@Name", dto.Name);
-            }
+                if (!string.IsNullOrEmpty(dto.Name))
+                {
+                    setClauses.Add("name = @Name");
+                    parameters.Add("@Name", dto.Name);
+                }
 
-            if (!string.IsNullOrEmpty(dto.Slug))
-            {
-                setClauses.Add("slug = @Slug");
-                parameters.Add("@Slug", dto.Slug);
-            }
+                if (!string.IsNullOrEmpty(dto.Slug))
+                {
+                    setClauses.Add("slug = @Slug");
+                    parameters.Add("@Slug", dto.Slug);
+                }
 
-            if (dto.ParentId.HasValue)
-            {
-                setClauses.Add("parent_id = @ParentId");
-                parameters.Add("@ParentId", dto.ParentId);
-            }
+                if (dto.ParentId.HasValue)
+                {
+                    setClauses.Add("parent_id = @ParentId");
+                    parameters.Add("@ParentId", dto.ParentId);
+                }
 
-            if (!string.IsNullOrEmpty(imageUrl))
-            {
-                setClauses.Add("image = @ImageUrl"); // ⚠️ FIX THIS COLUMN NAME
-                parameters.Add("@ImageUrl", imageUrl);
-            }
+                if (!string.IsNullOrEmpty(imageUrl))
+                {
+                    setClauses.Add("imageUrl = @ImageUrl"); // ⚠️ FIX THIS COLUMN NAME
+                    parameters.Add("@ImageUrl", imageUrl);
+                }
 
-            if (!setClauses.Any())
-                throw new Exception("No fields to update");
+                if (!setClauses.Any())
+                    throw new Exception("No fields to update");
 
-            setClauses.Add("updated_at = SYSUTCDATETIME()");
+                setClauses.Add("updated_at = SYSUTCDATETIME()");
 
-            parameters.Add("@Id", id);
+                parameters.Add("@Id", id);
 
-            var sql = $@"
+                var sql = $@"
         UPDATE dbo.Product_Categories
         SET {string.Join(", ", setClauses)}
         WHERE id = @Id";
 
-            var rows = await _db.ExecuteAsync(sql, parameters);
+                var rows = await _db.ExecuteAsync(sql, parameters);
 
-            return rows > 0;
+                return rows > 0;
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
         }
         public async Task<bool> ApproveProductAsync(long Productid, string approvedBy, string details, IDbTransaction? transaction = null)
         {

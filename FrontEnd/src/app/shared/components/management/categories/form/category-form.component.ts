@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { NgSelectModule } from '@ng-select/ng-select';
 
 import { CompanyService } from '../../../../services/management/company.service';
@@ -34,6 +34,8 @@ export class CategoryFormComponent implements OnInit {
 
   isDragging = false;
   maxVisibleLevels = 5; // feel free to increase
+  isEditMode = false;
+  categoryId!: number;
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
@@ -42,19 +44,54 @@ export class CategoryFormComponent implements OnInit {
     private categoryService: CategoryService,
     private companyService: CompanyService,
     private router: Router,
+    private route: ActivatedRoute,   // ✅ FIXED
     private cdr: ChangeDetectorRef
   ) {
     this.form = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
       slug: ['', Validators.required],
       parent_id: [null],
-      image: [null, Validators.required]
+      image: [null]
     });
   }
 
   ngOnInit() {
-    this.loadCategories();
+  const id = this.route.snapshot.paramMap.get('id');
+  if (id) {
+    console.log('Editing category ID:', id); // ✅ you can log it
+    this.isEditMode = true;
+    this.categoryId = +id;
+    this.loadCategoryById(); // load data for editing
     this.setupNameToSlugListener();
+  }
+  this.setupNameToSlugListener();
+}
+
+// ✅ LOAD CATEGORY FOR EDIT
+  private loadCategoryById(): void {
+    this.loading = true;
+
+    this.categoryService.getCategoryById(this.categoryId).subscribe({
+      next: (res: any) => {
+        const data = res.result;
+
+        this.form.patchValue({
+          name: data.name,
+          slug: data.slug,
+          parent_id: data.parentId
+        });
+
+        if (data.image) {
+          this.imageUrl = `http://localhost:5000/UploadedImages/${data.image}`;
+        }
+
+        this.loading = false;
+      },
+      error: () => {
+        this.error = 'Failed to load category';
+        this.loading = false;
+      }
+    });
   }
 
   private setupNameToSlugListener(): void {
@@ -230,6 +267,27 @@ private initializeCascadingLevels(): void {
   //                   Form Submit
   // ────────────────────────────────────────────────
 
+// onSubmit(): void {
+//   if (this.form.invalid) {
+//     this.form.markAllAsTouched();
+//     return;
+//   }
+
+//   const formData = new FormData();
+//   formData.append('Name', this.form.value.name);       
+//   formData.append('Slug', this.form.value.slug);       
+//   if (this.form.value.parent_id) {
+//     formData.append('ParentId', this.form.value.parent_id || ''); 
+//   }
+//   if (this.selectedImage) {
+//     formData.append('Image', this.selectedImage);     
+//   }
+
+//   this.categoryService.createCategory(formData).subscribe({
+//     next: () => this.router.navigate(['/management/categories']),
+//     error: (err) => console.error('Error', err)
+//   });
+// }
 onSubmit(): void {
   if (this.form.invalid) {
     this.form.markAllAsTouched();
@@ -237,19 +295,26 @@ onSubmit(): void {
   }
 
   const formData = new FormData();
-  formData.append('Name', this.form.value.name);       
-  formData.append('Slug', this.form.value.slug);       
+  formData.append('Name', this.form.value.name);
+  formData.append('Slug', this.form.value.slug);
   if (this.form.value.parent_id) {
-    formData.append('ParentId', this.form.value.parent_id || ''); 
+    formData.append('ParentId', this.form.value.parent_id || '');
   }
   if (this.selectedImage) {
-    formData.append('Image', this.selectedImage);     
+    formData.append('Image', this.selectedImage);
   }
 
-  this.categoryService.createCategory(formData).subscribe({
-    next: () => this.router.navigate(['/management/categories']),
-    error: (err) => console.error('Error', err)
-  });
+  if (this.isEditMode) {
+    this.categoryService.updateCategory(this.categoryId, formData).subscribe({
+      next: () => this.router.navigate(['/management/categories']),
+      error: (err) => console.error('Error', err)
+    });
+  } else {
+    this.categoryService.createCategory(formData).subscribe({
+      next: () => this.router.navigate(['/management/categories']),
+      error: (err) => console.error('Error', err)
+    });
+  }
 }
 
   goBack(): void {
@@ -266,17 +331,17 @@ onSubmit(): void {
     return lastSelectedId ? this.findCategoryById(lastSelectedId)?.name || '' : '';
   }
 
-  private loadCategories(): void {
-    this.categoryService.getTreeCategories().subscribe({
-      next: (categories: Category[]) => {
-        this.allCategories = categories;
-        this.flatCategories = this.flattenCategories(categories);
-        this.initializeCascadingLevels();
-      },
-      error: (err) => {
-        console.error('Error loading categories:', err);
-        this.error = 'Failed to load categories. Please try again later.';
-      }
-    });
-  }
+  // private loadCategories(): void {
+  //   this.categoryService.getTreeCategories().subscribe({
+  //     next: (categories: Category[]) => {
+  //       this.allCategories = categories;
+  //       this.flatCategories = this.flattenCategories(categories);
+  //       this.initializeCascadingLevels();
+  //     },
+  //     error: (err) => {
+  //       console.error('Error loading categories:', err);
+  //       this.error = 'Failed to load categories. Please try again later.';
+  //     }
+  //   });
+  // }
 }

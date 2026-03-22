@@ -41,7 +41,7 @@ namespace Marketplace.Api.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ProductModel>>> Get() => Ok(await repositorysitory.GetAllAsync());
 
-        [HttpGet("Category")]
+        [HttpGet("Categories")]
         public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAllCategory() => Ok(await repositorysitory.GetAllCategoryAsync());
 
         [HttpGet("GetAllCategorybyparentid")]
@@ -87,7 +87,7 @@ namespace Marketplace.Api.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
-        [HttpPut("{id}")]
+        [HttpPost("Category/{id:int}")]
         public async Task<IActionResult> UpdateCategory(int id, [FromForm] CreateCategoryDto dto)
         {
             if (!ModelState.IsValid)

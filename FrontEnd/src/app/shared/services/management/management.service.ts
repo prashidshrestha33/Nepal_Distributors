@@ -141,6 +141,9 @@ export interface ImportStatusResponse {
 
 @Injectable({ providedIn: 'root' })
 export class CategoryService {
+  approveCategory(id: number) {
+    throw new Error('Method not implemented.');
+  }
   constructor(private apiGateway: ApiGatewayService) {}
 
   getTreeCategories(): Observable<Category[]> {
@@ -155,7 +158,7 @@ export class CategoryService {
   }
 getAllCategories(): Observable<Category[]> {
   return this.apiGateway.get<Category>(
-    '/api/Product/category',
+    '/api/Product/Categories',
     { requiresAuth: true }
   ).pipe(
     map((response: any) => response?.result || [])
@@ -190,6 +193,22 @@ createCategory(formData: FormData): Observable<Category> {
       { requiresAuth: true }
     );
   }
+
+    getCategoryById(id: number): Observable<void> {
+    return this.apiGateway. get<void>(
+      `/api/Product/${id}`,
+      { requiresAuth: true }
+    );
+  }
+
+  updateCategory(id: number, formData: FormData): Observable<any> {
+    debugger;
+  return this.apiGateway.post<any>(
+    `/api/Product/Category/${id}`,
+    formData,
+    { requiresAuth: true }
+  );
+}
 }
 
 // ============================================

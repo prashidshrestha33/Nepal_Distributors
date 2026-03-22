@@ -80,9 +80,13 @@
                   </svg>
                 </button>
 
-                <button title="Edit" class="p-2 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition">
-                  <span class="inline-block rotate-[135deg]">✏</span>
-                </button>
+                <button
+  (click)="goToEdit(cat.id)"
+  title="Edit"
+  class="p-2 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition"
+>
+  ✏
+</button>
               </div>
             </td>
           </tr>
