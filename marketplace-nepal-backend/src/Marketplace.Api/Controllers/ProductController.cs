@@ -87,6 +87,55 @@ namespace Marketplace.Api.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateCategory(int id, [FromForm] CreateCategoryDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage);
+
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+
+            try
+            {
+                var existingCategory = await repositorysitory.GetCatagoryByIdAsync(id);
+
+                if (existingCategory == null)
+                    return NotFound(new { message = "Category not found" });
+
+                string? imageUrl = existingCategory.Image;
+
+                // If new image uploaded → replace
+                if (dto.Image != null && dto.Image.Length > 0)
+                {
+                    var uploads = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
+
+                    if (!Directory.Exists(uploads))
+                        Directory.CreateDirectory(uploads);
+
+                    var fileName = $"{Guid.NewGuid()}_{dto.Image.FileName}";
+                    var filePath = Path.Combine(uploads, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await dto.Image.CopyToAsync(stream);
+                    }
+
+                    imageUrl = fileName;
+                }
+
+                await repositorysitory.UpdateCategoryAsync(id, dto, imageUrl);
+
+                return Ok(new { message = "Category updated successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
 
         [HttpPost("move")]
         public async Task<IActionResult> MoveCatagory([FromBody] MoveCategoryDto dto)

@@ -13,8 +13,8 @@ export interface Category {
   id: number;
   name: string;
   slug: string;
-  parent_id?: number | null;
-  imageUrl?: string;  
+  parentId?: number | null;
+  image?: string;  
   depth?: number;
   children?: Category[];
   createdAt?: string;
@@ -153,10 +153,19 @@ export class CategoryService {
       })
     );
   }
+getAllCategories(): Observable<Category[]> {
+  return this.apiGateway.get<Category>(
+    '/api/Product/category',
+    { requiresAuth: true }
+  ).pipe(
+    map((response: any) => response?.result || [])
+  );
+}
 
   getCategories(): Observable<Category[]> {
     return this.getTreeCategories();
   }
+
 createCategory(formData: FormData): Observable<Category> {
   return this.apiGateway.post<Category>(
     '/api/Product/AddCatagory',

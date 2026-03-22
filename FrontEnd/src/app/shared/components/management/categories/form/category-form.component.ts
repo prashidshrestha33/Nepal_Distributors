@@ -88,7 +88,7 @@ private flattenCategories(categories: Category[], depth = 0): Category[] {
 
 private initializeCascadingLevels(): void {
     this.levelCategories = [];
-    this.levelCategories[0] = this.allCategories.filter(c => c.parent_id === null);
+    this.levelCategories[0] = this.allCategories.filter(c => c.parentId === null);
 
     // Initialize empty arrays for deeper levels
     for (let i = 1; i < this.maxVisibleLevels; i++) {

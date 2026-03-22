@@ -73,39 +73,32 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
         public async Task<List<CategoryDto>> GetAllCategoryAsync()
         {
             const string sql = @"
-        SELECT
-            id AS Id,
-            name AS Name,
-            slug AS Slug,
-            parent_id AS ParentId,
-            depth AS Depth
-        FROM [NepalDistributers].[dbo].[Product_Categories]
-        ORDER BY depth ASC"; // make sure parents come first
+    SELECT id AS Id, name AS Name, slug AS Slug, parent_id AS ParentId, depth AS Depth, imageUrl as Image
+    FROM dbo.Product_Categories
+    ORDER BY depth ASC";
 
-            // Fetch flat list
             var flatList = (await _db.QueryAsync<CategoryDto>(sql)).ToList();
 
-            // Build hierarchical tree
             var lookup = flatList.ToDictionary(c => c.Id);
-            var rootCategories = new List<CategoryDto>();
 
-            foreach (var category in flatList)
+            foreach (var cat in flatList)
+                cat.Children = new List<CategoryDto>();
+
+            var roots = new List<CategoryDto>();
+
+            foreach (var cat in flatList)
             {
-                if (category.ParentId.HasValue)
+                if (cat.ParentId.HasValue && lookup.ContainsKey(cat.ParentId.Value))
                 {
-                    if (lookup.TryGetValue(category.ParentId.Value, out var parent))
-                    {
-                        parent.Children ??= new List<CategoryDto>();
-                        parent.Children.Add(category);
-                    }
+                    lookup[cat.ParentId.Value].Children.Add(cat);
                 }
                 else
                 {
-                    rootCategories.Add(category); // top-level
+                    roots.Add(cat);
                 }
             }
 
-            return rootCategories;
+            return roots;
         }
         public async Task<int> AddReviewAsync(ProductReview review)
         {
@@ -423,14 +416,79 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
                         FROM dbo.Product_Categories WHERE id = @id";
             return await _db.QueryFirstOrDefaultAsync<CategoryDto>(sql, new { id });
         }
-
-        private static string Slugify(string text)
+        public async Task<bool> UpdateCategoryAsync(int id, CreateCategoryDto dto, string? imageUrl)
         {
-            if (string.IsNullOrWhiteSpace(text)) return "";
-            var s = text.ToLowerInvariant().Trim();
-            s = System.Text.RegularExpressions.Regex.Replace(s, @"\s+", "-");
-            s = System.Text.RegularExpressions.Regex.Replace(s, @"[^a-z0-9\-]", "");
-            return s;
+            // 🔹 Check exists
+            var exists = await _db.ExecuteScalarAsync<int>(
+                "SELECT COUNT(1) FROM dbo.Product_Categories WHERE id = @Id",
+                new { Id = id });
+
+            if (exists == 0)
+                throw new Exception("Category not found");
+
+            // 🔹 Duplicate check
+            if (!string.IsNullOrEmpty(dto.Name))
+            {
+                var duplicate = await _db.ExecuteScalarAsync<int>(
+                    @"SELECT COUNT(1)
+              FROM dbo.Product_Categories
+              WHERE name = @Name
+              AND ISNULL(parent_id,0) = ISNULL(@ParentId,0)
+              AND id <> @Id",
+                    new
+                    {
+                        Name = dto.Name,
+                        ParentId = dto.ParentId,
+                        Id = id
+                    });
+
+                if (duplicate > 0)
+                    throw new Exception("Category already exists under same parent");
+            }
+
+            // 🔹 Build update
+            var parameters = new DynamicParameters();
+            var setClauses = new List<string>();
+
+            if (!string.IsNullOrEmpty(dto.Name))
+            {
+                setClauses.Add("name = @Name");
+                parameters.Add("@Name", dto.Name);
+            }
+
+            if (!string.IsNullOrEmpty(dto.Slug))
+            {
+                setClauses.Add("slug = @Slug");
+                parameters.Add("@Slug", dto.Slug);
+            }
+
+            if (dto.ParentId.HasValue)
+            {
+                setClauses.Add("parent_id = @ParentId");
+                parameters.Add("@ParentId", dto.ParentId);
+            }
+
+            if (!string.IsNullOrEmpty(imageUrl))
+            {
+                setClauses.Add("image = @ImageUrl"); // ⚠️ FIX THIS COLUMN NAME
+                parameters.Add("@ImageUrl", imageUrl);
+            }
+
+            if (!setClauses.Any())
+                throw new Exception("No fields to update");
+
+            setClauses.Add("updated_at = SYSUTCDATETIME()");
+
+            parameters.Add("@Id", id);
+
+            var sql = $@"
+        UPDATE dbo.Product_Categories
+        SET {string.Join(", ", setClauses)}
+        WHERE id = @Id";
+
+            var rows = await _db.ExecuteAsync(sql, parameters);
+
+            return rows > 0;
         }
         public async Task<bool> ApproveProductAsync(long Productid, string approvedBy, string details, IDbTransaction? transaction = null)
         {
