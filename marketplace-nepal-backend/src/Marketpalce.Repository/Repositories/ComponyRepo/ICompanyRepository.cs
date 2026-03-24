@@ -1,12 +1,14 @@
-﻿using Marketplace.Models;
-using System.Data;
+﻿using Marketplace.Model.Models;
+using Marketplace.Models;
 using System.Collections.Generic;
+using System.Data;
 
 namespace Marketpalce.Repository.Repositories.ComponyRepo
 {
     public interface ICompanyRepository
     {
-        // Accept optional transaction so callers can create both company+user in same transaction
+        Task<CompanyNotificationSettingsDto?> GetNotificationSettingsAsync(long companyId);
+        Task<bool> UpdateNotificationSettingsAsync(UpdateNotificationSettingsRequest req);
         Task<long> CreateAsync(Company company, IDbTransaction? transaction = null);
         Task<Company?> GetByIdAsync(long id);
         Task<IEnumerable<Company>> ListAsync(int page = 1, int pageSize = 50);

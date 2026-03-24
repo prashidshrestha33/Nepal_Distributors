@@ -4,6 +4,7 @@ using Marketplace.Api.Services.Company;
 using Marketplace.Api.Services.EmailService;
 using Marketplace.Api.Services.Helper;
 using Marketplace.Helpers;
+using Marketplace.Model.Models;
 using Marketplace.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -213,6 +214,19 @@ namespace Marketplace.Api.Controllers
                     details = ex.Message
                 });
             }
+        }
+        [HttpGet("{id}/notifications")]
+        public async Task<IActionResult> GetSettings(long id)
+        {
+            var result = await _companies.GetNotificationSettingsAsync(id);
+            if (result == null) return NotFound();
+            return Ok(new { success = true, data = result });
+        }
+        [HttpPost("notifications/update")]
+        public async Task<IActionResult> UpdateSettings([FromBody] UpdateNotificationSettingsRequest request)
+        {
+            await _companies.UpdateNotificationSettingsAsync(request);
+            return Ok(new { success = true, message = "Settings updated!" });
         }
     }
 

@@ -64,6 +64,10 @@ export class UserDropdownComponent implements OnInit {
   OnComopneyProfileClick() {
    this.ui.openCompanyProfile(this.catalogId||0);
   }
+  OnNotificaitonSetting(){
+    
+   this.ui.openNotificationSettings(this.catalogId||0);
+  }
   OnUserProfileClick() {
    this.ui.openUserProfile(this.UserId||0);
   }

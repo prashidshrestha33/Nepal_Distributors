@@ -65,7 +65,7 @@ export class ProductsComponent implements OnInit {
   Math = Math;
   alertMessage = '';
   alertType: 'success' | 'error' | null = null;
-  
+    tempOrderItems: any[] = [];
 
   constructor(
     private productService: ProductService,
@@ -106,10 +106,6 @@ export class ProductsComponent implements OnInit {
     });
   }
   
-  openProductList(companyId: number, keyword: string = '', style: 'table' | 'list' | 'scroll' = 'table') {
-  this.ui.openProductList(companyId, keyword, 'table');
-}
-
   // Get brand name by brandId safely
 getBrandName(brandId?: number | null): string {
   if (!brandId) return 'N/A';

@@ -15,7 +15,10 @@ export interface ProductListPopupState {
   companyId: number;
   keyword: string;
   style: 'table' | 'list' | 'scroll';
+  preSelectedItems?: any[]; // 👈 NEW: Pass in previously selected items
+  onSelect?: (products: any[]) => void;
 }
+
 
 @Injectable({
   providedIn: 'root'
@@ -96,16 +99,32 @@ export class UiService {
   private _showProductList = new BehaviorSubject<ProductListPopupState | null>(null);
   readonly showProductList$: Observable<ProductListPopupState | null> = this._showProductList.asObservable();
 
+// Update the open function:
   openProductList(
     companyId: number,
     keyword: string = '',
-    style: 'table' | 'list' | 'scroll' = 'table'
+    style: 'table' | 'list' | 'scroll' = 'table',
+    preSelectedItems: any[] = [],            // 👈 NEW PARAMETER
+    onSelect?: (product: any[]) => void
   ): void {
-    this._showProductList.next({ companyId, keyword, style });
+    this._showProductList.next({ companyId, keyword, style, preSelectedItems, onSelect });
   }
+
 
   closeProductList(): void {
     this._showProductList.next(null);
   }
   
+  // ------------------
+  //Show Notification Settings
+  // ------------------
+    private _showNotificationSettings = new BehaviorSubject<number | null>(null);
+  readonly showNotificationSettings$: Observable<number | null> = this._showNotificationSettings.asObservable();
+  openNotificationSettings(companyId: number): void {
+    this._showNotificationSettings.next(companyId);
+  }
+  
+  closeNotificationSettings(): void {
+    this._showNotificationSettings.next(null);
+  }
 }

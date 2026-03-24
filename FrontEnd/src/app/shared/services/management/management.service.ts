@@ -32,6 +32,7 @@ export interface Product {
   sku?: string;
   name: string;
   description: string;
+  defaultImage: string;
   shortDescription?: string;
   categoryId: number;
   brandId: number;
@@ -39,6 +40,8 @@ export interface Product {
   rate: number;
   hsCode: string;
   status: string;
+  categoryName:string;
+  categorySlug:string;
   isFeatured?: boolean;
   seoTitle: string;
   seoDescription: string;
