@@ -186,6 +186,7 @@ namespace Marketplace.Api.Controllers
                     Name = model.Company.Name?.Trim() ?? string.Empty,
                     ContactPerson = model.Company.CompamyPerson,
                     RegistrationDocument = model.Company.RegistrationDocument,
+                    CompanyType = model.Company.CompanyType,
                     MobilePhone = model.Company.MobilePhone,
                     LandlinePhone = model.Company.LandLinePhone,
                     Location = model.Company.Address,
