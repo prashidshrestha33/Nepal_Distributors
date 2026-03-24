@@ -1,4 +1,4 @@
-﻿using Marketpalce.Repository.Repositories.ProductRepo;
+using Marketpalce.Repository.Repositories.ProductRepo;
 using Marketplace.Model.Models;
 using Dapper;
 using Microsoft.AspNetCore.Mvc;
@@ -155,17 +155,18 @@ namespace Marketplace.Api.Controllers
                     // Pass companyId to the MapFields method
                     var record = await MapFields(headers, fields, createdBy, repo, db, job, lineNumber, companyId);
                     if (record == null)
+                    {
                         job.Errors.Enqueue($"Line {lineNumber}: missing required fields.");
+                    }
                     else
+                    {
                         await repo.CreateAsync(record);
+                        job.Processed++; // Only increment on success
+                    }
                 }
                 catch (Exception ex)
                 {
                     job.Errors.Enqueue($"Line {lineNumber} error: {ex.Message}");
-                }
-                finally
-                {
-                    job.Processed++;
                 }
             }
         }
@@ -181,7 +182,7 @@ namespace Marketplace.Api.Controllers
             var product = new ProductModel
             {
                 CompanyId = companyId,
-                Sku = $"SKU-{name}",  // Set SKU to be "SKU" - "name"
+                Sku = $"SKU-{name.Replace(" ", "-")}",  // Set SKU to be "SKU" - "name" (with spaces replaced by hyphens)
                 Name = name,
                 Description = dict.GetValueOrDefault("details"),
                 CategoryId = 0,

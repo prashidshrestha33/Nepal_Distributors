@@ -1,4 +1,4 @@
-﻿using Marketplace.Model.Models;
+using Marketplace.Model.Models;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -11,6 +11,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
     public interface IProductRepository
     {
         Task<IEnumerable<ProductModel>> GetAllAsync();
+        Task<PagedResult<ProductModel>> GetPaginatedAsync(int pageNumber, int pageSize);
         Task<List<CategoryDto>> GetAllCategoryAsync();
         Task<ProductModel> GetByIdAsync(int id);
         Task<int> CreateAsync(ProductModel product);

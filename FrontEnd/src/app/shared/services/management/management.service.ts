@@ -182,8 +182,8 @@ createCategory(formData: FormData): Observable<Category> {
   );
 }
 
-  moveCategory(categoryId: number, newParentId:  number): Observable<Category> {
-    return this.apiGateway.postWithResult<Category>(
+  moveCategory(categoryId: number, newParentId:  number): Observable<void> {
+    return this.apiGateway.post<void>(
       '/api/Product/move',
       { categoryId, newParentId },
       { requiresAuth:  true }
@@ -205,7 +205,6 @@ createCategory(formData: FormData): Observable<Category> {
   }
 
   updateCategory(id: number, formData: FormData): Observable<any> {
-    debugger;
   return this.apiGateway.post<any>(
     `/api/Product/Category/${id}`,
     formData,
@@ -224,7 +223,7 @@ export class ProductService {
 
   getProducts(page: number = 1, pageSize: number = 20): Observable<ProductResponse> {
     const params = this.apiGateway.buildParams({ page, pageSize });
-    return this.apiGateway. get<ProductResponse>(
+    return this.apiGateway.getWithResult<ProductResponse>(
       '/api/Product',
       { requiresAuth: true, params }
     );
@@ -232,7 +231,7 @@ export class ProductService {
   
 SearchProducts(keyword:string,page: number = 1, pageSize: number = 20): Observable<ProductResponse> {
     const params = this.apiGateway.buildParams({ page, pageSize });
-    return this.apiGateway. get<ProductResponse>(
+    return this.apiGateway.getWithResult<ProductResponse>(
       `/api/Product/search?keyword=${keyword}`,
       { requiresAuth: true, params }
     );
@@ -257,7 +256,7 @@ ApprovedProductById(id: number, payload: ApproveProduct): Observable<Product> {
   );
 }
 
-  createProduct(product: Product, images?: { file: File, isDefault: boolean }[]): Observable<Product> {
+  createProduct(product: Product, images?: { file?: File, isDefault: boolean, id?: number }[]): Observable<Product> {
     const formData = this.buildProductFormData(product, images);
   return this.apiGateway.post<Product>(
     '/api/Product/AddProduct',
@@ -266,8 +265,8 @@ ApprovedProductById(id: number, payload: ApproveProduct): Observable<Product> {
   );
 }
 
-updateProduct(id: number, product: Product, images?: { file: File, isDefault: boolean }[]): Observable<Product> {
-  const formData = this.buildProductFormData(product, images);
+updateProduct(id: number, product: Product, images?: { file?: File, isDefault: boolean, id?: number }[], deletedImageIds: number[] = []): Observable<Product> {
+  const formData = this.buildProductFormData(product, images, deletedImageIds);
   return this.apiGateway.post<Product>(
     `/api/Product/${id}`,
     formData,
@@ -277,7 +276,7 @@ updateProduct(id: number, product: Product, images?: { file: File, isDefault: bo
 
   private buildProductFormData(
   product: Product,
-  images?: { file: File; isDefault: boolean; id?: number }[], 
+  images?: { file?: File; isDefault: boolean; id?: number }[], 
   deletedImageIds: number[] = []
 ): FormData {
   const formData = new FormData();

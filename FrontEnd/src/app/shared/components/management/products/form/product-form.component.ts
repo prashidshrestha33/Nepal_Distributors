@@ -89,10 +89,13 @@ export class ProductFormComponent implements OnInit {
   /* -------------------- IMAGES -------------------- */
 
   productImages: {
-    file: File | null;
+    id?: number;
+    file?: File | null;
     previewUrl: string;
     isDefault: boolean
   }[] = [];
+
+  deletedImageIds: number[] = [];
 
 
   constructor(
@@ -390,11 +393,26 @@ export class ProductFormComponent implements OnInit {
 
         if (product?.images?.length) {
 
-          this.productImages = product.images.map(img => ({
-            file: null,
-            previewUrl: this.getImageUrl(img.imageName),
-            isDefault: img.isDefault
-          }));
+          let foundDefault = false;
+          this.productImages = product.images.map(img => {
+            let isDef = img.isDefault;
+            if (isDef && !foundDefault) {
+              foundDefault = true;
+            } else if (isDef && foundDefault) {
+              isDef = false; // ensure exactly 1 default across loaded images
+            }
+            return {
+              id: img.id,
+              file: null,
+              previewUrl: this.getImageUrl(img.imageName),
+              isDefault: isDef
+            };
+          });
+
+          // Ensure exactly one is flagged if none were
+          if (!foundDefault && this.productImages.length > 0) {
+            this.productImages[0].isDefault = true;
+          }
 
         }
 
@@ -532,9 +550,19 @@ export class ProductFormComponent implements OnInit {
 
   }
   removeImage(url: string) {
-    debugger;
-  this.productImages = this.productImages.filter(img => img.previewUrl !== url);
-}
+    const imgToRemove = this.productImages.find(img => img.previewUrl === url);
+    const wasDefault = imgToRemove?.isDefault;
+
+    if (imgToRemove && imgToRemove.id) {
+      this.deletedImageIds.push(imgToRemove.id);
+    }
+    this.productImages = this.productImages.filter(img => img.previewUrl !== url);
+
+    // Re-assign default if the default image was deleted
+    if (wasDefault && this.productImages.length > 0) {
+      this.productImages[0].isDefault = true;
+    }
+  }
 
 
   // removeImage(removeImagename: string) {
@@ -571,25 +599,25 @@ export class ProductFormComponent implements OnInit {
     debugger;
 
     const imagesToSend =
-      this.productImages
-        .filter(i => i.file)
-        .map(i => ({
-          file: i.file!,
-          isDefault: i.isDefault
-        }));
+      this.productImages.map(i => ({
+        id: i.id,
+        file: i.file!,
+        isDefault: i.isDefault
+      }));
 
 
     const req$ =
       this.editMode && this.productId
         ? this.productService.updateProduct(
-            this.productId,
-            product,
-            imagesToSend
-          )
+          this.productId,
+          product,
+          imagesToSend,
+          this.deletedImageIds
+        )
         : this.productService.createProduct(
-            product,
-            imagesToSend
-          );
+          product,
+          imagesToSend
+        );
 
 
     req$.subscribe({

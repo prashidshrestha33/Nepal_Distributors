@@ -1,3 +1,54 @@
+<!-- Snackbar Notification -->
+<div *ngIf="snackbar.show"
+     class="fixed top-6 right-6 z-[9999] min-w-[320px] max-w-md bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] border-l-4 p-4 flex gap-4 transition-all duration-300 animate-slide-in"
+     [ngClass]="{
+       'border-green-500': snackbar.type === 'success',
+       'border-red-500': snackbar.type === 'error',
+       'border-yellow-500': snackbar.type === 'warning'
+     }">
+  
+  <div class="flex-shrink-0">
+    <!-- Success Icon -->
+    <div *ngIf="snackbar.type === 'success'" class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+    <!-- Error Icon -->
+    <div *ngIf="snackbar.type === 'error'" class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </div>
+    <!-- Warning Icon -->
+    <div *ngIf="snackbar.type === 'warning'" class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+    </div>
+  </div>
+
+  <div class="flex-grow">
+    <div class="flex justify-between items-start">
+      <h3 class="text-sm font-bold" [ngClass]="{
+        'text-green-800': snackbar.type === 'success',
+        'text-red-800': snackbar.type === 'error',
+        'text-yellow-800': snackbar.type === 'warning'
+      }">
+        {{ snackbar.type === 'success' ? 'Success!' : snackbar.type === 'warning' ? 'Note' : 'Error!' }}
+      </h3>
+      <button (click)="snackbar.show = false" class="text-gray-400 hover:text-gray-600">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <p class="text-xs text-gray-500 mt-1 font-medium leading-relaxed">
+      {{ snackbar.message }}
+    </p>
+  </div>
+</div>
+
 <div class="min-h-screen bg-gray-50 p-4 space-y-6">
 
   <!-- Header -->
@@ -123,26 +174,6 @@
     {{ uploadMessage }}
   </div>
 
-  <div *ngIf="alertType === 'error'"
-       class="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-md relative mb-4"
-       role="alert">
-    <strong class="font-semibold">Error!</strong>
-    <span class="block">{{ alertMessage }}</span>
-    <button (click)="closeAlert()" class="absolute top-2 right-2 text-red-600 hover:text-red-800">
-      ✕
-    </button>
-  </div>
-
-  <div *ngIf="alertType === 'success'"
-       class="bg-green-50 border border-green-300 text-green-700 px-4 py-3 rounded-md relative mb-4"
-       role="alert">
-    <strong class="font-semibold">Success!</strong>
-    <span class="block">{{ alertMessage }}</span>
-    <button (click)="closeAlert()" class="absolute top-2 right-2 text-green-600 hover:text-green-800">
-      ✕
-    </button>
-  </div>
-
   <!-- Search Box -->
   <div class="bg-white rounded-xl shadow-sm p-4">
     <input
@@ -167,114 +198,278 @@
   <!-- Product Table -->
   <div *ngIf="!loading && filteredProducts.length > 0"
        class="bg-white rounded-xl shadow-sm overflow-hidden">
+    
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-left text-gray-700">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr class="text-xs font-semibold uppercase tracking-wide text-gray-600">
+            <th class="px-4 py-3">
+              <input type="checkbox" [checked]="allSelected" (change)="toggleSelectAll($event)" />
+            </th>
+            <th class="px-3 py-3 hidden xl:table-cell">S.N</th>
+            <th class="px-6 py-3 cursor-pointer select-none group" (click)="onSort('name')">
+              <div class="flex items-center gap-1 hover:text-blue-600 transition-colors">
+                Name
+                <span class="text-gray-400 group-hover:text-blue-400 transition-colors">
+                  <svg *ngIf="sortColumn !== 'name'" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                  <svg *ngIf="sortColumn === 'name' && sortDirection === 'asc'" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                  </svg>
+                  <svg *ngIf="sortColumn === 'name' && sortDirection === 'desc'" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 4h13M3 8h9m-9 4h6m4 0l4 4m0 0l4-4m-4 4v-12" />
+                  </svg>
+                </span>
+              </div>
+            </th>
+            <th class="px-6 py-3 hidden sm:table-cell cursor-pointer select-none group" (click)="onSort('category')">
+              <div class="flex items-center gap-1 hover:text-blue-600 transition-colors">
+                Category
+                <span class="text-gray-400 group-hover:text-blue-400 transition-colors">
+                  <svg *ngIf="sortColumn !== 'category'" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                  <svg *ngIf="sortColumn === 'category' && sortDirection === 'asc'" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                  </svg>
+                  <svg *ngIf="sortColumn === 'category' && sortDirection === 'desc'" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 4h13M3 8h9m-9 4h6m4 0l4 4m0 0l4-4m-4 4v-12" />
+                  </svg>
+                </span>
+              </div>
+            </th>
+            <th class="px-6 py-3 hidden lg:table-cell cursor-pointer select-none group" (click)="onSort('brand')">
+              <div class="flex items-center gap-1 hover:text-blue-600 transition-colors">
+                Brand
+                <span class="text-gray-400 group-hover:text-blue-400 transition-colors">
+                  <svg *ngIf="sortColumn !== 'brand'" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                  <svg *ngIf="sortColumn === 'brand' && sortDirection === 'asc'" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                  </svg>
+                  <svg *ngIf="sortColumn === 'brand' && sortDirection === 'desc'" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 4h13M3 8h9m-9 4h6m4 0l4 4m0 0l4-4m-4 4v-12" />
+                  </svg>
+                </span>
+              </div>
+            </th>
+            <th class="px-6 py-3 cursor-pointer select-none group" (click)="onSort('rate')">
+              <div class="flex items-center gap-1 hover:text-blue-600 transition-colors">
+                Rate
+                <span class="text-gray-400 group-hover:text-blue-400 transition-colors">
+                  <svg *ngIf="sortColumn !== 'rate'" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                  <svg *ngIf="sortColumn === 'rate' && sortDirection === 'asc'" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                  </svg>
+                  <svg *ngIf="sortColumn === 'rate' && sortDirection === 'desc'" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 4h13M3 8h9m-9 4h6m4 0l4 4m0 0l4-4m-4 4v-12" />
+                  </svg>
+                </span>
+              </div>
+            </th>
+            <th class="px-6 py-3 hidden xl:table-cell">Created By</th>
+            <th class="px-6 py-3 hidden md:table-cell cursor-pointer select-none group" (click)="onSort('status')">
+              <div class="flex items-center gap-1 hover:text-blue-600 transition-colors">
+                Status
+                <span class="text-gray-400 group-hover:text-blue-400 transition-colors">
+                  <svg *ngIf="sortColumn !== 'status'" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                  <svg *ngIf="sortColumn === 'status' && sortDirection === 'asc'" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                  </svg>
+                  <svg *ngIf="sortColumn === 'status' && sortDirection === 'desc'" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 4h13M3 8h9m-9 4h6m4 0l4 4m0 0l4-4m-4 4v-12" />
+                  </svg>
+                </span>
+              </div>
+            </th>
+            <th class="px-6 py-3 hidden sm:table-cell">Image</th>
+            <th class="px-6 py-3">Actions</th>
+          </tr>
+        </thead>
 
-    <table class="min-w-full text-left text-gray-700">
-      <thead class="bg-gray-50 border-b border-gray-200">
-        <tr class="text-xs font-semibold uppercase tracking-wide text-gray-600">
-          <th class="px-4 py-3">
-            <input type="checkbox" [checked]="allSelected" (change)="toggleSelectAll($event)" />
-          </th>
-          <th class="px-3 py-3">S.N</th>
-          <th class="px-6 py-3">Name</th>
-          <th class="px-6 py-3">Category</th>
-          <th class="px-6 py-3">Brand</th>
-          <th class="px-6 py-3">Rate</th>
-          <th class="px-6 py-3">Created By</th>
-          <th class="px-6 py-3">Status</th>
-          <th class="px-6 py-3">Image</th>
-          <th class="px-6 py-3">Actions</th>
-        </tr>
-      </thead>
+        <tbody class="divide-y divide-gray-100">
+          <tr *ngFor="let product of filteredProducts; let i = index" class="hover:bg-gray-50 transition">
+            <td class="px-4 py-3">
+              <input
+                type="checkbox"
+                [(ngModel)]="product.selected"
+                (change)="updateBulkButtonState()"
+                class="cursor-pointer"
+              />
+            </td>
 
-      <tbody class="divide-y divide-gray-100">
-        <tr *ngFor="let product of filteredProducts; let i = index" class="hover:bg-gray-50 transition">
-          <td class="px-4 py-3">
-            <input
-              type="checkbox"
-              [(ngModel)]="product.selected"
-              (change)="updateBulkButtonState()"
-              class="cursor-pointer"
-            />
-          </td>
+            <td class="px-4 py-3 text-sm font-medium text-gray-900 hidden xl:table-cell">
+              {{ (currentPage - 1) * pageSize + i + 1 }}
+            </td>
 
-          <td class="px-4 py-3 text-sm font-medium text-gray-900">
-            {{ (currentPage - 1) * pageSize + i + 1 }}
-          </td>
+            <td class="px-6 py-3 text-sm font-semibold text-gray-800">
+              <div class="flex flex-col">
+                <span>{{ product.name }}</span>
+                <span class="text-xs text-gray-500 sm:hidden">
+                  {{ getCategoryName(product.categoryId) }}
+                </span>
+              </div>
+            </td>
 
-          <td class="px-6 py-3 text-sm font-semibold text-gray-800">
-            {{ product.name }}
-          </td>
+            <td class="px-6 py-3 text-sm text-gray-600 hidden sm:table-cell">
+              {{ getCategoryName(product.categoryId) }}
+            </td>
 
-          <td class="px-6 py-3 text-sm text-gray-600">
-            {{ getCategoryName(product.categoryId) }}
-          </td>
+            <td class="px-6 py-3 text-sm text-gray-600 hidden lg:table-cell">
+              {{ getBrandName(product.brandId) }}
+            </td>
 
-          <td class="px-6 py-3 text-sm text-gray-600">
-            {{ getBrandName(product.brandId) }}
-          </td>
+            <td class="px-6 py-3 text-sm font-semibold text-gray-900">
+              Rs. {{ product.rate | number:'1.2-2' }}
+            </td>
 
-          <td class="px-6 py-3 text-sm font-semibold text-gray-900">
-            Rs. {{ product.rate | number:'1.2-2' }}
-          </td>
+            <td class="px-6 py-3 text-sm text-gray-700 hidden xl:table-cell">
+              {{ product.createdBy }}
+            </td>
 
-          <td class="px-6 py-3 text-sm text-gray-700">
-            {{ product.createdBy }}
-          </td>
+            <td class="px-6 py-3 text-sm hidden md:table-cell">
+              <span
+                class="px-3 py-1 rounded-full text-xs font-semibold"
+                [ngClass]="{
+                  'bg-green-100 text-green-700': product.status === 'Approved',
+                  'bg-yellow-100 text-yellow-700': product.status !== 'Approved'
+                }"
+              >
+                {{ product.status || 'Pending' }}
+              </span>
+            </td>
 
-          <td class="px-6 py-3 text-sm">
-            <span
-              class="px-3 py-1 rounded-full text-xs font-semibold"
-              [ngClass]="{
-                'bg-green-100 text-green-700': product.status === 'Approved',
-                'bg-yellow-100 text-yellow-700': product.status !== 'Approved'
-              }"
+            <td class="px-6 py-3 hidden sm:table-cell">
+              <img
+                *ngIf="getDefaultImage(product) as img"
+                [src]="getImageUrl(img.imageName)"
+                class="w-12 h-12 object-cover rounded-md"
+                alt="Product image"
+              />
+              <span *ngIf="!getDefaultImage(product)" class="text-gray-400 text-xs text-nowrap">
+                No Image
+              </span>
+            </td>
+
+            <td class="px-6 py-3">
+              <div class="flex gap-2 sm:gap-3">
+                <button
+                  (click)="approveProduct(product)"
+                  title="Approve"
+                  class="cursor-pointer w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition transform hover:scale-110 flex items-center justify-center"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                </button>
+
+                <a
+                  [routerLink]="['/products/details', product.id]"
+                  title="View"
+                  class="cursor-pointer w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition transform hover:scale-110 flex items-center justify-center"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </a>
+
+                <button
+                  (click)="goToEditProduct(product.id)"
+                  title="Edit"
+                  class="cursor-pointer w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition transform hover:scale-110 flex items-center justify-center font-bold"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Section -->
+    <div class="px-6 py-5 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white">
+      <!-- Info Text -->
+      <div class="text-sm font-medium text-gray-500">
+        Showing 
+        <span class="text-gray-900 font-bold">{{ (currentPage - 1) * pageSize + 1 }}</span>
+        to 
+        <span class="text-gray-900 font-bold">{{ Math.min(currentPage * pageSize, totalCount) }}</span>
+        of 
+        <span class="text-gray-900 font-bold">{{ totalCount }}</span> 
+        results
+      </div>
+
+      <!-- Controls -->
+      <div class="flex items-center gap-4">
+        <!-- Page Size Selector -->
+        <div class="relative min-w-[140px]">
+          <select 
+            [ngModel]="pageSize" 
+            (ngModelChange)="onPageSizeChange($event)"
+            class="appearance-none w-full bg-white border border-gray-200 rounded-lg px-4 py-2 pr-8 text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer shadow-sm"
+          >
+            <option [value]="10">10 per page</option>
+            <option [value]="25">25 per page</option>
+            <option [value]="50">50 per page</option>
+          </select>
+          <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Page Numbers -->
+        <div class="flex items-center gap-1.5">
+          <!-- Back button -->
+          <button 
+            (click)="onPageChange(currentPage - 1)" 
+            [disabled]="currentPage === 1"
+            class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-50 hover:text-gray-600 disabled:opacity-40 disabled:hover:bg-transparent transition-all shadow-sm"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          <!-- Numbers -->
+          <ng-container *ngFor="let page of [].constructor(totalPages); let i = index">
+            <!-- Simplified: show all if under 7, otherwise show range (can be improved if needed) -->
+            <button 
+              *ngIf="i + 1 === 1 || i + 1 === totalPages || (i + 1 >= currentPage - 2 && i + 1 <= currentPage + 2)"
+              (click)="onPageChange(i + 1)"
+              class="w-10 h-10 flex items-center justify-center rounded-lg text-sm font-bold transition-all shadow-sm"
+              [ngClass]="currentPage === i + 1 ? 'bg-blue-600 text-white shadow-blue-200' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'"
             >
-              {{ product.status || 'Pending' }}
-            </span>
-          </td>
+              {{ i + 1 }}
+            </button>
+            <span *ngIf="totalPages > 7 && (i + 1 === 2 && currentPage > 4)" class="px-1 text-gray-400 font-bold">...</span>
+            <span *ngIf="totalPages > 7 && (i + 1 === totalPages - 1 && currentPage < totalPages - 3)" class="px-1 text-gray-400 font-bold">...</span>
+          </ng-container>
 
-          <td class="px-6 py-3">
-            <img
-              *ngIf="getDefaultImage(product) as img"
-              [src]="getImageUrl(img.imageName)"
-              class="w-12 h-12 object-cover rounded-md"
-              alt="Product image"
-            />
-            <span *ngIf="!getDefaultImage(product)" class="text-gray-400 text-xs">
-              No Image
-            </span>
-          </td>
-
-          <td class="px-6 py-3">
-            <div class="flex gap-3">
-              <button
-                (click)="approveProduct(product)"
-                title="Approve"
-                class="cursor-pointer w-9 h-9 rounded-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition transform hover:scale-110 flex items-center justify-center"
-              >
-                ✔
-              </button>
-
-              <a
-                [routerLink]="['/products/details', product.id]"
-                title="View"
-                class="cursor-pointer w-9 h-9 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition transform hover:scale-110 flex items-center justify-center"
-              >
-                 👁
-              </a>
-
-              <button
-                (click)="goToEditProduct(product.id)"
-                title="Edit"
-                class="cursor-pointer w-9 h-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition transform hover:scale-110 flex items-center justify-center"
-              >
-                <span class="inline-block rotate-[135deg]">✏</span>
-              </button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+          <!-- Next button -->
+          <button 
+            (click)="onPageChange(currentPage + 1)" 
+            [disabled]="currentPage === totalPages"
+            class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-50 hover:text-gray-600 disabled:opacity-40 disabled:hover:bg-transparent transition-all shadow-sm"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Approve Modal -->

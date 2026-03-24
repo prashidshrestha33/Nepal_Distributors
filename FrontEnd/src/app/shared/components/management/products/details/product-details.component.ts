@@ -42,6 +42,7 @@ export class ProductDetailsComponent implements OnInit {
   selectedRating: number = 0;
   commentText: string = '';
   approveProductData: (Product & { categoryName?: string; brandName?: string }) | null = null;
+  snackbar: { show: boolean; message: string; type: 'success' | 'error' | 'warning' } = { show: false, message: '', type: 'success' };
 
   // Approve modal properties
   showApproveModal: boolean = false;
@@ -58,7 +59,7 @@ export class ProductDetailsComponent implements OnInit {
     private productService: ProductService,
     private categoryService: CategoryService,
     private staticValueService: StaticValueService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
@@ -72,11 +73,11 @@ export class ProductDetailsComponent implements OnInit {
     this.loadProduct(id);
     this.loadCategories();
     this.loadStaticValues();
-    setInterval(() => {
-    if (this.product?.images?.length) {
-      this.selectedImageIndex = (this.selectedImageIndex + 1) % this.product.images.length;
-    }
-  }, 5000); // change image every 3 seconds
+    this.carouselInterval = setInterval(() => {
+      if (this.product?.images?.length) {
+        this.selectedImageIndex = (this.selectedImageIndex + 1) % this.product.images.length;
+      }
+    }, 5000); 
   }
 
   ngOnDestroy(): void {
@@ -92,31 +93,31 @@ export class ProductDetailsComponent implements OnInit {
     this.selectedRating = rating;
   }
 
- submitFeedback() {
-  if (!this.commentText.trim() || this.selectedRating === 0) {
-    alert('Please select a rating and enter a comment.');
-    return;
-  }
-
-  const payload = {
-    productId: this.product?.id,
-    rating: this.selectedRating,
-    comment: this.commentText.trim()
-  };
-  this.productService.submitReview(payload).subscribe({
-    next: (res) => {
-      alert('Review submitted successfully');
-
-      // reset form
-      this.selectedRating = 0;
-      this.commentText = '';
-    },
-    error: (err) => {
-      console.error('Error saving review', err);
-      alert('Failed to submit review');
+  submitFeedback() {
+    if (!this.commentText.trim() || this.selectedRating === 0) {
+      alert('Please select a rating and enter a comment.');
+      return;
     }
-  });
-}
+
+    const payload = {
+      productId: this.product?.id,
+      rating: this.selectedRating,
+      comment: this.commentText.trim()
+    };
+    this.productService.submitReview(payload).subscribe({
+      next: (res) => {
+        alert('Review submitted successfully');
+
+        // reset form
+        this.selectedRating = 0;
+        this.commentText = '';
+      },
+      error: (err) => {
+        console.error('Error saving review', err);
+        alert('Failed to submit review');
+      }
+    });
+  }
   loadProduct(id: number) {
     this.loading = true;
     this.productService.getProductById(id).subscribe({
@@ -138,7 +139,7 @@ export class ProductDetailsComponent implements OnInit {
         }
         this.loading = false;
       },
-      
+
       error: err => {
         console.error('Error loading products:', err);
         this.loading = false;
@@ -146,10 +147,10 @@ export class ProductDetailsComponent implements OnInit {
     });
   }
 
-    getDefaultImage(product: Product) {
-  return product.images?.find(i => i.isDefault) 
+  getDefaultImage(product: Product) {
+    return product.images?.find(i => i.isDefault)
       || product.images?.[0];
-}
+  }
   // Manual index change (if you add thumbnails/buttons in HTML)
   setCurrentIndex(index: number) {
     this.currentIndex = index;
@@ -249,37 +250,56 @@ export class ProductDetailsComponent implements OnInit {
           this.product.status = updatedProduct.status;
         }
         this.showApproveModal = false;
+        
+        const msg = payload.action === 'Approved' ? 'Product approved successfully!' : 'Product rejected.';
+        const type = payload.action === 'Approved' ? 'success' : 'warning';
+        this.showSnackbar(msg, type);
+        
+        // Refresh product data
+        if (this.product?.id) {
+          this.loadProduct(this.product.id);
+        }
       },
       error: (err) => {
         console.error('Error updating product status:', err);
+        this.showSnackbar('Operation failed', 'error');
       },
     });
   }
-selectedImageIndex = 0;
 
-prevImage() {
-  if (!this.product?.images?.length) return;
-  this.selectedImageIndex =
-    (this.selectedImageIndex - 1 + this.product.images.length) % this.product.images.length;
-}
+  showSnackbar(message: string, type: 'success' | 'error' | 'warning' = 'success') {
+    this.snackbar = { show: true, message, type };
+    setTimeout(() => {
+      this.snackbar.show = false;
+    }, 5000);
+  }
+  selectedImageIndex = 0;
 
-nextImage() {
-  if (!this.product?.images?.length) return;
-  this.selectedImageIndex = (this.selectedImageIndex + 1) % this.product.images.length;
-}
+  prevImage() {
+    if (!this.product?.images?.length) return;
+    this.selectedImageIndex =
+      (this.selectedImageIndex - 1 + this.product.images.length) % this.product.images.length;
+  }
 
-selectImage(index: number) {
-  if (!this.product?.images?.length) return;
-  this.selectedImageIndex = index;
-}
+  nextImage() {
+    if (!this.product?.images?.length) return;
+    this.selectedImageIndex = (this.selectedImageIndex + 1) % this.product.images.length;
+  }
+
+  selectImage(index: number) {
+    if (!this.product?.images?.length) return;
+    this.selectedImageIndex = index;
+  }
   // Handle image load error
   handleImageError(event: any) {
-    event.target.src = 'assets/images/no-image.png';
+    if (!event.target.src.includes('no-image.png')) {
+      event.target.src = 'assets/images/no-image.png';
+    }
   }
   get currentImageUrl(): string | null {
-  if (this.product?.images?.length && this.product.images[this.selectedImageIndex]) {
-    return this.getImageUrl(this.product.images[this.selectedImageIndex].imageName);
+    if (this.product?.images?.length && this.product.images[this.selectedImageIndex]) {
+      return this.getImageUrl(this.product.images[this.selectedImageIndex].imageName);
+    }
+    return null;
   }
-  return null;
-}
 }

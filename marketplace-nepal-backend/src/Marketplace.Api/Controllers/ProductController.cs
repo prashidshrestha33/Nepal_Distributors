@@ -1,4 +1,4 @@
-﻿using Marketpalce.Repository.Repositories.ProductRepo;
+using Marketpalce.Repository.Repositories.ProductRepo;
 using Marketplace.Api.Models;
 using Marketplace.Api.Services.Helper;
 using Marketplace.Model.Models;
@@ -39,7 +39,11 @@ namespace Marketplace.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ProductModel>>> Get() => Ok(await repositorysitory.GetAllAsync());
+        public async Task<IActionResult> Get([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            var result = await repositorysitory.GetPaginatedAsync(page, pageSize);
+            return Ok(ApiResponse<Marketplace.Model.Models.PagedResult<ProductModel>>.Ok(result));
+        }
 
         [HttpGet("Categories")]
         public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAllCategory() => Ok(await repositorysitory.GetAllCategoryAsync());

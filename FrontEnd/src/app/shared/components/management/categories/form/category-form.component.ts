@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgSelectModule } from '@ng-select/ng-select';
 
+import { environment } from '../../../../../../environments/environment';
 import { CompanyService } from '../../../../services/management/company.service';
 import { Category, CategoryService } from '../../../../services/management/management.service';
 import { FormsModule } from '@angular/forms';
@@ -36,6 +37,8 @@ export class CategoryFormComponent implements OnInit {
   maxVisibleLevels = 5; // feel free to increase
   isEditMode = false;
   categoryId!: number;
+  initialParentId: number | null = null;
+  snackbar: { show: boolean; message: string; type: 'success' | 'error' | 'warning' } = { show: false, message: '', type: 'success' };
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
@@ -73,16 +76,29 @@ export class CategoryFormComponent implements OnInit {
 
     this.categoryService.getCategoryById(this.categoryId).subscribe({
       next: (res: any) => {
-        const data = res.result;
+        // The endpoint returns the category directly (no ApiResponse wrapper)
+        const data = res?.result ?? res;
 
         this.form.patchValue({
           name: data.name,
           slug: data.slug,
           parent_id: data.parentId
         });
+        this.initialParentId = data.parentId;
 
         if (data.image) {
-          this.imageUrl = `http://localhost:5000/UploadedImages/${data.image}`;
+          this.imageUrl = `${environment.apiBaseUrl}/api/CompanyFile?fileName=${encodeURIComponent(data.image)}`;
+        }
+        
+        if (data.parentId) {
+          this.categoryService.getCategoryById(data.parentId).subscribe({
+            next: (pRes: any) => {
+              const pData = pRes?.result ?? pRes;
+              this.parentSlugBase = pData?.slug || '';
+            }
+          });
+        } else {
+          this.parentSlugBase = '';
         }
 
         this.loading = false;
@@ -94,22 +110,40 @@ export class CategoryFormComponent implements OnInit {
     });
   }
 
+  parentSlugBase = '';
+
   private setupNameToSlugListener(): void {
-    this.form.get('name')?.valueChanges.subscribe(name => {
-      if (name?.trim()) {
-        const slug = this.generateSlug(name);
-        this.form.get('slug')?.setValue(slug, { emitEvent: false });
-      } else {
-        this.form.get('slug')?.setValue('', { emitEvent: false });
-      }
+    this.form.get('name')?.valueChanges.subscribe(() => {
+      this.updateSlug();
     });
   }
-    onCategoryChosen(categoryId: any): void {
-      if (typeof categoryId === 'number') {
-        this.form.get('parent_id')?.setValue(categoryId);
-      } else {
-        console.error('Invalid category ID:', categoryId);
-      }
+
+  private updateSlug(): void {
+    const name = this.form.get('name')?.value;
+    if (name?.trim()) {
+      const nameSegment = name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      const finalSlug = this.parentSlugBase 
+        ? `${this.parentSlugBase}-${nameSegment}` 
+        : nameSegment;
+      this.form.get('slug')?.setValue(finalSlug, { emitEvent: false });
+    } else {
+      this.form.get('slug')?.setValue('', { emitEvent: false });
+    }
+  }
+
+  onCategoryPathChosen(slugPath: string): void {
+    this.parentSlugBase = slugPath;
+    this.updateSlug();
+  }
+
+  onCategoryChosen(categoryId: any): void {
+    if (typeof categoryId === 'number' && categoryId > 0) {
+      this.form.get('parent_id')?.setValue(categoryId);
+    } else {
+      this.form.get('parent_id')?.setValue(null);
+      this.parentSlugBase = '';
+      this.updateSlug();
+    }
   }
 
 private flattenCategories(categories: Category[], depth = 0): Category[] {
@@ -176,13 +210,7 @@ private initializeCascadingLevels(): void {
     return this.flatCategories.find(c => c.id === id);
   }
 
-  generateSlug(name: string): string {
-    return `categories-${name
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '')}`;
-  }
+  
 
   // ────────────────────────────────────────────────
   //               Image Handling
@@ -306,15 +334,38 @@ onSubmit(): void {
 
   if (this.isEditMode) {
     this.categoryService.updateCategory(this.categoryId, formData).subscribe({
-      next: () => this.router.navigate(['/management/categories']),
-      error: (err) => console.error('Error', err)
+      next: () => {
+        this.router.navigate(['/management/categories'], { 
+          state: { snackbar: { message: 'Category updated successfully!', success: true } } 
+        });
+      },
+      error: (err) => {
+        console.error('Error', err);
+        this.showSnackbar('Failed to update category. Please try again.', 'error');
+      }
     });
   } else {
     this.categoryService.createCategory(formData).subscribe({
-      next: () => this.router.navigate(['/management/categories']),
-      error: (err) => console.error('Error', err)
+      next: () => {
+        this.router.navigate(['/management/categories'], { 
+          state: { snackbar: { message: 'Category created successfully!', success: true } } 
+        });
+      },
+      error: (err) => {
+        console.error('Error', err);
+        this.showSnackbar('Failed to create category. Please try again.', 'error');
+      }
     });
   }
+}
+
+showSnackbar(message: string, type: 'success' | 'error' | 'warning' = 'success', duration: number = 5000) {
+  this.snackbar = { show: true, message, type };
+  setTimeout(() => {
+    this.snackbar.show = false;
+    this.cdr.detectChanges();
+  }, duration);
+  this.cdr.detectChanges();
 }
 
   goBack(): void {

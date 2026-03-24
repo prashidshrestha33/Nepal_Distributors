@@ -58,14 +58,15 @@ export class ProductsComponent implements OnInit {
 
   // Pagination
   currentPage = 1;
-  pageSize = 20;
+  pageSize = 10;
   totalCount = 0;
   totalPages = 0;
 
   Math = Math;
-  alertMessage = '';
-  alertType: 'success' | 'error' | null = null;
-    tempOrderItems: any[] = [];
+  snackbar: { show: boolean; message: string; type: 'success' | 'error' | 'warning' } = { show: false, message: '', type: 'success' };
+  tempOrderItems: any[] = [];
+  sortColumn: string = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
 
   constructor(
     private productService: ProductService,
@@ -81,6 +82,24 @@ export class ProductsComponent implements OnInit {
     this.loadProducts();
     this.loadCategoryTree();
     this.loadBrandStaticValues();
+
+    // Check for snackbar from navigation state
+    const nav = this.router.getCurrentNavigation();
+    const stateSnackbar = nav?.extras?.state?.['snackbar'] || 
+                         (window.history.state?.['snackbar']); // Fallback for some Angular versions
+
+    if (stateSnackbar) {
+      this.showSnackbar(stateSnackbar.message, stateSnackbar.success ? 'success' : 'error');
+    }
+  }
+
+  showSnackbar(message: string, type: 'success' | 'error' | 'warning' = 'success', duration: number = 5000) {
+    this.snackbar = { show: true, message, type };
+    setTimeout(() => {
+      this.snackbar.show = false;
+      this.cdr.detectChanges();
+    }, duration);
+    this.cdr.detectChanges();
   }
 
   // ----------------------
@@ -89,19 +108,26 @@ export class ProductsComponent implements OnInit {
   loadProducts() {
     this.loading = true;
     this.productService.getProducts(this.currentPage, this.pageSize).subscribe({
-      next: (response: any) => {
-        this.products = response.result.map((p: Product) => ({
-          ...p,
-          imageUrl: this.getImageUrl(p.imageName)
-        }));
-        this.filteredProducts = [...this.products];
-        this.totalCount = this.products.length;
-        this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+      next: (pagedData: any) => {
+        if (pagedData && pagedData.data) {
+          this.products = pagedData.data.map((p: Product) => ({
+            ...p,
+            imageUrl: this.getImageUrl(p.imageName)
+          }));
+          this.filteredProducts = [...this.products];
+          this.totalCount = pagedData.totalCount ?? 0;
+          this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+        } else {
+          this.products = [];
+          this.filteredProducts = [];
+        }
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: err => {
         console.error('Error loading products:', err);
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -174,8 +200,7 @@ onFileSelected(event: any) {
 uploadCSV(selectedFile: File) {
 
   if (!selectedFile) {
-    this.alertType = 'error';
-    this.alertMessage = 'CSV upload failed.';
+    this.showSnackbar('CSV upload failed.', 'error');
     return;
   }
 
@@ -188,14 +213,11 @@ uploadCSV(selectedFile: File) {
       const statusUrl = response?.result?.jobId;
 
       if (!statusUrl) {
-        this.alertType = 'success';
-        this.alertMessage = 'File uploaded successfully.';
+        this.showSnackbar('File uploaded successfully.', 'success');
         return;
       }
 
-      this.alertType = 'success';
-      this.alertMessage = 'CSV uploaded. Processing started...';
-
+      this.showSnackbar('CSV uploaded. Processing started...', 'success');
       this.isPanelOpen = false;
 
       // Start checking job status
@@ -204,10 +226,8 @@ uploadCSV(selectedFile: File) {
 
     error: (err) => {
       console.error(err);
-
       this.loading = false;
-      this.alertType = 'error';
-      this.alertMessage = 'CSV upload failed.';
+      this.showSnackbar('CSV upload failed.', 'error');
       this.isPanelOpen = false;
     }
   });
@@ -281,9 +301,14 @@ onApproveSave(event: { status: string; reason?: string }) {
 
       // Close the modal after the operation is done
       this.showApproveModal = false;
+
+      const msg = event.status === 'Approved' ? 'Product approved successfully!' : 'Product rejected.';
+      const type = event.status === 'Approved' ? 'success' : 'warning';
+      this.showSnackbar(msg, type);
     },
     error: (err) => {
       console.error('Error updating product status:', err);
+      this.showSnackbar('Operation failed', 'error');
     },
   });
 }
@@ -291,17 +316,17 @@ onApproveSave(event: { status: string; reason?: string }) {
 // Method to refresh the product list (fetching from the server)
 refreshProductList() {
   this.productService.getProducts(this.currentPage, this.pageSize).subscribe({
-    next: (response: any) => {
-      // Update the local list with the fetched data
-      this.products = response.result.map((p: Product) => ({
-        ...p,
-        imageUrl: this.getImageUrl(p.imageName),
-      }));
-      this.filteredProducts = [...this.products]; // Update filtered products
-
-      // Recalculate pagination
-      this.totalCount = this.products.length;
-      this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+    next: (pagedData: any) => {
+      if (pagedData && pagedData.data) {
+        this.products = pagedData.data.map((p: Product) => ({
+          ...p,
+          imageUrl: this.getImageUrl(p.imageName),
+        }));
+        this.filteredProducts = [...this.products];
+        this.totalCount = pagedData.totalCount ?? 0;
+        this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+      }
+      this.cdr.markForCheck();
     },
     error: (err) => {
       console.error('Error refreshing product list:', err);
@@ -368,10 +393,12 @@ downloadTemplate() {
         this.canBulkApprove = false;
         this.allSelected = false;
         this.loading = false;
+        this.showSnackbar(`${selectedProducts.length} products approved successfully!`, 'success');
       },
       error: err => {
         console.error('Bulk approve failed', err);
         this.loading = false;
+        this.showSnackbar('Bulk approve failed', 'error');
       }
     });
   }
@@ -417,79 +444,102 @@ getImageUrl(imageName?: string): string {
     'list' // or 'table' or 'scroll'
   );
 }
-closeAlert() {
-  this.alertType = null;
-  this.alertMessage = '';
-}
+  onSort(column: string) {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
 
-checkImportStatus(jobId: string) {
-  const pollInterval = 3000; // 3 seconds
-  const timer$ = interval(pollInterval);
+    this.filteredProducts.sort((a, b) => {
+      let valA: any;
+      let valB: any;
 
-  const subscription = timer$
-    .pipe(
-      switchMap(() => this.productService.importStatus(jobId)),
-      takeWhile(
-        (res: ImportStatusResponse) =>
-          res.result?.status !== 'Completed' && res.result?.status !== 'Failed',
-        true
-      )
-    )
-    .subscribe({
-      next: (res: ImportStatusResponse) => {
-        const errors: string[] = res.result?.errors || [];
-
-        // Separate warnings (duplicates) vs real errors
-        const warnings: string[] = errors.filter((e: string) =>
-          e.includes('already exists')
-        );
-        const realErrors: string[] = errors.filter((e: string) =>
-          !e.includes('already exists')
-        );
-
-        if (res.result?.status === 'Completed') {
-          this.alertType = 'success';
-          this.alertMessage = `CSV import completed successfully. Processed: ${res.result?.processed ?? 0}/${res.result?.total ?? 0}`;
-
-          // Append warnings to alert message
-if (warnings.length > 0) {
-  this.alertMessage += ` Warnings: ${warnings.join('; ')}`;
-}
-
-// Show real errors if there are any
-if (realErrors.length > 0) {
-  this.alertType = 'error';
-  this.alertMessage = `CSV import failed. Errors: ${realErrors.join('; ')}`;
-}
-          subscription.unsubscribe();
-          this.loadProducts();
-        }
-
-        if (res.result?.status === 'Failed') {
-          this.alertType = 'error';
-          this.alertMessage = `CSV import failed.`;
-
-          if (realErrors.length) {
-            this.alertMessage += ` Errors: ${realErrors.join('; ')}`;
-          }
-
-          if (warnings.length > 0) {
-  const cleanedWarnings = warnings.map(w => {
-    const index = w.indexOf(':');
-    return index !== -1 ? w.substring(index + 1).trim() : w;
-  });
-
-  this.alertMessage += ` Warnings: ${cleanedWarnings.join('; ')}`;
-}
-          subscription.unsubscribe();
-        }
-      },
-      error: (err: any) => {
-        console.error('Status check error:', err);
-        this.alertType = 'error';
-        this.alertMessage = 'Error checking import status.';
-        subscription.unsubscribe();
+      switch (column) {
+        case 'name':
+          valA = a.name?.toLowerCase() || '';
+          valB = b.name?.toLowerCase() || '';
+          break;
+        case 'category':
+          valA = this.getCategoryName(a.categoryId).toLowerCase();
+          valB = this.getCategoryName(b.categoryId).toLowerCase();
+          break;
+        case 'brand':
+          valA = this.getBrandName(a.brandId).toLowerCase();
+          valB = this.getBrandName(b.brandId).toLowerCase();
+          break;
+        case 'rate':
+          valA = a.rate || 0;
+          valB = b.rate || 0;
+          break;
+        case 'status':
+          valA = (a.status || 'Pending').toLowerCase();
+          valB = (b.status || 'Pending').toLowerCase();
+          break;
+        default:
+          return 0;
       }
+
+      if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
+      return 0;
     });
-}
+    this.cdr.detectChanges();
+  }
+  checkImportStatus(jobId: string) {
+    const pollInterval = 3000;
+    const timer$ = interval(pollInterval);
+
+    const subscription = timer$
+      .pipe(
+        switchMap(() => this.productService.importStatus(jobId)),
+        takeWhile(
+          (res: ImportStatusResponse) =>
+            res.result?.status !== 'Completed' && res.result?.status !== 'Failed',
+          true
+        )
+      )
+      .subscribe({
+        next: (res: ImportStatusResponse) => {
+          if (res?.result?.status === 'Completed') {
+            const errors: string[] = res.result.errors || [];
+            const duplicates = errors.filter(e => e.toLowerCase().includes('already exists'));
+            const realErrors = errors.filter(e => !e.toLowerCase().includes('already exists'));
+            
+            const processedCount = res.result.processed || 0;
+            const totalCount = res.result.total || 0;
+
+            let message = `${processedCount} product(s) inserted successfully.`;
+            
+            if (duplicates.length > 0) {
+              message += ` ${duplicates.length} skipped (duplicates found).`;
+              // Try to extract a clean message from the first duplicate error
+              const firstDup = duplicates[0].includes(':') 
+                ? duplicates[0].split(':').slice(1).join(':').trim() 
+                : duplicates[0];
+              message += ` Example: ${firstDup}`;
+            }
+
+            if (realErrors.length > 0) {
+              message += ` ${realErrors.length} other errors occurred.`;
+            }
+
+            // Show for longer (10s) since it contains detail
+            this.showSnackbar(message, realErrors.length === 0 ? 'success' : 'error', 10000);
+            
+            this.loadProducts();
+            subscription.unsubscribe();
+          } else if (res?.result?.status === 'Failed') {
+            this.showSnackbar('CSV import failed. Please check the file format.', 'error');
+            subscription.unsubscribe();
+          }
+        },
+        error: (err: any) => {
+          console.error('Status check error:', err);
+          this.showSnackbar('Error checking import status', 'error');
+          subscription.unsubscribe();
+        }
+      });
+  }
 }

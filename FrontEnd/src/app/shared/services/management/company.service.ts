@@ -224,6 +224,13 @@ uploadDocument(
     );
   }
 
+  getCategoryById(id: number): Observable<Category> {
+    return this.apiGateway.getWithResult<Category>(
+      `${environment.apiBaseUrl}/api/Product/${id}`,
+      { requiresAuth: true }
+    );
+  }
+
   /* ===================== REGISTRATION ===================== */
 
   sendRegisterLink(email: string, role: string, company_id: string): Observable<any[]> {
