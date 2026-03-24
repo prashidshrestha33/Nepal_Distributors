@@ -16,7 +16,6 @@
   width: 90%;
   max-width: 1000px;
   max-height: 80vh;
-  overflow-y: auto;
   box-shadow: 0 0 20px rgba(0,0,0,0.3);
 }
 
@@ -118,4 +117,102 @@
 .no-data {
   padding: 16px;
   font-style: italic;
+}.btn-select {
+  padding: 6px 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.btn-select:hover {
+  background-color: #0056b3;
+}
+.list-item {
+    height: 122px;
+    overflow: hidden;
+}
+.list-item img {
+    width: 122px;
+    height: 103px;
+    object-fit: cover;
+    height: 103px !important;
+    width: 122px;
+}.list-info h1 {
+    font-weight: 580;
+    font-size: 16px;
+}
+.category-itm{
+    border: 1px solid;
+    border-radius: 0px 60px 60px 0px;
+    text-align: center;
+    font-size: 10px !important;
+    background: #497e10;
+    color: #fff;
+    padding: 5px 9px;
+}.list-item:hover {
+    background: #e3e3e3;
+}
+/* Container Layout */
+.popup-backdrop {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.5);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 1000;
+}
+
+.popup-container {
+  background: #fff; 
+  width: 90%; max-width: 900px;
+  height: 85vh; /* Fixed overall height */
+  display: flex; flex-direction: column; /* Crucial for fixed header/footer */
+  border-radius: 8px; overflow: hidden;
+}
+
+/* Fixed Header & Filters */
+.popup-header, .filters, .popup-footer {
+  flex-shrink: 0; 
+  padding: 15px;
+  background: #ffffff;
+}
+
+.popup-header {
+  display: flex; justify-content: space-between; align-items: center; 
+  border-bottom: 1px solid #ddd;
+}
+
+.filters {
+  border-bottom: 1px solid #eee;
+  display: flex; gap: 10px; flex-wrap: wrap;
+}
+
+/* Scrollable Body */
+.popup-body {
+  flex-grow: 1; 
+  overflow-y: auto; /* Scroller lives here! */
+  padding: 15px;
+  background-color: #fcfcfc;
+}
+
+/* Fixed Footer */
+.popup-footer {
+  border-top: 1px solid #ddd;
+  display: flex; gap: 10px; justify-content: flex-end;
+}
+
+/* Selection Highlight Effect */
+.selected-bg {
+  background-color: #e3f2fd !important;
+  border-color: #90caf9 !important;
+}
+
+/* General Button Styles */
+.btn-ok { background: #007bff; color: white; border: none; padding: 8px 20px; border-radius: 4px; cursor: pointer; }
+.btn-ok:hover { background: #0056b3; }
+.btn-cancel { background: #e0e0e0; color: #333; border: none; padding: 8px 20px; border-radius: 4px; cursor: pointer; }
+.btn-cancel:hover { background: #ccc; }
+.list-item input {display: contents;
 }

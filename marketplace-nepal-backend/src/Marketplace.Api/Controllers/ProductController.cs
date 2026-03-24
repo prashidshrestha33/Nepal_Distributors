@@ -41,7 +41,7 @@ namespace Marketplace.Api.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ProductModel>>> Get() => Ok(await repositorysitory.GetAllAsync());
 
-        [HttpGet("Category")]
+        [HttpGet("Categories")]
         public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAllCategory() => Ok(await repositorysitory.GetAllCategoryAsync());
 
         [HttpGet("GetAllCategorybyparentid")]
@@ -81,6 +81,55 @@ namespace Marketplace.Api.Controllers
                 var id = await repositorysitory.AddCatagoryAsync(dto, imageUrl);
 
                 return CreatedAtAction(nameof(GetCatagoryById), new { id }, new { id });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+        [HttpPost("Category/{id:int}")]
+        public async Task<IActionResult> UpdateCategory(int id, [FromForm] CreateCategoryDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage);
+
+                return BadRequest(new { message = "Validation failed", errors });
+            }
+
+            try
+            {
+                var existingCategory = await repositorysitory.GetCatagoryByIdAsync(id);
+
+                if (existingCategory == null)
+                    return NotFound(new { message = "Category not found" });
+
+                string? imageUrl = existingCategory.Image;
+
+                // If new image uploaded → replace
+                if (dto.Image != null && dto.Image.Length > 0)
+                {
+                    var uploads = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
+
+                    if (!Directory.Exists(uploads))
+                        Directory.CreateDirectory(uploads);
+
+                    var fileName = $"{Guid.NewGuid()}_{dto.Image.FileName}";
+                    var filePath = Path.Combine(uploads, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await dto.Image.CopyToAsync(stream);
+                    }
+
+                    imageUrl = fileName;
+                }
+
+                await repositorysitory.UpdateCategoryAsync(id, dto, imageUrl);
+
+                return Ok(new { message = "Category updated successfully" });
             }
             catch (Exception ex)
             {

@@ -5,7 +5,6 @@ import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getMessaging, provideMessaging } from '@angular/fire/messaging';
 
 import { BreadcrumbService } from '../app/shared/services/breadcrumb.service';
-import { NavigationHistoryService } from '../app/shared/services/navigation-history.service';
 
 import { routes } from './app.routes';
 import { JwtInterceptor } from './shared/interceptors/jwt.interceptor';
@@ -29,7 +28,6 @@ export const appConfig: ApplicationConfig = {
     provideMessaging(() => getMessaging()),
 
     // ✅ ADD THESE TWO SERVICES
-    BreadcrumbService,
-    NavigationHistoryService
+    BreadcrumbService
   ]
 };

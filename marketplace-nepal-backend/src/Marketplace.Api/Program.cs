@@ -1,6 +1,7 @@
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Marketpalce.Repository.Repositories.ComponyRepo;
+using Marketpalce.Repository.Repositories.OrderRepo;
 using Marketpalce.Repository.Repositories.ProductRepo;
 using Marketpalce.Repository.Repositories.StaticValueReop;
 using Marketpalce.Repository.Repositories.UserReop;
@@ -11,6 +12,7 @@ using Marketplace.Api.Services.FcmNotificationService;
 using Marketplace.Api.Services.GoogleTokenVerifier;
 using Marketplace.Api.Services.Hassing;
 using Marketplace.Api.Services.Helper;
+using Marketplace.Api.Services.Order;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -50,6 +52,8 @@ builder.Services.AddScoped<IFcmNotificationService, FcmNotificationService>();
 builder.Services.AddScoped<IFacebookTokenVerifier, FacebookTokenVerifier>();
 builder.Services.AddScoped<ICompanyTypeService, CompanyTypeService>();
 builder.Services.AddTransient<IEmailService, EmailService>();
+builder.Services.AddTransient<IOrderService, OrderService>();
+builder.Services.AddTransient<IOrderRepository, OrderRepository>();
 
 // --- HttpClient for Facebook Graph API ---
 builder.Services.AddHttpClient("facebook", client =>

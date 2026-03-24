@@ -13,8 +13,11 @@ namespace Marketplace.Model.Models
         public string? Sku { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        public string DefaultImage { get; set; }        
         public string? ShortDescription { get; set; }
         public int CategoryId { get; set; }
+        public string CategoryName { get; set; }
+        public string CategorySlug { get; set; }
         public string? CompanyName { get; set; }
         public int? CompanyId { get; set; }
         public int? Credit { get; set; }

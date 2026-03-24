@@ -17,9 +17,10 @@ import { CompanyProfilePopupComponent } from '../../components/CustomComponents/
 import { UserProfilePopupComponent } from '../../components/CustomComponents/user-detail/user-profile-popup.component';
 import { RegisterUserlinkPopupComponent } from '../../components/CustomComponents/RegisterUserlink/RegisterUserlink-popup.component';
 
+import { BreadcrumbComponent } from '../../components/common/page-breadcrumb/breadcrumb.component';
 // Services
-import { NavigationHistoryService } from '../../services/navigation-history.service';
 import { UiService, StatusPopupState } from '../../../ui.service';
+import { NotificationSettingsPopupComponent } from '../../components/CustomComponents/NotificationSettingsPopup/notification-settings-popup.component'; 
 
 @Component({
   selector: 'app-layout',
@@ -35,7 +36,9 @@ import { UiService, StatusPopupState } from '../../../ui.service';
     StatusPopupComponent,
     CompanyProfilePopupComponent,
     UserProfilePopupComponent,
-    RegisterUserlinkPopupComponent
+    RegisterUserlinkPopupComponent,
+    BreadcrumbComponent,
+    NotificationSettingsPopupComponent
   ],
   templateUrl: './app-layout.component.html',
   styleUrls: ['./app-layout.component.css']
@@ -45,6 +48,7 @@ export class AppLayoutComponent implements OnInit {
   readonly isExpanded$: Observable<boolean>;
   readonly isHovered$: Observable<boolean>;
   readonly isMobileOpen$: Observable<boolean>;
+  
 
   // ✅ Full page trail
   pageTrail: string = '';
@@ -56,9 +60,8 @@ export class AppLayoutComponent implements OnInit {
   showCompanyProfile$: Observable<number | null>;
   showUserProfile$: Observable<number | null>;
   showRegisterLink$: Observable<number | null>;
-
+  showNotificationSettings$: Observable<number | null>; 
   constructor(
-    public navHistory: NavigationHistoryService,
     public sidebarService: SidebarService,
     public ui: UiService
   ) {
@@ -73,7 +76,8 @@ export class AppLayoutComponent implements OnInit {
     this.showStatus$ = this.ui.showStatus$;
     this.showCompanyProfile$ = this.ui.showCompanyProfile$;
     this.showUserProfile$ = this.ui.showUserProfile$;
-    this.showRegisterLink$ = this.ui.showRegisterLink$;
+    this.showRegisterLink$ = this.ui.showRegisterLink$;    
+    this.showNotificationSettings$ = this.ui.showNotificationSettings$;
   }
 
   // ✅ Layout margin handler
@@ -89,15 +93,10 @@ export class AppLayoutComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Subscribe to breadcrumb changes via NavigationHistoryService
-    this.updatePageTrail();
   }
 
   // 🔙 Back navigation
-  goBack() {
-    this.navHistory.goBack();
-    this.updatePageTrail();
-  }
+
 
   // --------------------------
   // Popup helper methods
@@ -126,9 +125,7 @@ export class AppLayoutComponent implements OnInit {
   closeRegisterLink(): void {
     this.ui.closeRegisterLink();
   }
-
-  private updatePageTrail() {
-    const crumbs = this.navHistory.getCurrentTrail();
-    this.pageTrail = crumbs.map(c => c.title).join(' / ');
+  closeNotificationSettings(): void {
+    this.ui.closeNotificationSettings();
   }
 }

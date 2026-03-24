@@ -3,8 +3,6 @@ import { RouterModule, Router, NavigationEnd, ActivatedRoute } from '@angular/ro
 import { InactivityService } from './shared/services/inactivity.service';
 import { AuthService } from './shared/services/auth.service';
 import { NotificationService } from '../app/shared/services/notification.service';
-import { BreadcrumbService, Breadcrumb } from './shared/services/breadcrumb.service';
-import { NavigationHistoryService } from './shared/services/navigation-history.service';
 import { filter } from 'rxjs/operators';
 
 @Component({
@@ -19,8 +17,6 @@ export class AppComponent implements OnInit, OnDestroy {
   title = 'Nepal Distributors';
   notificationsEnabled = false;
 
-  // ✅ breadcrumb array
-  breadcrumbs: Breadcrumb[] = [];
 
   constructor(
     private inactivityService: InactivityService,
@@ -28,8 +24,6 @@ export class AppComponent implements OnInit, OnDestroy {
     private router: Router,
     private activatedRoute: ActivatedRoute,
     private notificationService: NotificationService,
-    private breadcrumbService: BreadcrumbService,
-    public navHistory: NavigationHistoryService
   ) {}
 
   ngOnInit() {
@@ -48,8 +42,6 @@ export class AppComponent implements OnInit, OnDestroy {
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe(() => {
 
-        // 🔹 Build breadcrumbsthis.breadcrumbService.buildBreadCrumb(this.activatedRoute.snapshot.root);
-this.breadcrumbService.buildBreadCrumb(this.activatedRoute.snapshot.root);
 
 
         // 🔹 Inactivity handling
@@ -61,10 +53,6 @@ this.breadcrumbService.buildBreadCrumb(this.activatedRoute.snapshot.root);
       });
   }
 
-  // ✅ Back button click
-  goBack() {
-    this.navHistory.goBack();
-  }
 
   // ================= NOTIFICATION =================
 

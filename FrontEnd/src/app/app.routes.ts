@@ -130,6 +130,11 @@ export const routes: Routes = [
             title: 'Add Category'
           },
           {
+            path: 'categories/edit/:id',
+            component: CategoryFormComponent,
+            title: 'Edit Category'
+          },
+          {
             path: 'products',
             component: ProductsMgmtComponent,
             title: 'Products Management'
@@ -267,7 +272,8 @@ export const routes: Routes = [
 },
 {
   path: 'categories/edit/:id',
-  component: CategoryFormComponent
+  component: CategoryFormComponent,
+  title: 'Edit Category'
 },
       {
         path: 'static-values-Catalog',

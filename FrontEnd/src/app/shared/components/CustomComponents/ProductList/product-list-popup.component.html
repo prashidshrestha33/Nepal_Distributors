@@ -2,13 +2,13 @@
 <div *ngIf="displayMode === 'popup'" class="popup-backdrop">
   <div class="popup-container">
 
-    <!-- HEADER -->
+    <!-- 📍 FIXED HEADER -->
     <div class="popup-header">
       <h2>Product List</h2>
       <button class="close-btn" (click)="closePopup()">✖</button>
     </div>
 
-    <!-- FILTERS -->
+    <!-- 📍 FIXED FILTERS -->
     <div class="filters">
       <input [(ngModel)]="searchFilters.name" (input)="applyFilters()" placeholder="Search Name">
       <input [(ngModel)]="searchFilters.brand" (input)="applyFilters()" placeholder="Search Brand">
@@ -16,127 +16,77 @@
       <input [(ngModel)]="searchFilters.status" (input)="applyFilters()" placeholder="Search Status">
     </div>
 
-    <!-- LOADING -->
-    <div *ngIf="loading" class="loading">Loading products...</div>
+    <!-- 📍 SCROLLABLE BODY -->
+    <div class="popup-body">
+      <div *ngIf="loading" class="loading">Loading products...</div>
+      <div *ngIf="!loading && filteredProducts.length === 0" class="no-data">No products found.</div>
 
-    <!-- NO DATA -->
-    <div *ngIf="!loading && filteredProducts.length === 0" class="no-data">
-      No products found.
-    </div>
+      <div *ngIf="!loading && filteredProducts.length > 0" class="contents">
+        
+        <!-- TABLE -->
+        <table *ngIf="productListStyle === 'table'" class="product-table">
+          <thead>
+            <tr>
+              <th>Select</th>
+              <th>Image</th>
+              <th>Name</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of filteredProducts" 
+                (click)="toggleSelection(p)" 
+                [class.selected-bg]="p.selected" 
+                style="cursor: pointer;">
+              <td>
+                <input type="checkbox" [checked]="p.selected" (click)="$event.stopPropagation(); toggleSelection(p)">
+              </td>
+              <td><img [src]="p.imageUrl" width="50"></td>
+              <td>{{ p.name }}</td>
+              <td>{{ p.description }}</td>
+              <td>{{ getCategoryName(p.categoryId) }}</td>
+              <td>{{ p.status }}</td>
+            </tr>
+          </tbody>
+        </table>
 
-    <!-- CONTENT -->
-    <div *ngIf="!loading && filteredProducts.length > 0">
-
-      <!-- TABLE -->
-      <table *ngIf="productListStyle === 'table'" class="product-table">
-        <thead>
-          <tr>
-            <th>Image</th>
-            <th>Name</th>
-            <th>Brand</th>
-            <th>Category</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let p of filteredProducts">
-            <td><img [src]="p.imageUrl" width="50"></td>
-            <td>{{ p.name }}</td>
-            <td>{{ getBrandName(p.brandId) }}</td>
-            <td>{{ getCategoryName(p.categoryId) }}</td>
-            <td>{{ p.status }}</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- LIST -->
-      <div *ngIf="productListStyle === 'list'" class="list-view">
-        <div class="list-item" *ngFor="let p of filteredProducts">
-          <img [src]="p.imageUrl" width="50">
-          <div class="list-info">
-            <h4>{{ p.name }}</h4>
-            <p>Brand: {{ getBrandName(p.brandId) }}</p>
-            <p>Category: {{ getCategoryName(p.categoryId) }}</p>
-            <p>Status: {{ p.status }}</p>
+        <!-- LIST -->
+        <div *ngIf="productListStyle === 'list'" class="list-view">
+          <div class="list-item" *ngFor="let p of filteredProducts" 
+               (click)="toggleSelection(p)" 
+               [class.selected-bg]="p.selected" 
+               style="cursor: pointer;">
+            <input type="checkbox" [checked]="p.selected" (click)="$event.stopPropagation(); toggleSelection(p)" style="margin-right:15px;">
+            <img [src]="p.imageUrl" width="50">
+            <div class="list-info">
+              <h1>{{ p.name }}</h1>
+              <span class="category-itm">{{ p.categoryName || getCategoryName(p.categoryId) }}</span>
+              <p>{{ p.description }}</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- SCROLL GRID -->
-      <div *ngIf="productListStyle === 'scroll'" class="scroll-grid">
-        <div class="grid-item" *ngFor="let p of filteredProducts">
-          <img [src]="p.imageUrl" width="80">
-          <h4>{{ p.name }}</h4>
+        <!-- SCROLL GRID -->
+        <div *ngIf="productListStyle === 'scroll'" class="scroll-grid">
+          <div class="grid-item" *ngFor="let p of filteredProducts" 
+               (click)="toggleSelection(p)" 
+               [class.selected-bg]="p.selected" 
+               style="cursor: pointer;">
+            <input type="checkbox" [checked]="p.selected" (click)="$event.stopPropagation(); toggleSelection(p)" style="margin-bottom:10px;">
+            <img [src]="p.imageUrl" width="80">
+            <h4>{{ p.name }}</h4>
+          </div>
         </div>
-      </div>
 
-    </div>
-  </div>
-</div>
-
-<!-- ================= FLAT MODE ================= -->
-<div *ngIf="displayMode === 'flat'" class="flat-container">
-
-  <!-- FILTERS -->
-  <div class="filters">
-    <input [(ngModel)]="searchFilters.name" (input)="applyFilters()" placeholder="Search Name">
-    <input [(ngModel)]="searchFilters.brand" (input)="applyFilters()" placeholder="Search Brand">
-    <input [(ngModel)]="searchFilters.category" (input)="applyFilters()" placeholder="Search Category">
-    <input [(ngModel)]="searchFilters.status" (input)="applyFilters()" placeholder="Search Status">
-  </div>
-
-  <!-- LOADING -->
-  <div *ngIf="loading" class="loading">Loading products...</div>
-
-  <!-- NO DATA -->
-  <div *ngIf="!loading && filteredProducts.length === 0" class="no-data">
-    No products found.
-  </div>
-
-  <!-- CONTENT -->
-  <div *ngIf="!loading && filteredProducts.length > 0">
-
-    <!-- TABLE -->
-    <table *ngIf="productListStyle === 'table'" class="product-table">
-      <thead>
-        <tr>
-          <th>Image</th>
-          <th>Name</th>
-          <th>Brand</th>
-          <th>Category</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let p of filteredProducts">
-          <td><img [src]="p.imageUrl" width="50"></td>
-          <td>{{ p.name }}</td>
-          <td>{{ getBrandName(p.brandId) }}</td>
-          <td>{{ getCategoryName(p.categoryId) }}</td>
-          <td>{{ p.status }}</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <!-- LIST -->
-    <div *ngIf="productListStyle === 'list'" class="list-view">
-      <div class="list-item" *ngFor="let p of filteredProducts">
-        <img [src]="p.imageUrl" width="50">
-        <div class="list-info">
-          <h4>{{ p.name }}</h4>
-          <p>Brand: {{ getBrandName(p.brandId) }}</p>
-          <p>Category: {{ getCategoryName(p.categoryId) }}</p>
-          <p>Status: {{ p.status }}</p>
-        </div>
       </div>
     </div>
 
-    <!-- SCROLL GRID -->
-    <div *ngIf="productListStyle === 'scroll'" class="scroll-grid">
-      <div class="grid-item" *ngFor="let p of filteredProducts">
-        <img [src]="p.imageUrl" width="80">
-        <h4>{{ p.name }}</h4>
-      </div>
+    <!-- 📍 FIXED FOOTER / OK BUTTON -->
+    <div class="popup-footer">
+      <button class="btn-cancel" (click)="closePopup()">Cancel</button>
+      <button class="btn-ok" (click)="confirmSelection()">OK</button>
     </div>
 
   </div>

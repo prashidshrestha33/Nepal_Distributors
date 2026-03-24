@@ -78,6 +78,13 @@ export class CompanyService {
   ) {}
 
   /* ===================== LIST ===================== */
+  getNotificationSettings(companyId: number): Observable<any> {
+    return this.apiGateway.get<any>(`/api/Companies/${companyId}/notifications`);
+  }
+
+  updateNotificationSettings(payload: any): Observable<any> {
+    return this.apiGateway.post<any>(`/api/Companies/notifications/update`, payload);
+  }
 
   getCompanys(): Observable<company[]> {
     const token = this.authService.getToken();

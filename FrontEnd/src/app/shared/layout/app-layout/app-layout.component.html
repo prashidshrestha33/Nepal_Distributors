@@ -35,6 +35,11 @@
   [companyId]="companyId"
   (close)="closeRegisterLink()">
 </app-RegisterUserlink-popup>
+<app-notification-settings-popup
+  *ngIf="showNotificationSettings$ | async as companyId"
+  [companyId]="companyId"
+  (close)="closeNotificationSettings()">
+</app-notification-settings-popup>
   <!-- Main Content Area -->
   <div
       class="flex-1 flex flex-col transition-all duration-300 ease-in-out"
@@ -57,10 +62,9 @@
     <!-- Scrollable Body Content -->
     <div class="flex-1 mt-[40px] mb-[11px] overflow-auto">
       <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
-        <div class="bg-gray-100 px-4 py-3 flex items-center gap-3 shadow-sm">
-  <button (click)="goBack()" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">
-    ← Back
-  </button>
+        <div class="breadcrumb">
+
+    <app-breadcrumb></app-breadcrumb>
 
   <span class="text-lg font-semibold text-gray-800">
     {{ pageTrail }}

@@ -1,0 +1,57 @@
+<div class="popup-backdrop">
+  <div class="popup-container">
+
+    <div class="popup-header">
+      <h2>Notification Settings 
+        <span *ngIf="settings.companyName" style="color:#777; font-size:14px;">({{ settings.companyName }})</span>
+      </h2>
+      <button class="close-btn" (click)="closePopup()">✖</button>
+    </div>
+
+    <div class="popup-body">
+      <div *ngIf="loading" class="loading">Loading preferences...</div>
+
+      <div *ngIf="!loading">
+        <!-- GENERAL NOTIFY SWITCH -->
+        <div class="general-setting card-panel">
+          <div>
+            <h3>General Notifications</h3>
+            <p>Turn on/off all global notifications for this company.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="settings.notifyFg">
+            <span class="slider round"></span>
+          </label>
+        </div>
+
+        <h3 class="section-title">Assigned Categories Push Alerts</h3>
+        
+        <p *ngIf="settings.categories.length === 0" class="empty">No categories assigned yet.</p>
+
+        <!-- CATEGORY LIST -->
+        <div class="category-list">
+          <div class="category-item" *ngFor="let cat of settings.categories">
+            <div class="cat-info">
+              <img [src]="getImageUrl(cat.imageUrl)" alt="Img">
+              <h4>{{ cat.categoryName }}</h4>
+            </div>
+            
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="cat.pushNotification">
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="popup-footer">
+      <button class="btn-cancel" (click)="closePopup()">Cancel</button>
+      <button class="btn-ok" (click)="saveSettings()" [disabled]="saving">
+        {{ saving ? 'Saving...' : 'Save Settings' }}
+      </button>
+    </div>
+
+  </div>
+</div>

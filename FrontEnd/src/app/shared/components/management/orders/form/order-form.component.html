@@ -1,65 +1,127 @@
-<div class="space-y-6">
-  <div class="flex justify-between items-center">
-    <h1 class="text-2xl font-bold text-gray-800">Add New Order</h1>
+<div class="page-container">
+  
+
+
+  <div *ngIf="error" class="alert-error">
+    {{ error }}
   </div>
 
-  <div class="bg-white rounded-lg shadow p-8">
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
-      <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2">Order Number *</label>
-        <input
-          type="text"
-          formControlName="orderNumber"
-          placeholder="Enter order number"
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <span *ngIf="isFieldInvalid('orderNumber')" class="text-red-500 text-sm mt-1">
-          Order number is required
-        </span>
-      </div>
+  <div class="form-grid">
+    
+    <!-- LEFT SIDE: QUOTATION FORM -->
+    <div class="card order-details-card">
+      <h3 class="card-title">Quotation Details</h3>
+      
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        
+        <div class="form-group">
+          <label>Quotation Number</label>
+          <input type="text" formControlName="orderNumber" class="form-control" 
+                 style="background-color: #f1f3f5; font-weight: bold;" readonly>
+        </div>
 
-      <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2">Total Amount *</label>
-        <input
-          type="number"
-          formControlName="totalAmount"
-          placeholder="Enter total amount"
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <span *ngIf="isFieldInvalid('totalAmount')" class="text-red-500 text-sm mt-1">
-          Total amount is required
-        </span>
-      </div>
+        <div class="form-group">
+          <label>Delivery Location (Map)</label>
+          
+          <input type="text" formControlName="google_map_location" class="form-control" 
+                 style="margin-bottom: 10px; background-color: #f8f9fa; font-size: 13px;" readonly>
 
-      <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2">Status *</label>
-        <select
-          formControlName="status"
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="shipped">Shipped</option>
-          <option value="delivered">Delivered</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
-      </div>
+          <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <input type="text" class="form-control" 
+                   [(ngModel)]="mapSearchQuery" 
+                   [ngModelOptions]="{standalone: true}" 
+                   placeholder="Search city, street..." 
+                   (keyup.enter)="searchLocation()">
+                   
+            <button type="button" class="btn-primary" (click)="searchLocation()" [disabled]="isSearchingMap">
+               {{ isSearchingMap ? 'Searching...' : 'Search' }}
+            </button>
+          </div>
+          <div id="map" style="height: 300px; width: 100%; border: 1px solid #ccc; border-radius: 4px; z-index: 1;"></div>
+          
+          <small class="help-text">Click anywhere on the map or drag the pin to set a custom delivery location for this quotation.</small>
+        </div>
 
-      <div *ngIf="error" class="p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-        {{ error }}
-      </div>
 
-      <div class="flex gap-4">
-        <button
-          type="submit"
-          [disabled]="!form.valid || loading"
-          class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-8 rounded-lg transition disabled:opacity-50">
-          {{ loading ? 'Saving...' : 'Save Order' }}
-        </button>
-        <button
-          type="button"
-          (click)="goBack()"
-          class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-8 rounded-lg transition">
-          Cancel
+        <div class="form-group">
+          <label>Remarks / Notes</label>
+          <textarea formControlName="remarks" class="form-control" rows="5" 
+                    placeholder="Add special instructions or notes..."></textarea>
+        </div>
+      </form>
+    </div>
+
+    <!-- RIGHT SIDE: PRODUCT ITEMS -->
+    <div class="card order-items-card">
+      <div class="card-header-flex">
+        <h3 class="card-title" style="margin: 0;">Quotation Items</h3>
+        <button type="button" class="btn-primary" (click)="openProductSelection()">
+          + Add Products
         </button>
       </div>
-    </form>
+      
+      <p class="empty-state" *ngIf="tempOrderItems.length === 0">
+        No products added yet. Click "Add Products".
+      </p>
+
+      <div class="table-responsive" *ngIf="tempOrderItems.length > 0">
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Product ID</th>
+              <th>Product Name</th>
+              <th width="150px">Quantity</th>
+              <th width="60px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of tempOrderItems; let i = index">
+              <td><strong>PID-0{{ item.productId }}</strong></td>
+              <td>{{ item.productName }}</td>
+              
+              <!-- Clean value binding that totally skips ngModel errors -->
+              <td>
+                <input type="number" class="qty-input" min="1" 
+                       [value]="item.quantity" 
+                       (input)="item.quantity = $any($event.target).value">
+              </td>
+              
+              <td>
+                <button type="button" class="btn-icon-danger" (click)="removeOrderItem(i)" title="Remove">✖</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div> <!-- End Form Grid -->
+
+  <!-- SUBMIT FOOTER -->
+  <div class="footer-actions card">
+    <div class="footer-totals">
+      <p>Total Items Selected: <strong>{{ tempOrderItems.length }}</strong></p>
+      <small style="color: #666;">* Sent directly to processing queue.</small>
+    </div>
+    <div class="footer-buttons">
+      <button type="button" class="btn-secondary" (click)="goBack()">Cancel</button>
+      <button type="button" class="btn-success" (click)="onSubmit()" [disabled]="loading || tempOrderItems.length === 0">
+        <span *ngIf="loading">Saving...</span>
+        <span *ngIf="!loading">Save Quotation</span>
+      </button>
+    </div>
   </div>
 </div>
+
+<!-- ============================================== -->
+<!-- POPUP EMBEDDED DIRECTLY IN THE HTML FOR SAFETY -->
+<!-- ============================================== -->
+<app-product-list-popup 
+    *ngIf="showProductPopup"
+    [companyId]="2" 
+    productListStyle="list"
+    displayMode="popup"
+    [preSelectedItems]="tempOrderItems"
+    (close)="closePopup()"
+    (productSelected)="onProductsConfirmed($event)">
+</app-product-list-popup>

@@ -1,8 +1,10 @@
 ﻿using Dapper;
+using Marketplace.Model.Models;
 using Marketplace.Models;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Data;
+using System.Text.Json;
 using System.Transactions;
 
 namespace Marketpalce.Repository.Repositories.ComponyRepo
@@ -11,6 +13,53 @@ namespace Marketpalce.Repository.Repositories.ComponyRepo
     {
         private readonly IDbConnection _db;
         public CompanyRepository(IDbConnection db) => _db = db;
+
+        public async Task<CompanyNotificationSettingsDto?> GetNotificationSettingsAsync(long companyId)
+        {
+            var lookup = new Dictionary<long, CompanyNotificationSettingsDto>();
+
+            await _db.QueryAsync<CompanyNotificationSettingsDto, CategoryNotificationDto, CompanyNotificationSettingsDto>(
+                "dbo.sp_GetCompanyNotificationSettings",
+                (company, category) =>
+                {
+                    // Check if we already have the base Company DTO in our dictionary dictionary
+                    if (!lookup.TryGetValue(company.CompanyId, out var currentCompany))
+                    {
+                        currentCompany = company;
+                        currentCompany.Categories = new List<CategoryNotificationDto>();
+                        lookup.Add(currentCompany.CompanyId, currentCompany);
+                    }
+
+                    // Append assigned categories if they cleanly joined from the table (Id > 0 removes null left joins)
+                    if (category != null && category.CategoryId > 0)
+                    {
+                        currentCompany.Categories.Add(category);
+                    }
+
+                    return currentCompany;
+                },
+                new { CompanyId = companyId },
+                splitOn: "CategoryId", // 👈 Tells Dapper where the Company table ends and Category table begins
+                commandType: CommandType.StoredProcedure
+            );
+
+            // Return the successfully populated single object grouping
+            return lookup.Values.FirstOrDefault();
+        }
+
+        public async Task<bool> UpdateNotificationSettingsAsync(UpdateNotificationSettingsRequest req)
+        {
+            string categoriesJson = req.Categories != null
+                 ? JsonSerializer.Serialize(req.Categories)
+                 : "[]";
+            var p = new DynamicParameters();
+            p.Add("@CompanyId", req.CompanyId);
+            p.Add("@NotifyFg", req.NotifyFg);
+            p.Add("@CategoryPrefsJSON", categoriesJson);
+            await _db.ExecuteAsync("dbo.sp_UpdateCompanyNotificationSettings", p, commandType: CommandType.StoredProcedure);
+            return true;
+        }
+
 
         public async Task<long> CreateAsync(Company company, IDbTransaction? transaction = null)
         {
