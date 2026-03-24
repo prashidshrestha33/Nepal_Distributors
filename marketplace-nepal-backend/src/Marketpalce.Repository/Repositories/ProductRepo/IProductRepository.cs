@@ -52,6 +52,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
         Task<IEnumerable<ProductModel>> SearchProductsAsync(string? categoryIds, string? keyword, long? companyId);
         Task<List<CategoryDto>> GetparentChild(int parentid = 0);
         Task<int> AddReviewAsync(ProductReview review);
+        Task<bool> UpdateCategoryAsync(int id, CreateCategoryDto dto, string? imageUrl);
 
     }
 }

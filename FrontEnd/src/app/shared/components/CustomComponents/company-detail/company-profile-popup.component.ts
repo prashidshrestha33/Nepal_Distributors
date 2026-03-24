@@ -228,11 +228,11 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
   }
 
   getImageUrl(imageName?: string): string {
-    debugger;
+
     if (!imageName) {
       return 'assets/images/no-image.png';
     }
-debugger;
+
     return `${environment.apiBaseUrl}/api/CompanyFile?fileName=${encodeURIComponent(
       imageName
     )}`;

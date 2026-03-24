@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CategoryService } from '../../../../services/management/management.service';
 import type { Category } from '../../../../services/management/management.service';
 import { CategoryMoveModalComponent } from '../move/category-move-modal.component';
@@ -35,7 +35,8 @@ export class CategoriesComponent implements OnInit {
   // Export Math for template
   Math = Math;
 
-  constructor(private service: CategoryService) {}
+  constructor(private service: CategoryService,
+  private router: Router) {}
 
   ngOnInit() {
     this.load();
@@ -43,16 +44,18 @@ export class CategoriesComponent implements OnInit {
 
   load() {
   this.loading = true;
-  this.service.getCategories().subscribe({
+  this.service.getAllCategories().subscribe({
     next: (data: Category[]) => {
+      debugger;
         
         // Flatten tree structure for table display
       this.items = this.flattenCategoryTree(data);
 
         // Extract root categories (depth = 1)
-        this.rootCategories = this.items.filter(cat => cat.depth === 1);
+        // this.rootCategories = this.items.filter(cat => cat.depth === 1);
 
       this.filteredItems = this.items;
+      console.log("this is item", this.filteredItems);
       this.currentPage = 1;
       this.updatePaginatedItems();
       this.loading = false;
@@ -70,6 +73,7 @@ export class CategoriesComponent implements OnInit {
 flattenCategoryTree(categories: Category[], depth: number = 0): Category[] {
   let result: Category[] = [];
   for (const cat of categories) {
+    debugger;
       result.push(cat);
     if (cat.children && cat.children.length) {
       result.push(...this.flattenCategoryTree(cat.children, depth + 1));
@@ -207,10 +211,9 @@ flattenCategoryTree(categories: Category[], depth: number = 0): Category[] {
   /**
    * Get parent category name by ID
    */
-  getParentCategoryName(parentId: number | null): string {
-    if (!parentId) return '-';
-    const parent = this.items.find(cat => cat.id === parentId);
-    return parent?.name || '-';
+  getParentCategoryName(parent_id: number | null | undefined): string {
+    if (!parent_id || parent_id === 0) return '-';
+    return this.items.find(c => c.id === parent_id)?.name || '-';
   }
 
   /**
@@ -223,8 +226,8 @@ flattenCategoryTree(categories: Category[], depth: number = 0): Category[] {
     const path: Category[] = [];
     let currentCat = this.items.find(cat => cat.id === categoryId);
     
-    while (currentCat && currentCat.parent_id) {
-      const parent = this.items.find(cat => cat.id === currentCat!.parent_id);
+    while (currentCat && currentCat.parentId) {
+      const parent = this.items.find(cat => cat.id === currentCat!.parentId);
       if (parent) {
         path.unshift(parent); // Add to beginning to show root first
         currentCat = parent;
@@ -235,4 +238,8 @@ flattenCategoryTree(categories: Category[], depth: number = 0): Category[] {
     
     return path;
   }
+  goToEdit(id: number) {
+  console.log('Navigating to edit category with ID:', id); // ✅ logs
+  this.router.navigate(['/management/categories/edit', id]);
+}
 }
