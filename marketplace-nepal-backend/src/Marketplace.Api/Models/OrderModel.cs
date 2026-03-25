@@ -1,4 +1,6 @@
-﻿namespace Marketplace.Api.Models
+﻿using Marketplace.Model.Models;
+
+namespace Marketplace.Api.Models
 {
     public class Order
     {
@@ -52,4 +54,6 @@
         public Order Order { get; set; }
         public List<OrderItem> Items { get; set; } = new List<OrderItem>();
     }
+   
+
 }

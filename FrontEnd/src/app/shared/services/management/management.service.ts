@@ -471,6 +471,46 @@ export class QuotationService {
       '/api/quotations',
       { requiresAuth: true }
     );
+  }  getSellerRequests(sellerCompanyId: number): Observable<any> {
+    return this.apiGateway.get<any>(`/api/Orders/seller-requests/${sellerCompanyId}`);
+  }
+submitBulkQuote(payload: any): Observable<any> {
+    return this.apiGateway.post<any>(
+      '/api/Orders/submit-bulk-quote',
+      payload,
+      { requiresAuth: true }
+    );
+  }
+  getSentQuotations(sellerCompanyId: number): Observable<any> {
+    return this.apiGateway.get<any>(
+      `/api/Orders/sent-quotations/${sellerCompanyId}`,
+      { requiresAuth: true }
+    );
+  }
+  getBuyerQuotations(buyerCompanyId: number): Observable<any> {
+    return this.apiGateway.get<any>(
+      `/api/Orders/buyer-dashboard/${buyerCompanyId}`,
+      { requiresAuth: true }
+    );
+  } approveQuote(quoteId: number,buyerCompanyId: number): Observable<any> {
+    return this.apiGateway.post<any>(
+      `/api/Orders/buyer-approve-quote/${quoteId}/${buyerCompanyId}`,
+      { requiresAuth: true }
+    );
+  }
+ rejectQuote(quoteId: number): Observable<any> {
+    return this.apiGateway.post<any>(
+      `/api/Orders/buyer-reject-quote/${quoteId}`,
+      { requiresAuth: true }
+    );
+  }
+
+  submitQuote(payload: any): Observable<any> {
+    return this.apiGateway.post<any>(
+      '/api/Orders/submit-quote',
+      payload,
+      { requiresAuth: true }
+    );
   }
 
   getQuotationById(id: number): Observable<Quotation> {
@@ -510,6 +550,25 @@ export class QuotationService {
       { requiresAuth: true }
     );
   }
+
+
+    // --- KANBAN BOARD ENDPOINTS ---
+
+  getSellerConfirmedOrders(sellerCompanyId: number): Observable<any> {
+    return this.apiGateway.get<any>(
+      `/api/Orders/seller-confirmed/${sellerCompanyId}`,
+      { requiresAuth: true }
+    );
+  }
+
+  updateOrderStatus(orderId: number, status: string): Observable<any> {
+    return this.apiGateway.post<any>(
+      `/api/Orders/update-status/${orderId}/${encodeURIComponent(status)}`, 
+      {}, 
+      { requiresAuth: true }
+    );
+  }
+
 }
 
 // ============================================

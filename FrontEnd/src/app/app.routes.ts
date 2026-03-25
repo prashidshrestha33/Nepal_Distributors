@@ -35,6 +35,8 @@ import { NotificationsComponent } from './shared/components/management/notificat
 
 // Management Components - Quotations
 import { QuotationsComponent } from './shared/components/management/quotations/list/quotations.component';
+import { BuyerBidsComponent } from './shared/components/management/quotations/BuyerBids/buyer-bids.component';
+import { SellerKanbanComponent } from './shared/components/management/quotations/SellerKanban/seller-kanban.component';
 import { QuotationFormComponent } from './shared/components/management/quotations/form/quotation-form.component';
 
 // Management Components - Static Values
@@ -177,6 +179,15 @@ export const routes: Routes = [
             title: 'Quotations'
           },
           {
+            path: 'SalesBoard',
+            component: SellerKanbanComponent,
+            title: 'SalesBoard'
+          }, {
+            path: 'BuyerBids',
+            component: BuyerBidsComponent,
+            title: 'BuyerBids'
+          },
+          {
             path: 'quotations/add',
             component: QuotationFormComponent,
             title: 'Add Quotation'
@@ -256,6 +267,16 @@ export const routes: Routes = [
         component: QuotationsComponent,
         title: 'Quotations'
       },
+      {
+        path: 'management/buyerbids',
+        component: BuyerBidsComponent,
+        title: 'BuyerBids'
+      },
+          {
+            path: 'management/SalesBoard',
+            component: SellerKanbanComponent,
+            title: 'SalesBoard'
+          },
       {
         path: 'quotations/add',
         component: QuotationFormComponent,
