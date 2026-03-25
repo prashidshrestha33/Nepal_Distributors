@@ -1,33 +1,205 @@
-<div class="space-y-6">
-  <div class="flex justify-between items-center">
-    <h1 class="text-2xl font-bold text-gray-800">Quotations</h1>
-    <a href="/quotations/add" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg">Add Quotation</a>
+<div class="page-container">
+  
+  <div class="page-header">
+    <h2 class="page-title">Market Quotes Dashboard</h2>
+    <p class="page-subtitle">Select items to send bulk bids, or check your history.</p>
+    
+    <!-- TABS NAVIGATION -->
+    <div class="tabs-nav">
+       <button class="tab-btn" [class.active-tab]="activeTab === 'pending'" (click)="switchTab('pending')">
+          Inbox Requests
+       </button>
+       <button class="tab-btn" [class.active-tab]="activeTab === 'sent'" (click)="switchTab('sent')">
+          Sent Quotes History
+       </button>
+    </div>
   </div>
-  <div class="bg-white rounded-lg shadow p-4">
-    <input type="text" placeholder="Search..." [(ngModel)]="searchTerm" (keyup)="onSearch()" 
-      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+  <div *ngIf="loading" class="loading-state">
+    <p>Fetching data...</p>
   </div>
-  <div class="bg-white rounded-lg shadow overflow-hidden">
-    <table class="w-full">
-      <thead class="bg-gray-100 border-b">
-        <tr>
-          <th class="px-6 py-3 text-left text-sm font-semibold">Quotation #</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold">Total Amount</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold">Status</th>
-          <th class="px-6 py-3 text-center text-sm font-semibold">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of filteredItems" class="border-b hover:bg-gray-50">
-          <td class="px-6 py-4 text-sm">{{ item.quotationNumber }}</td>
-          <td class="px-6 py-4 text-sm">Rs {{ item.totalAmount }}</td>
-          <td class="px-6 py-4"><span [ngClass]="{'bg-green-200': item.status==='approved', 'bg-yellow-200': item.status==='pending', 'bg-red-200': item.status==='rejected'}" class="px-3 py-1 rounded-full text-xs">{{ item.status }}</span></td>
-          <td class="px-6 py-4 text-center">
-            <button *ngIf="item.status==='pending'" (click)="approve(item.id!)" class="text-green-500 text-sm">Approve</button>
-            <button (click)="delete(item.id!)" class="text-red-500 text-sm ml-2">Delete</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+
+  <!-- ============================================== -->
+  <!-- TAB 1: INBOX PENDING REQUESTS                  -->
+  <!-- ============================================== -->
+  <ng-container *ngIf="!loading && activeTab === 'pending'">
+    
+    <div *ngIf="groupedAddresses.length === 0" class="empty-state">
+      <h3>No Pending Requests</h3>
+      <p>No inquiries in your categories right now. Check back later!</p>
+    </div>
+
+    <!-- BULK GROUP PANEL -->
+    <div *ngFor="let address of groupedAddresses" class="address-group-card shadow-sm">
+      
+      <div class="address-header" style="justify-content: space-between;">
+        <h3>📍 Delivery Location: <span>{{ address }}</span></h3>
+        
+        <button class="btn-success" *ngIf="hasSelected(address)" (click)="openBulkPopup(address)">
+           Give Quote For {{ countSelected(address) }} Selected
+        </button>
+      </div>
+      
+      <div class="list-view">
+        <!-- Invisible checkbox highlight logic -->
+        <label class="list-item pointer-row" [class.selected-row]="item.selected" *ngFor="let item of groupedData[address]">
+          
+          <input type="checkbox" [(ngModel)]="item.selected" style="display:none;">
+
+          <img [src]="getImageUrl(item.productImageUrl)" class="product-img" alt="Product">
+          
+          <div class="list-info flex-grow">
+            <h4 class="product-title">{{ item.productName }}</h4>
+            <span class="badge badge-qty">Requested Qty: {{ item.requestedQuantity }}</span>
+            <p class="item-note" *ngIf="item.note"><strong>Note:</strong> {{ item.note }}</p>
+          </div>
+          
+          <div class="action-section" *ngIf="item.selected">
+             <span class="badge" style="background:#28a745; color:white; padding:6px 12px; font-size:13px;">✅ Selected</span>
+          </div>
+
+        </label>
+      </div>
+    </div>
+  </ng-container>
+
+
+  <!-- ============================================== -->
+  <!-- TAB 2: SENT QUOTATIONS HISTORY                 -->
+  <!-- ============================================== -->
+  <ng-container *ngIf="!loading && activeTab === 'sent'">
+    <div style="background:white; border-radius:8px; border:1px solid #e0e0e0; padding:15px; margin-bottom: 25px;">
+      
+      <div class="table-responsive">
+        <table style="width:100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background:#f8f9fa; border-bottom:2px solid #ddd; text-align:left;">
+              <th style="padding:15px; color:#444;">Quote #</th>
+              <th style="padding:15px; color:#444;">Product</th>
+              <th style="padding:15px; color:#444;">Destination</th>
+              <th style="padding:15px; text-align:right; color:#444;">Subtotal</th>
+              <th style="padding:15px; text-align:center; color:#444;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of sentQuotations" style="border-bottom:1px solid #eee;">
+              <td style="padding:15px; vertical-align:middle;">
+                 <strong>{{ row.quoteNumber }}</strong><br>
+                 <small style="color:#888;">{{ row.createdAt | date:'shortDate' }}</small>
+              </td>
+              
+              <td style="padding:15px; display:flex; align-items:center; gap:15px;">
+                <img [src]="getImageUrl(row.productImageUrl)" width="40" height="40" style="border-radius:4px; object-fit:cover;">
+                <div>
+                  <strong>{{ row.productName }}</strong><br>
+                  <small style="color:#666;">{{ row.quotedQuantity }} units x Rs. {{ row.unitRate }}</small>
+                </div>
+              </td>
+              
+              <td style="padding:15px; vertical-align:middle;">{{ row.shippingAddress }}</td>
+              
+              <td style="padding:15px; text-align:right; font-weight:600; color:#28a745; vertical-align:middle;">
+                 Rs. {{ (row.quotedQuantity * row.unitRate) | number:'1.2-2'}}
+                 <div *ngIf="row.deliveryCharge > 0" style="font-size:11px; color:#777;">+ Rs.{{row.deliveryCharge}} Transport</div>
+              </td>
+              
+              <td style="padding:15px; text-align:center; vertical-align:middle;">
+                <!-- Status Badges -->
+                <span class="badge" *ngIf="row.status === 'open'" style="background:#e3f2fd; color:#0d47a1;">Pending</span>
+                <span class="badge" *ngIf="row.status === 'approved'" style="background:#d4edda; color:#155724;">Approved</span>
+                <span class="badge" *ngIf="row.status === 'rejected'" style="background:#f8d7da; color:#721c24;">Rejected</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="sentQuotations.length === 0" style="padding:40px; text-align:center; color:#777;">
+        You have not sent any quotations yet.
+      </div>
+    </div>
+  </ng-container>
+
+</div>
+
+
+<!-- ============================================== -->
+<!-- BULK RATE POPUP DIALOG                         -->
+<!-- ============================================== -->
+<div *ngIf="selectedBulkItems.length > 0" class="popup-backdrop">
+  <div class="popup-wrapper">
+    
+    <div class="popup-header">
+      <h2>Provide Rate Quotation</h2>
+      <button class="popup-close-btn" (click)="closePopup()">✖</button>
+    </div>
+
+    <div class="popup-body">
+      
+      <!-- Buyer Map -->
+      <label class="input-label">📍 Buyer Delivery Destination</label>
+      <div *ngIf="selectedBulkItems[0].googleMapLocation; else noMap" id="quoteMap" class="buyer-map"></div>
+      <ng-template #noMap><p class="no-map-alert">No map location submitted by buyer.</p></ng-template>
+
+      <!-- Unified Bulk Quote Table -->
+      <label class="input-label" style="margin-top:15px; border-bottom:1px solid #ddd; padding-bottom:5px;">Quoted Items</label>
+      
+      <div class="table-responsive" style="margin-bottom:20px; border:1px solid #e0e0e0; border-radius:6px; overflow:hidden;">
+        <table style="width:100%; border-collapse: collapse; background:#fff;">
+          <thead>
+            <tr style="background:#f4f6f9; text-align:left; border-bottom:1px solid #e0e0e0;">
+              <th style="padding:10px 15px; color:#444;">Product</th>
+              <th style="padding:10px; color:#444;">Commit Quantity</th>
+              <th style="padding:10px; width: 140px; color:#444;">Unit Rate (Rs)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of selectedBulkItems" style="border-bottom:1px solid #eee;">
+              <td style="padding:10px 15px; font-weight:500; vertical-align:middle;">
+                 {{ item.productName }}
+              </td>
+              
+              <!-- User can safely adjust their actual available stock limits -->
+              <td style="padding:10px; vertical-align:middle; width:130px;">
+                 <input type="number" class="form-control" [(ngModel)]="item.quoteQuantity" min="1">
+                 <small style="color:#777; display:block; margin-top:3px; font-weight:600;">Req: {{ item.requestedQuantity }}</small>
+              </td>
+
+              <td style="padding:10px; vertical-align:middle;">
+                 <input type="number" class="form-control" [(ngModel)]="item.unitRate" min="0" placeholder="0.00">
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- General Form Inputs -->
+      <div class="form-group" style="width:50%;">
+        <label class="input-label">Overall Delivery Charge (Rs.)</label>
+        <input type="number" class="form-control" [(ngModel)]="deliveryCharge" min="0" placeholder="Transport Cost">
+      </div>
+
+      <div class="form-group">
+        <label class="input-label">Extra Terms or Notes</label>
+        <textarea class="form-control" [(ngModel)]="notes" rows="3" placeholder="Timeframe, availability, custom terms..."></textarea>
+      </div>
+
+    </div>
+
+    <!-- Final Footer Calculations -->
+    <div class="popup-footer">
+       <div>
+           <small style="color:#666; display:block;">Grand Total</small>
+           <h3 class="total-text">Rs. {{ totalAmount }}</h3>
+       </div>
+       
+       <div class="popup-actions">
+         <button class="btn-cancel" (click)="closePopup()">Cancel</button>
+         <button class="btn-success" (click)="submitBulkQuote()" [disabled]="submitting">
+           {{ submitting ? 'Sending...' : 'Issue Custom Quotation' }}
+         </button>
+       </div>
+    </div>
+
   </div>
 </div>
