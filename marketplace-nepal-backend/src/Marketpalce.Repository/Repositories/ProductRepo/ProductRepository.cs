@@ -72,20 +72,57 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
             return productDictionary.Values;
         }
 
-        public async Task<PagedResult<ProductModel>> GetPaginatedAsync(int pageNumber, int pageSize)
+        public async Task<PagedResult<ProductModel>> GetPaginatedAsync(int pageNumber, int pageSize, int? categoryId = null, long? companyId = null, long? brandId = null, long? manufacturerId = null)
         {
             var offset = (pageNumber - 1) * pageSize;
 
             // 1. Get total count
-            var totalCountSql = "SELECT COUNT(*) FROM Products";
-            var totalCount = await _db.ExecuteScalarAsync<int>(totalCountSql);
+            var totalCountSql = "SELECT COUNT(*) FROM Products WHERE 1=1";
+            if (categoryId.HasValue && categoryId > 0)
+            {
+                totalCountSql += " AND Category_Id = @CategoryId";
+            }
+            if (companyId.HasValue && companyId > 0)
+            {
+                totalCountSql += " AND Company_Id = @CompanyId";
+            }
+            if (brandId.HasValue && brandId > 0)
+            {
+                totalCountSql += " AND Brand_Id = @BrandId";
+            }
+            if (manufacturerId.HasValue && manufacturerId > 0)
+            {
+                totalCountSql += " AND Manufacturer_Id = @ManufacturerId";
+            }
+            var totalCount = await _db.ExecuteScalarAsync<int>(totalCountSql, new { CategoryId = categoryId, CompanyId = companyId, BrandId = brandId, ManufacturerId = manufacturerId });
 
             // 2. Get paginated product IDs
             var pagedIdsSql = @"
                 SELECT Id FROM Products 
+                WHERE 1=1";
+            
+            if (categoryId.HasValue && categoryId > 0)
+            {
+                pagedIdsSql += " AND Category_Id = @CategoryId";
+            }
+            if (companyId.HasValue && companyId > 0)
+            {
+                pagedIdsSql += " AND Company_Id = @CompanyId";
+            }
+            if (brandId.HasValue && brandId > 0)
+            {
+                pagedIdsSql += " AND Brand_Id = @BrandId";
+            }
+            if (manufacturerId.HasValue && manufacturerId > 0)
+            {
+                pagedIdsSql += " AND Manufacturer_Id = @ManufacturerId";
+            }
+
+            pagedIdsSql += @" 
                 ORDER BY Created_At DESC 
                 OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
-            var pagedIds = (await _db.QueryAsync<int>(pagedIdsSql, new { Offset = offset, PageSize = pageSize })).ToList();
+
+            var pagedIds = (await _db.QueryAsync<int>(pagedIdsSql, new { Offset = offset, PageSize = pageSize, CategoryId = categoryId, CompanyId = companyId, BrandId = brandId, ManufacturerId = manufacturerId })).ToList();
 
             if (!pagedIds.Any())
             {

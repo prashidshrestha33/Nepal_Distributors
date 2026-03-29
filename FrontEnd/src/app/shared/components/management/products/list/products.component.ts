@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { ApproveProductComponent } from '../approve/approve-product.component';
+import { ProductFormComponent } from '../form/product-form.component';
 import { PaginationComponent } from '../../Pagination/app-pagination.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule, FormGroup } from '@angular/forms';
@@ -10,6 +11,7 @@ import type { ImportStatusResponse, Product as ProductBase } from '../../../../s
 import { Category, CategoryService, Users, StaticValueCatalog, StaticValueService, StaticValue } from '../../../../services/management/management.service';
 import { environment } from '../../../../../../environments/environment';
 import { ProductListPopupComponent } from '../../../CustomComponents/ProductList/product-list-popup.component';
+import { CategorySidebarComponent } from '../../categories/sidebar/category-sidebar.component';
 import { HttpEvent, HttpEventType, HttpClient } from '@angular/common/http';
 import { interval } from 'rxjs';
 import { switchMap, takeWhile } from 'rxjs/operators';
@@ -20,7 +22,7 @@ type Product = ProductBase & { selected?: boolean };
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ApproveProductComponent, PaginationComponent,ProductListPopupComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ApproveProductComponent, ProductFormComponent, PaginationComponent, ProductListPopupComponent, CategorySidebarComponent],
   templateUrl:'./products.component.html',
   styleUrls: ['./products.component.css']
 })
@@ -52,9 +54,10 @@ export class ProductsComponent implements OnInit {
   rowsInserted = 0;
   uploadMessage = '';
 
-  // Bulk selection flags
   allSelected = false;
   canBulkApprove = false;
+  showProductFormModal = false;
+  editProductId: number | null = null;
 
   // Pagination
   currentPage = 1;
@@ -65,8 +68,20 @@ export class ProductsComponent implements OnInit {
   Math = Math;
   snackbar: { show: boolean; message: string; type: 'success' | 'error' | 'warning' } = { show: false, message: '', type: 'success' };
   tempOrderItems: any[] = [];
+  selectedCategoryId: number | null = null;
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
+  isMyProducts: boolean = false;
+  
+  stats = {
+    myProductsCount: 0,
+    waitingApprovalCount: 0,
+    globalCatalogCount: 0,
+    topBrands: [] as any[],
+    topManufacturers: [] as any[]
+  };
+  selectedBrandId: number | null = null;
+  selectedManufacturerId: number | null = null;
 
   constructor(
     private productService: ProductService,
@@ -79,6 +94,7 @@ export class ProductsComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.fetchStats();
     this.loadProducts();
     this.loadCategoryTree();
     this.loadBrandStaticValues();
@@ -103,11 +119,79 @@ export class ProductsComponent implements OnInit {
   }
 
   // ----------------------
+  
+  fetchStats() {
+    let companyId: number | null = null;
+    if (this.isMyProducts) {
+      try {
+        const claimsStr = localStorage.getItem('userClaims');
+        if (claimsStr) {
+          const claims = JSON.parse(claimsStr);
+          companyId = claims.company_id ? Number(claims.company_id) : null;
+        }
+      } catch (e) {}
+    }
+
+    this.productService.getDashboardStats(this.isMyProducts, companyId).subscribe({
+      next: (res: any) => {
+        const data = res.result || res;
+        this.stats = {
+          globalCatalogCount: data.globalCatalogCount || 0,
+          myProductsCount: data.myProductsCount || 0,
+          waitingApprovalCount: data.waitingApprovalCount || 0,
+          topBrands: data.topBrands || [],
+          topManufacturers: data.topManufacturers || []
+        };
+        this.cdr.detectChanges(); // Force immediate UI update for name/count changes
+      },
+      error: () => console.log('Failed to load dashboard stats')
+    });
+  }
+
+  // ----------------------
+  // Modal Handlers
+  // ----------------------
+  openAddProductModal() {
+    this.showProductFormModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeProductFormModal() {
+    this.showProductFormModal = false;
+    this.editProductId = null;
+    this.cdr.detectChanges();
+  }
+
+  onProductSaved() {
+    const msg = this.editProductId
+      ? 'Product updated successfully!'
+      : 'Product added successfully!';
+    this.showSnackbar(msg);
+    this.loadProducts();
+    this.fetchStats();
+    this.showProductFormModal = false;
+    this.editProductId = null;
+    this.cdr.detectChanges();
+  }
   // Load products & pagination
   // ----------------------
   loadProducts() {
     this.loading = true;
-    this.productService.getProducts(this.currentPage, this.pageSize).subscribe({
+
+    let companyId: number | null = null;
+    if (this.isMyProducts) {
+      try {
+        const claimsStr = localStorage.getItem('userClaims');
+        if (claimsStr) {
+          const claims = JSON.parse(claimsStr);
+          companyId = claims.company_id ? Number(claims.company_id) : null;
+        }
+      } catch (e) {
+        console.error('Error parsing userClaims:', e);
+      }
+    }
+
+    this.productService.getProducts(this.currentPage, this.pageSize, this.selectedCategoryId, this.isMyProducts, companyId, this.selectedBrandId, this.selectedManufacturerId).subscribe({
       next: (pagedData: any) => {
         if (pagedData && pagedData.data) {
           this.products = pagedData.data.map((p: Product) => ({
@@ -122,6 +206,7 @@ export class ProductsComponent implements OnInit {
           this.filteredProducts = [];
         }
         this.loading = false;
+        this.fetchStats(); // Update stats as well
         this.cdr.markForCheck();
       },
       error: err => {
@@ -147,6 +232,38 @@ getBrandName(brandId?: number | null): string {
     this.pageSize = newSize;
     this.currentPage = 1;
     this.loadProducts();
+  }
+
+  onSidebarCategorySelect(id: number | null) {
+    this.selectedCategoryId = id;
+    this.selectedBrandId = null; 
+    this.selectedManufacturerId = null;
+    this.currentPage = 1;
+    this.loadProducts();
+  }
+
+  onSidebarBrandSelect(brandId: number) {
+    this.selectedBrandId = brandId;
+    this.selectedCategoryId = null; 
+    this.selectedManufacturerId = null;
+    this.currentPage = 1;
+    this.loadProducts();
+  }
+
+  onSidebarManufacturerSelect(mId: number) {
+    this.selectedManufacturerId = mId;
+    this.selectedCategoryId = null;
+    this.selectedBrandId = null;
+    this.currentPage = 1;
+    this.loadProducts();
+  }
+
+  toggleMyProducts(isMy: boolean) {
+    this.isMyProducts = isMy;
+    this.currentPage = 1;
+    this.selectedCategoryId = null;
+    this.loadProducts();
+    this.fetchStats(); // Refresh dashboard counts for the new mode
   }
 
   // ----------------------
@@ -298,6 +415,7 @@ onApproveSave(event: { status: string; reason?: string }) {
 
       // Optionally, you can fetch the product list from the server again to ensure data is in sync
       this.refreshProductList();  // Re-fetch to ensure data is updated
+      this.fetchStats();          // Re-fetch global stats to ensure consistency
 
       // Close the modal after the operation is done
       this.showApproveModal = false;
@@ -315,23 +433,7 @@ onApproveSave(event: { status: string; reason?: string }) {
 
 // Method to refresh the product list (fetching from the server)
 refreshProductList() {
-  this.productService.getProducts(this.currentPage, this.pageSize).subscribe({
-    next: (pagedData: any) => {
-      if (pagedData && pagedData.data) {
-        this.products = pagedData.data.map((p: Product) => ({
-          ...p,
-          imageUrl: this.getImageUrl(p.imageName),
-        }));
-        this.filteredProducts = [...this.products];
-        this.totalCount = pagedData.totalCount ?? 0;
-        this.totalPages = Math.ceil(this.totalCount / this.pageSize);
-      }
-      this.cdr.markForCheck();
-    },
-    error: (err) => {
-      console.error('Error refreshing product list:', err);
-    },
-  });
+  this.loadProducts();
 }
 
 onApproveCancel() {
@@ -393,6 +495,7 @@ downloadTemplate() {
         this.canBulkApprove = false;
         this.allSelected = false;
         this.loading = false;
+        this.fetchStats();
         this.showSnackbar(`${selectedProducts.length} products approved successfully!`, 'success');
       },
       error: err => {
@@ -417,8 +520,11 @@ getImageUrl(imageName?: string): string {
   }
 
   onSearch() {
+    const term = (this.searchTerm || '').toLowerCase();
     this.filteredProducts = this.products.filter(p =>
-      p.name.toLowerCase().includes(this.searchTerm.toLowerCase())
+      p.name.toLowerCase().includes(term) ||
+      this.getBrandName(p.brandId).toLowerCase().includes(term) ||
+      this.getCategoryName(p.categoryId).toLowerCase().includes(term)
     );
   }
 
@@ -435,7 +541,27 @@ getImageUrl(imageName?: string): string {
 }
 
   goToEditProduct(id: number) {
-    this.router.navigate(['/management/products/edit', id]);
+    this.editProductId = id;
+    this.showProductFormModal = true;
+    this.cdr.detectChanges();
+  }
+
+  deleteProduct(product: Product) {
+    if (!product.id) return;
+    
+    if (confirm(`Are you sure you want to delete "${product.name}"?`)) {
+      this.productService.deleteProduct(product.id).subscribe({
+        next: () => {
+          this.showSnackbar('Product deleted successfully', 'success');
+          this.loadProducts();
+          this.fetchStats();
+        },
+        error: (err) => {
+          console.error('Delete error:', err);
+          this.showSnackbar('Error deleting product. It might be linked to orders.', 'error');
+        }
+      });
+    }
   }
   openProductListPopup(product: Product) {
   this.ui.openProductList(

@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Security.Claims;
+using Dapper;
 namespace Marketplace.Api.Controllers
 {
     [ApiController]
@@ -39,10 +40,91 @@ namespace Marketplace.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Get([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> Get([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] int? categoryId = null, [FromQuery] bool myProducts = false, [FromQuery] long? companyId = null, [FromQuery] long? brandId = null, [FromQuery] long? manufacturerId = null)
         {
-            var result = await repositorysitory.GetPaginatedAsync(page, pageSize);
+            if (myProducts && companyId == null)
+            {
+                var companyIdClaim = User.FindFirst("company_id")?.Value ?? User.FindFirst("CompanyId")?.Value;
+                if (!string.IsNullOrEmpty(companyIdClaim) && long.TryParse(companyIdClaim, out var parsedCompanyId))
+                {
+                    companyId = parsedCompanyId;
+                }
+            }
+            var result = await repositorysitory.GetPaginatedAsync(page, pageSize, categoryId, companyId, brandId, manufacturerId);
             return Ok(ApiResponse<Marketplace.Model.Models.PagedResult<ProductModel>>.Ok(result));
+        }
+
+        [HttpGet("stats")]
+        public async Task<IActionResult> GetDashboardStats([FromQuery] bool myProducts = false, [FromQuery] long? companyId = null)
+        {
+            if (myProducts && companyId == null)
+            {
+                var companyIdClaim = User.FindFirst("company_id")?.Value ?? User.FindFirst("CompanyId")?.Value;
+                if (!string.IsNullOrEmpty(companyIdClaim) && long.TryParse(companyIdClaim, out var parsedCompanyId))
+                {
+                    companyId = parsedCompanyId;
+                }
+            }
+
+            // 1. Resolve CompanyId (Priority: Query Param > JWT)
+            var jwtCompanyIdClaim = User.FindFirst("company_id")?.Value ?? User.FindFirst("CompanyId")?.Value;
+            long? resolvedCompanyId = null;
+            if (!string.IsNullOrEmpty(jwtCompanyIdClaim) && long.TryParse(jwtCompanyIdClaim, out var pId))
+            {
+                resolvedCompanyId = pId;
+            }
+            if (companyId.HasValue) resolvedCompanyId = companyId.Value;
+
+            var dParam = new { CompanyId = resolvedCompanyId };
+            string scopeFilter = (myProducts && resolvedCompanyId.HasValue) ? " WHERE Company_Id = @CompanyId" : "";
+
+            // Card 1: Global/Total Catalog (Contextual: Marketplace Total OR My Total)
+            int totalCount = await _db.ExecuteScalarAsync<int>($"SELECT COUNT(*) FROM Products {scopeFilter}", dParam);
+            
+            // Card 2: Approved (Contextual: All Approved OR My Approved)
+            string approvedWhere = string.IsNullOrEmpty(scopeFilter) ? " WHERE UPPER(Status) = 'APPROVED'" : scopeFilter + " AND UPPER(Status) = 'APPROVED'";
+            int approvedCount = await _db.ExecuteScalarAsync<int>($"SELECT COUNT(*) FROM Products {approvedWhere}", dParam);
+
+            // Card 3: Pending/Waiting (Contextual: All Pending OR My Pending)
+            string pendingWhere = string.IsNullOrEmpty(scopeFilter) ? " WHERE (UPPER(Status) = 'PENDING' OR Status IS NULL)" : scopeFilter + " AND (UPPER(Status) = 'PENDING' OR Status IS NULL)";
+            int waitingCount = await _db.ExecuteScalarAsync<int>($"SELECT COUNT(*) FROM Products {pendingWhere}", dParam);
+
+            // Sidebar aggregation: Contextual based on mode
+            var sidebarFilter = (myProducts && resolvedCompanyId.HasValue) ? " AND company_id = @CompanyId" : "";
+            var sidebarParam = new { CompanyId = resolvedCompanyId };
+
+            var topBrands = await _db.QueryAsync<dynamic>($@"
+                SELECT TOP 4 
+                    COALESCE(sv.static_value, 'Brand ' + CAST(p.brand_id AS VARCHAR)) AS name, 
+                    p.brand_id AS id, 
+                    COUNT(*) AS productCount
+                FROM products p
+                LEFT JOIN static_value sv ON p.brand_id = sv.static_id
+                WHERE p.brand_id > 0
+                  {sidebarFilter}
+                GROUP BY sv.static_value, p.brand_id
+                ORDER BY productCount DESC", sidebarParam);
+
+            var topManufacturers = await _db.QueryAsync<dynamic>($@"
+                SELECT TOP 4 
+                    COALESCE(m.name, 'Manuf. ' + CAST(p.manufacturer_id AS VARCHAR)) AS name, 
+                    p.manufacturer_id AS id, 
+                    COUNT(*) AS productCount
+                FROM products p
+                LEFT JOIN manufacturers m ON p.manufacturer_id = m.id
+                WHERE p.manufacturer_id > 0
+                  {sidebarFilter}
+                GROUP BY m.name, p.manufacturer_id
+                ORDER BY productCount DESC", sidebarParam);
+
+            return Ok(new
+            {
+                globalCatalogCount = totalCount,
+                myProductsCount = approvedCount,
+                waitingApprovalCount = waitingCount,
+                topBrands = topBrands,
+                topManufacturers = topManufacturers
+            });
         }
 
         [HttpGet("Categories")]

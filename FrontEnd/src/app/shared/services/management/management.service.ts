@@ -155,7 +155,38 @@ export class CategoryService {
       { requiresAuth: true }
     ).pipe(
       map((response: any) => {
-        return response?. result?.categories || response?.categories || [];
+        const raw = response?.result?.categories || response?.categories || [];
+        const flatList: Category[] = Array.isArray(raw) ? raw.map((c: any) => ({
+          id: c.Id ?? c.id,
+          name: c.Name ?? c.name,
+          slug: c.Slug ?? c.slug,
+          parentId: c.ParentId ?? c.parent_id ?? null,
+          depth: c.Depth ?? c.depth ?? 0,
+          children: []
+        })) : [];
+
+        // Build the tree
+        const map = new Map<number, Category>();
+        const roots: Category[] = [];
+
+        flatList.forEach(c => map.set(c.id, c));
+
+        map.forEach(c => {
+          if (c.parentId) {
+            const parent = map.get(Number(c.parentId));
+            if (parent) {
+              parent.children = parent.children || [];
+              parent.children.push(c);
+            } else {
+              roots.push(c); // Orphan nodes become roots
+            }
+          } else {
+            roots.push(c); // No parentId means root
+          }
+        });
+
+        // Ensure roots are sorted if needed, though SQL does it
+        return roots;
       })
     );
   }
@@ -221,12 +252,17 @@ createCategory(formData: FormData): Observable<Category> {
 export class ProductService {
   constructor(private apiGateway: ApiGatewayService) {}
 
-  getProducts(page: number = 1, pageSize: number = 20): Observable<ProductResponse> {
-    const params = this.apiGateway.buildParams({ page, pageSize });
+  getProducts(page: number = 1, pageSize: number = 20, categoryId?: number | null, myProducts: boolean = false, companyId?: number | null, brandId?: number | null, manufacturerId?: number | null): Observable<ProductResponse> {
+    const params = this.apiGateway.buildParams({ page, pageSize, categoryId, myProducts, companyId, brandId, manufacturerId });
     return this.apiGateway.getWithResult<ProductResponse>(
       '/api/Product',
       { requiresAuth: true, params }
     );
+  }
+
+  getDashboardStats(myProducts: boolean = false, companyId?: number | null): Observable<any> {
+    const params = this.apiGateway.buildParams({ myProducts, companyId });
+    return this.apiGateway.getWithResult<any>('/api/Product/stats', { requiresAuth: true, params });
   }
   
 SearchProducts(keyword:string,page: number = 1, pageSize: number = 20): Observable<ProductResponse> {

@@ -11,7 +11,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
     public interface IProductRepository
     {
         Task<IEnumerable<ProductModel>> GetAllAsync();
-        Task<PagedResult<ProductModel>> GetPaginatedAsync(int pageNumber, int pageSize);
+        Task<PagedResult<ProductModel>> GetPaginatedAsync(int pageNumber, int pageSize, int? categoryId = null, long? companyId = null, long? brandId = null, long? manufacturerId = null);
         Task<List<CategoryDto>> GetAllCategoryAsync();
         Task<ProductModel> GetByIdAsync(int id);
         Task<int> CreateAsync(ProductModel product);

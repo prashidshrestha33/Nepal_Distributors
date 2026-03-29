@@ -4,7 +4,9 @@ import {
   ChangeDetectorRef,
   ViewChild,
   ElementRef,
-  Input
+  Input,
+  Output,
+  EventEmitter
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
@@ -44,8 +46,12 @@ import { CatagoryDynamicComponent } from '../../../CustomComponents/CatagoryDyna
 })
 export class ProductFormComponent implements OnInit {
 
-  @Input() editMode: boolean = false;
   @Input() productId?: number;
+  @Input() isModal: boolean = false;
+  editMode: boolean = false;
+
+  @Output() closeModal = new EventEmitter<void>();
+  @Output() productSaved = new EventEmitter<void>();
 
   @ViewChild('fileInput', { static: false })
   fileInput!: ElementRef<HTMLInputElement>;
@@ -114,7 +120,7 @@ export class ProductFormComponent implements OnInit {
       categoryId: ['', Validators.required],
       brandId: ['', Validators.required],
       manufacturerId: ['', Validators.required],
-      rate: [0, [Validators.required, Validators.min(0)]],
+      rate: [0, [Validators.required, Validators.min(1)]],
       hsCode: ['']
     });
 
@@ -129,16 +135,18 @@ export class ProductFormComponent implements OnInit {
 
     this.route.paramMap.subscribe(params => {
 
-      const id = params.get('id');
-
-      this.productId = id ? +id : undefined;
-      this.editMode = !!this.productId;
-
-
-      /* -------- SNACKBAR FROM NAVIGATION -------- */
-
       const nav = this.router.getCurrentNavigation();
       const snackbar = nav?.extras?.state?.['snackbar'];
+
+      const routeId = params.get('id');
+
+      // Only use route params if not passed as Input (for modal use)
+      if (!this.productId && routeId) {
+        this.productId = +routeId;
+        this.editMode = true;
+      }
+      
+      this.editMode = !!this.productId;
 
       if (snackbar) {
         this.snackbar = {
@@ -492,12 +500,8 @@ export class ProductFormComponent implements OnInit {
   ========================================================= */
 
   onCategoryChosen(categoryId: number) {
-
-    debugger;
-
     this.selectedCategoryId = categoryId;
     this.form.get('categoryId')?.setValue(categoryId);
-
   }
 
 
@@ -596,7 +600,7 @@ export class ProductFormComponent implements OnInit {
     };
 
     this.loading = true;
-    debugger;
+
 
     const imagesToSend =
       this.productImages.map(i => ({
@@ -631,6 +635,12 @@ export class ProductFormComponent implements OnInit {
             ? 'Product updated successfully!'
             : 'Product added successfully!';
 
+
+        if (this.isModal) {
+          this.productSaved.emit();
+          this.closeModal.emit();
+          return;
+        }
 
         this.router.navigate(
           ['/management/products'],
@@ -685,9 +695,6 @@ export class ProductFormComponent implements OnInit {
     message: string,
     success: boolean = true
   ) {
-
-    debugger;
-
     this.snackbar = {
       show: true,
       message,
@@ -697,14 +704,15 @@ export class ProductFormComponent implements OnInit {
     setTimeout(() => {
       this.snackbar.show = false;
     }, 5000);
-
   }
 
 
   goBack() {
-
-    this.router.navigate(['/management/products']);
-
+    if (this.isModal) {
+      this.closeModal.emit();
+    } else {
+      this.router.navigate(['/management/products']);
+    }
   }
 
 }
