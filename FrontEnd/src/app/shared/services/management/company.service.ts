@@ -58,6 +58,10 @@ export interface Category {
   children?: Category[];
 }
 
+export interface CompanyType {
+  id: number;
+  name: string;
+}
 /* ===================== SERVICE ===================== */
 
 @Injectable({
@@ -237,6 +241,13 @@ export class CompanyService {
     return this.apiGateway.get<any[]>(
       `/api/Companies/send-registration-link?email=${encodeURIComponent(email)}&company_id=${encodeURIComponent(company_id)}&role=${encodeURIComponent(role)}`,
       { requiresAuth: true }
+    );
+  }
+
+  getCompanyTypes(): Observable<CompanyType[]> {
+    //return this.http.get<CompanyType[]>(`${this.apiUrl}/types`);
+    return this.apiGateway.getWithResult<CompanyType[]>(
+      `${environment.apiBaseUrl}/api/public/companyType`
     );
   }
 }

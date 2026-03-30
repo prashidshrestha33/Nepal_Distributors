@@ -44,6 +44,10 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
   selectedFile?: File;
   filePreview?: string;
 
+  companyTypes: any[] = [];
+  selectedCompanyType: string | null = null;
+
+
   /* ---------------------- MAP ---------------------- */
 
   @ViewChild('companyMapDiv') mapContainer!: ElementRef<HTMLDivElement>;
@@ -69,6 +73,7 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (this.companyId) {
       this.loadCompany();
+      this.loadCompanyTypes();
     }
   }
 
@@ -90,7 +95,7 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
       next: res => {
         this.company = { ...res };
         this.loading = false;
-
+        this.selectedCompanyType = this.company.companyType || null;
         if (
           this.company.registrationDocument &&
           this.isImage(this.company.registrationDocument)
@@ -128,6 +133,17 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
     setTimeout(() => this.initLeaflet(), 0);
   }
 
+  loadCompanyTypes() {
+    this.companyService.getCompanyTypes().subscribe({
+      next: (data) => {
+        this.companyTypes = data;
+      },
+      error: (err) => {
+        console.error('Error loading company types', err);
+      }
+    });
+  }
+
   cancelEdit(): void {
     this.editMode = false;
     this.loadCompany();
@@ -142,7 +158,7 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
 
     formData.append('Company.Name', this.company.name ?? '');
     formData.append('Company.companyId', this.companyId.toString());
-    formData.append('Company.CompanyType', this.company.companyType ?? '');
+    formData.append('Company.CompanyType', this.selectedCompanyType ?? '');
     formData.append('Company.CompamyPerson', this.company.contactPerson ?? '');
     formData.append('Company.MobilePhone', this.company.mobilePhone ?? '');
     formData.append('Company.LandLinePhone', this.company.landlinePhone ?? '');
