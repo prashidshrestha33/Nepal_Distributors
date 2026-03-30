@@ -185,7 +185,7 @@
                   class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-600 transition-colors">✕</button>
               </div>
               <div *ngIf="showBrandMenu && filteredBrands.length > 0"
-                class="absolute z-[30] w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-48 overflow-auto py-2">
+                class="absolute z-[30] w-full bottom-full mb-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-48 overflow-auto py-2">
                 <button type="button" *ngFor="let brand of filteredBrands" (click)="selectBrand(brand)"
                   class="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm font-medium text-gray-700 border-b border-gray-50 last:border-0">{{
                   brand.staticValueKey }}</button>
@@ -206,7 +206,7 @@
                   class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-600 transition-colors">✕</button>
               </div>
               <div *ngIf="showManufactureMenu && filteredManufacture.length > 0"
-                class="absolute z-[30] w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-48 overflow-auto py-2">
+                class="absolute z-[30] w-full bottom-full mb-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-48 overflow-auto py-2">
                 <button type="button" *ngFor="let m of filteredManufacture" (click)="selectManufacture(m)"
                   class="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm font-medium text-gray-700 border-b border-gray-50 last:border-0">{{
                   m.staticValueKey }}</button>
