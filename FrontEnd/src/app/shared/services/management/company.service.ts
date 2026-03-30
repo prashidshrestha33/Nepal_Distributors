@@ -71,7 +71,7 @@ export class CompanyService {
     private http: HttpClient,
     private authService: AuthService,
     private apiGateway: ApiGatewayService
-  ) {}
+  ) { }
 
   /* ===================== LIST ===================== */
   getNotificationSettings(companyId: number): Observable<any> {
@@ -110,23 +110,23 @@ export class CompanyService {
           return [];
         }
 
-          return companies.map((Company: any) => ({
-              id: Company.id,
-              name: Company.name || '',
-              email: Company.email || '',
-              mobilePhone: Company.mobilePhone || Company.MobilePhone || '',
-              contactPerson: Company.contactPerson || Company.ContactPerson || '',
-              landlinePhone: Company.landlinePhone || Company.LandlinePhone || '',
-              registrationDocument: Company.registrationDocument || Company.RegistrationDocument || '',
-              companyType: Company.companyType || Company.CompanyType || '',
-              status: Company.status || Company.Status || 'inactive',
-              userType: Company.userType || Company.UserType || '',
-              credits: Number(Company.credits ?? 0),
-              location: Company.location || Company.Location || '',
-              googleMapLocation: Company.googleMapLocation || Company.GoogleMapLocation || '',
-              createdAt: Company.createdAt || Company.created_at,
-              approveFg: Company.approveFg || Company.ApproveFg,
-              approveTs: Company.approveTs || Company.ApproveTs, 
+        return companies.map((Company: any) => ({
+          id: Company.id,
+          name: Company.name || '',
+          email: Company.email || '',
+          mobilePhone: Company.mobilePhone || Company.MobilePhone || '',
+          contactPerson: Company.contactPerson || Company.ContactPerson || '',
+          landlinePhone: Company.landlinePhone || Company.LandlinePhone || '',
+          registrationDocument: Company.registrationDocument || Company.RegistrationDocument || '',
+          companyType: Company.companyType || Company.CompanyType || '',
+          status: Company.status || Company.Status || 'inactive',
+          userType: Company.userType || Company.UserType || '',
+          credits: Number(Company.credits ?? 0),
+          location: Company.location || Company.Location || '',
+          googleMapLocation: Company.googleMapLocation || Company.GoogleMapLocation || '',
+          createdAt: Company.createdAt || Company.created_at,
+          approveFg: Company.approveFg || Company.ApproveFg,
+          approveTs: Company.approveTs || Company.ApproveTs,
         })) as company[];
       })
     );
@@ -145,21 +145,21 @@ export class CompanyService {
   getById(id: number): Observable<company> {
     return this.getCompanyById(id);
   }
-uploadDocument(
-  file: File, 
-  companyId: number
-): Observable<{ success: boolean; fileName: string }> {
+  uploadDocument(
+    file: File,
+    companyId: number
+  ): Observable<{ success: boolean; fileName: string }> {
 
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('companyId', companyId.toString());
-  formData.append('fieldName', "test"); // <-- send fieldName to backend
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('companyId', companyId.toString());
+    formData.append('fieldName', "test"); // <-- send fieldName to backend
 
-  return this.http.post<{ success: boolean; fileName: string }>(
-    `${this.apiUrl}/upload-document`,
-    formData
-  );
-}
+    return this.http.post<{ success: boolean; fileName: string }>(
+      `${this.apiUrl}/upload-document`,
+      formData
+    );
+  }
 
   // Optional: Update other fields
   updateField(request: { companyId: number; fieldName: string; fieldValue: any }): Observable<boolean> {
@@ -175,12 +175,12 @@ uploadDocument(
   /* ===================== UPDATE ===================== */
 
   updateCompany(companyId: number, data: FormData) {
-   return this.apiGateway.post<FormData>(
-    `${environment.apiBaseUrl}/api/Companies/update`,
-    data,
-    { requiresAuth: true } // pass auth if needed
-  );
-}
+    return this.apiGateway.post<FormData>(
+      `${environment.apiBaseUrl}/api/Companies/update`,
+      data,
+      { requiresAuth: true } // pass auth if needed
+    );
+  }
 
 
   /* ===================== DELETE ===================== */
@@ -214,11 +214,11 @@ uploadDocument(
 
   getCategories(): Observable<Category[]> {
     return this.apiGateway.getWithResult<Category[]>(
-      `${environment.apiBaseUrl}/api/Product/Category`
+      `${environment.apiBaseUrl}/api/Product/Categories`
     );
   }
 
-  getCategoriesparent(parentid:number): Observable<Category[]> {
+  getCategoriesparent(parentid: number): Observable<Category[]> {
     return this.apiGateway.getWithResult<Category[]>(
       `${environment.apiBaseUrl}/api/Product/GetAllCategorybyparentid?parentId=${encodeURIComponent(parentid)}`
     );

@@ -108,6 +108,20 @@
             <td class="px-4 py-2">{{ companylst.location || '-' }}</td>
           </tr>
 
+          <!-- STATUS -->
+          <tr class="border-b">
+            <th class="px-4 py-2 text-left">Status</th>
+            <td class="px-4 py-2">
+              <span [ngClass]="{
+                'bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200': companylst.status === 'Approved',
+                'bg-gray-200 text-gray-800 ': companylst.status === 'inactive',
+                'bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200': companylst.status === 'pending'
+              }" class="inline-block px-3 py-1 rounded-full text-xs font-semibold">
+                {{ companylst.status | titlecase }}
+              </span>
+            </td>
+          </tr>
+
           <!-- GOOGLE MAP -->
           <tr class="border-b">
             <th class="px-4 py-2 text-left">Google Map</th>
@@ -172,6 +186,53 @@
 
     </div>
 
+  </div>
+  <div *ngIf="showApproveModal1" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    {{isreject}}
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 custompopupmodel1">
+      <h2 class="text-lg font-semibold text-gray-800  mb-4" *ngIf="!isreject">
+        Approve Company
+      </h2>
+      <h2 class="text-lg font-semibold text-gray-800  mb-4 bg-red-500" *ngIf="isreject">
+        Reject Company
+      </h2>
+      <div class="custom model-body1">
+        <div class="w-full" *ngIf="!isreject">
+          <label class="block text-sm font-medium mb-1">Select Catagory</label>
+          <ng-select [items]="nestedCategories" bindLabel="name" class="Selectorcustom" bindValue="id" [multiple]="true"
+            [closeOnSelect]="false" [searchable]="true" placeholder="Select categories"
+            [(ngModel)]="selectedCategoryIds" class="w-full">
+
+            <ng-template ng-label-tmp let-item="item">
+              <span [style.paddingLeft.px]="(item.depth || 0) * 10">{{ item.name }}</span>
+            </ng-template>
+
+            <ng-template ng-option-tmp let-item="item">
+              <span [style.paddingLeft.px]="(item.depth || 0) * 20">{{ item.name }}</span>
+            </ng-template>
+          </ng-select>
+        </div>
+        <div class="w-full" *ngIf="isreject">
+          <label class="block text-sm font-medium mb-1">
+            Reject Reason
+          </label>
+
+          <textarea [(ngModel)]="rejectReason" name="rejectReason" rows="3" placeholder="Enter rejection reason"
+            class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400">
+  </textarea>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button (click)="closeApproveModal()" class="px-4 py-2 rounded-lg border">
+          Cancel
+        </button>
+        <button (click)="confirmApprove()" class="px-4 py-2 rounded-lg bg-green-500 text-white">
+          <span *ngIf="isreject">Reject </span>
+          <span *ngIf="!isreject">Approve </span>
+        </button>
+
+      </div>
+    </div>
   </div>
   <div class="bg-white rounded-xl shadow border overflow-hidden">
 
