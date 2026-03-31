@@ -49,6 +49,7 @@ export class ProductsComponent implements OnInit {
   brandMap = new Map<number, string>();
   loadings: boolean = false;
   isPanelOpen: boolean = false;
+  mobileSidebarOpen: boolean = false;
 
   progress = 0;
   rowsInserted = 0;

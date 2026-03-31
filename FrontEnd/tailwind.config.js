@@ -4,6 +4,14 @@ module.exports = {
   darkMode: false,
   content: ["./src/**/*.{html,ts,css,scss,sass,less,styl}"],
   theme: {
+    screens: {
+      'xs': '480px',
+      'sm': '640px',
+      'md': '768px',
+      'lg': '1024px',
+      'xl': '1280px',
+      '2xl': '1536px',
+    },
     extend: {
       colors: {
         brand: {
@@ -38,14 +46,8 @@ module.exports = {
         99999: '99999',
         999999: '999999',
       },
-      content: [
-  "./src/**/*.{html,ts}",
-],
-theme: {
-  extend: {},
-},
-plugins: [],
     },
   },
   plugins: [],
 }
+
