@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Marketplace.Model.Models;
 using System.Data;
 
@@ -43,6 +43,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
 
     FROM Products p
     LEFT JOIN ProductImages pi ON p.Id = pi.ProductId
+    ORDER BY p.Created_At DESC
     ";
 
             var productDictionary = new Dictionary<int, ProductModel>();
@@ -69,6 +70,115 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
             );
 
             return productDictionary.Values;
+        }
+
+        public async Task<PagedResult<ProductModel>> GetPaginatedAsync(int pageNumber, int pageSize, int? categoryId = null, long? companyId = null, long? brandId = null, long? manufacturerId = null)
+        {
+            var offset = (pageNumber - 1) * pageSize;
+
+            // 1. Get total count
+            var totalCountSql = "SELECT COUNT(*) FROM Products WHERE 1=1";
+            if (categoryId.HasValue && categoryId > 0)
+            {
+                totalCountSql += " AND Category_Id = @CategoryId";
+            }
+            if (companyId.HasValue && companyId > 0)
+            {
+                totalCountSql += " AND Company_Id = @CompanyId";
+            }
+            if (brandId.HasValue && brandId > 0)
+            {
+                totalCountSql += " AND Brand_Id = @BrandId";
+            }
+            if (manufacturerId.HasValue && manufacturerId > 0)
+            {
+                totalCountSql += " AND Manufacturer_Id = @ManufacturerId";
+            }
+            var totalCount = await _db.ExecuteScalarAsync<int>(totalCountSql, new { CategoryId = categoryId, CompanyId = companyId, BrandId = brandId, ManufacturerId = manufacturerId });
+
+            // 2. Get paginated product IDs
+            var pagedIdsSql = @"
+                SELECT Id FROM Products 
+                WHERE 1=1";
+            
+            if (categoryId.HasValue && categoryId > 0)
+            {
+                pagedIdsSql += " AND Category_Id = @CategoryId";
+            }
+            if (companyId.HasValue && companyId > 0)
+            {
+                pagedIdsSql += " AND Company_Id = @CompanyId";
+            }
+            if (brandId.HasValue && brandId > 0)
+            {
+                pagedIdsSql += " AND Brand_Id = @BrandId";
+            }
+            if (manufacturerId.HasValue && manufacturerId > 0)
+            {
+                pagedIdsSql += " AND Manufacturer_Id = @ManufacturerId";
+            }
+
+            pagedIdsSql += @" 
+                ORDER BY Created_At DESC 
+                OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
+
+            var pagedIds = (await _db.QueryAsync<int>(pagedIdsSql, new { Offset = offset, PageSize = pageSize, CategoryId = categoryId, CompanyId = companyId, BrandId = brandId, ManufacturerId = manufacturerId })).ToList();
+
+            if (!pagedIds.Any())
+            {
+                return new PagedResult<ProductModel>
+                {
+                    Data = new List<ProductModel>(),
+                    TotalCount = totalCount,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                };
+            }
+
+            // 3. Get full data for those IDs
+            var fullDataSql = @"
+                SELECT 
+                    p.Id, p.Sku, p.Name, p.Description, p.Short_Description AS ShortDescription,
+                    p.Category_Id AS CategoryId, p.Company_Id AS CompanyId, p.Rate,
+                    p.Brand_Id AS BrandId, p.Manufacturer_Id AS ManufacturerId, p.Hs_Code AS HsCode,
+                    p.Status, p.Is_Featured AS IsFeatured, p.Seo_Title AS SeoTitle,
+                    p.Seo_Description AS SeoDescription, p.Attributes, p.Created_By AS CreatedBy,
+                    p.Created_At AS CreatedAt,
+                    pi.Id, pi.ProductId, pi.ImageName, pi.IsDefault, pi.CreatedAt
+                FROM Products p
+                LEFT JOIN ProductImages pi ON p.Id = pi.ProductId
+                WHERE p.Id IN @Ids
+                ORDER BY p.Created_At DESC";
+
+            var productDictionary = new Dictionary<int, ProductModel>();
+
+            await _db.QueryAsync<ProductModel, ProductImageModel, ProductModel>(
+                fullDataSql,
+                (product, image) =>
+                {
+                    if (!productDictionary.TryGetValue(product.Id, out var currentProduct))
+                    {
+                        currentProduct = product;
+                        currentProduct.Images = new List<ProductImageModel>();
+                        productDictionary.Add(currentProduct.Id, currentProduct);
+                    }
+                    if (image != null)
+                    {
+                        currentProduct.Images.Add(image);
+                    }
+                    return currentProduct;
+                },
+                new { Ids = pagedIds },
+                splitOn: "Id"
+            );
+
+            return new PagedResult<ProductModel>
+            {
+                Data = productDictionary.Values.ToList(),
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
         public async Task<List<CategoryDto>> GetAllCategoryAsync()
         {
@@ -396,6 +506,63 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
             p.Add("@category_id", dto.CategoryId);
             p.Add("@new_parent_id", dto.NewParentId);
             await _db.ExecuteAsync("dbo.sp_MoveCategory", p, commandType: CommandType.StoredProcedure);
+
+            // Rebuild all slugs ensuring perfect hierarchical formats
+            await RebuildAllCategorySlugsAsync();
+        }
+
+        private async Task RebuildAllCategorySlugsAsync()
+        {
+            var categories = (await _db.QueryAsync<CategoryDto>(
+                "SELECT id AS Id, name AS Name, slug AS Slug, parent_id AS ParentId FROM dbo.Product_Categories"
+            )).ToList();
+            
+            var lookup = categories.ToDictionary(c => c.Id);
+            
+            foreach (var cat in categories) 
+                cat.Children = new List<CategoryDto>();
+                
+            var roots = new List<CategoryDto>();
+            
+            foreach (var cat in categories)
+            {
+                if (cat.ParentId.HasValue && cat.ParentId.Value != 0 && lookup.ContainsKey(cat.ParentId.Value))
+                    lookup[cat.ParentId.Value].Children.Add(cat);
+                else
+                    roots.Add(cat);
+            }
+
+            var updates = new List<(long Id, string Slug)>();
+            
+            void Traverse(CategoryDto node, string parentSlug)
+            {
+                var segment = System.Text.RegularExpressions.Regex.Replace(node.Name.ToLower().Trim(), @"\s+", "-");
+                segment = System.Text.RegularExpressions.Regex.Replace(segment, @"[^a-z0-9-]", "");
+                
+                var newSlug = string.IsNullOrEmpty(parentSlug) ? segment : $"{parentSlug}-{segment}";
+                
+                if (node.Slug != newSlug)
+                {
+                    updates.Add((node.Id, newSlug));
+                }
+                
+                foreach (var child in node.Children)
+                {
+                    Traverse(child, newSlug);
+                }
+            }
+
+            foreach (var root in roots)
+            {
+                Traverse(root, "");
+            }
+
+            if (updates.Any())
+            {
+                var sql = "UPDATE dbo.Product_Categories SET slug = @Slug, updated_at = SYSUTCDATETIME() WHERE id = @Id";
+                // Dapper supports executing a list of parameters in a single batch
+                await _db.ExecuteAsync(sql, updates.Select(u => new { Slug = u.Slug, Id = u.Id }).ToList());
+            }
         }
 
         // Return nested JSON tree (string) from stored proc
@@ -419,7 +586,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
         // Get single category by id
         public async Task<CategoryDto?> GetCatagoryByIdAsync(long id)
         {
-            var sql = @"SELECT id AS Id, name AS Name, slug AS Slug, parent_id AS ParentId, depth AS Depth
+            var sql = @"SELECT id AS Id, name AS Name, slug AS Slug, parent_id AS ParentId, depth AS Depth, ImageUrl AS Image 
                         FROM dbo.Product_Categories WHERE id = @id";
             return await _db.QueryFirstOrDefaultAsync<CategoryDto>(sql, new { id });
         }

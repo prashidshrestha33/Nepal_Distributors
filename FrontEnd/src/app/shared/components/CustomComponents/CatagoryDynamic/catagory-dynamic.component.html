@@ -8,6 +8,7 @@
       [clearable]="true"
       [searchable]="true"
       placeholder="Select category"
+      appendTo="body"
       [ngModel]="selectedPath[i] ?? null"
       (ngModelChange)="onCategorySelect(i, $event)"
       [ngModelOptions]="{ standalone: true }">

@@ -1,119 +1,192 @@
-<div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-6" *ngIf="product">
-  <div class="bg-white max-w-4xl w-full rounded-3xl shadow-lg p-8 relative overflow-auto max-h-[90vh]">
+<!-- Snackbar Notification -->
+<div *ngIf="snackbar.show"
+  class="fixed top-6 right-6 z-[9999] min-w-[320px] max-w-md bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.2)] border-l-4 p-4 flex gap-4 transition-all duration-300 animate-slide-in"
+  [ngClass]="{
+    'border-green-500': snackbar.type === 'success',
+    'border-red-500': snackbar.type === 'error',
+    'border-yellow-500': snackbar.type === 'warning'
+  }">
 
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
-      <h2 class="font-extrabold text-xl text-gray-900">Approve Product</h2>
-      <button (click)="onCancel()" class="text-gray-400 hover:text-gray-600 rounded-full w-8 h-8 flex items-center justify-center" title="Close">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+  <div class="flex-shrink-0">
+    <!-- Success Icon -->
+    <div *ngIf="snackbar.type === 'success'"
+      class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+    <!-- Error Icon -->
+    <div *ngIf="snackbar.type === 'error'"
+      class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </div>
+    <!-- Warning Icon -->
+    <div *ngIf="snackbar.type === 'warning'"
+      class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+    </div>
+  </div>
+
+  <div class="flex-grow">
+    <div class="flex justify-between items-start">
+      <h3 class="text-sm font-bold" [ngClass]="{
+        'text-green-800': snackbar.type === 'success',
+        'text-red-800': snackbar.type === 'error',
+        'text-yellow-800': snackbar.type === 'warning'
+      }">
+        {{ snackbar.type === 'success' ? 'Success!' : snackbar.type === 'warning' ? 'Note' : 'Error!' }}
+      </h3>
+      <button (click)="snackbar.show = false" class="text-gray-400 hover:text-gray-600">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <p class="text-xs text-gray-500 mt-1 font-medium leading-relaxed">
+      {{ snackbar.message }}
+    </p>
+  </div>
+</div>
+
+<div class="fixed inset-0 bg-black/40 flex items-center justify-center z-[999] p-6 animate-fade-in" *ngIf="product">
+  <div
+    class="bg-white max-w-4xl w-full rounded-[2rem] shadow-2xl p-8 sm:p-10 relative overflow-hidden flex flex-col max-h-[92vh]">
+
+    <!-- Header Section -->
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="font-extrabold text-[26px] text-[#111827] tracking-tight">Approve Product</h2>
+      <button (click)="onCancel()" class="text-gray-400 hover:text-gray-600 transition-colors p-2" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
     </div>
 
-    <!-- Status Badge -->
-    <div class="mb-4 flex items-center gap-3">
-      <span class="font-medium">Current Status:</span>
-      <span class="px-3 py-1 text-sm font-semibold rounded-full"
-            [ngClass]="{
-              'bg-green-100 text-green-700': product?.status === 'Approved',
-              'bg-yellow-100 text-yellow-700': product?.status === 'Pending',
-              'bg-red-100 text-red-700': product?.status === 'Rejected'
+    <!-- Status Info -->
+    <div class="mb-8 flex items-center gap-3">
+      <span class="text-[17px] font-bold text-[#111827]">Current Status:</span>
+      <span class="px-5 py-1.5 text-sm font-bold rounded-full tracking-wide shadow-sm" [ngClass]="{
+              'bg-emerald-100 text-emerald-800 border border-emerald-200': product?.status === 'Approved',
+              'bg-[#fff8da] text-[#a07409] border border-[#f5e4a8]': product?.status !== 'Approved'
             }">
         {{ product?.status || 'Pending' }}
       </span>
     </div>
 
-    <!-- Basic Info -->
-    <div class="bg-gray-50 rounded-xl p-6 mb-6 space-y-4">
-      <div class="font-semibold text-gray-800 text-lg">Basic Information</div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-700">
-        <div><span class="font-medium">SKU:</span> {{ product?.sku }}</div>
-        <div><span class="font-medium">Name:</span> {{ product?.name }}</div>
-        <div><span class="font-medium">Category:</span> {{ product?.categoryName }}</div>
-        <div><span class="font-medium">Brand:</span> {{ product?.brandName }}</div>
-        <div><span class="font-medium">Rate:</span> {{ product?.rate }}</div>
-        <div><span class="font-medium">Is Featured:</span> {{ product?.isFeatured ? 'Yes' : 'No' }}</div>
-      </div>
-    </div>
+    <div class="flex-grow overflow-y-auto pr-2 custom-scrollbar space-y-6">
 
-    <!-- Product Image -->
-    <div class="bg-gray-50 rounded-xl p-6 mb-6 flex items-center gap-6">
-      <div class="font-semibold text-gray-800">Product Image</div>
-      <div class="relative group w-fit">
-        <ng-container *ngIf="getDefaultImage() as defaultImage; else noImg">
-          <img [src]="defaultImage"
-               class="w-32 h-32 object-cover rounded border cursor-zoom-in"/>
-          <div class="absolute hidden group-hover:block left-40 top-0 z-50">
-            <img [src]="defaultImage"
-                 class="w-64 h-64 object-cover rounded-lg shadow-xl"/>
+      <!-- Basic Information Card -->
+      <div class="bg-[#f9fafb] rounded-[1.5rem] p-8 border border-gray-100">
+        <h3 class="text-xl font-extrabold text-[#111827] mb-6">Basic Information</h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-y-6 gap-x-8 text-[15px]">
+          <div class="flex flex-col gap-1">
+            <span class="text-gray-900 font-extrabold">SKU:</span>
+            <span class="text-gray-600 font-medium tracking-tight overflow-hidden text-ellipsis">{{ product?.sku
+              }}</span>
           </div>
-        </ng-container>
-        <ng-template #noImg>N/A</ng-template>
+          <div class="flex flex-col gap-1">
+            <span class="text-gray-900 font-extrabold">Name:</span>
+            <span class="text-gray-600 font-medium tracking-tight overflow-hidden text-ellipsis">{{ product?.name
+              }}</span>
+          </div>
+          <div class="flex flex-col gap-1">
+            <span class="text-gray-900 font-extrabold">Category:</span>
+            <span class="text-gray-600 font-medium tracking-tight overflow-hidden text-ellipsis">{{
+              product?.categoryName }}</span>
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <span class="text-gray-900 font-extrabold">Brand:</span>
+            <span class="text-gray-600 font-medium tracking-tight">{{ product?.brandName }}</span>
+          </div>
+          <div class="flex flex-col gap-1">
+            <span class="text-gray-900 font-extrabold">Rate:</span>
+            <span class="text-gray-600 font-medium tracking-tight font-sans">{{ product?.rate }}</span>
+          </div>
+          <div class="flex flex-col gap-1">
+            <span class="text-gray-900 font-extrabold">Is Featured:</span>
+            <span class="text-gray-600 font-medium tracking-tight">{{ product?.isFeatured ? 'Yes' : 'No' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Product Image Card -->
+      <div class="bg-[#f9fafb] rounded-[1.5rem] p-8 border border-gray-100 flex items-center min-h-[160px]">
+        <span class="text-[17px] font-extrabold text-[#111827] w-48 shrink-0">Product Image</span>
+        <div class="flex-grow flex items-center justify-center md:justify-start">
+          <ng-container *ngIf="getDefaultImage() as defaultImage; else noImg">
+            <div class="w-36 h-36 bg-gray-100 rounded-2xl overflow-hidden shadow-sm border border-gray-200/50">
+              <img [src]="defaultImage"
+                class="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                alt="Product display" />
+            </div>
+          </ng-container>
+          <ng-template #noImg>
+            <div
+              class="w-36 h-36 bg-gray-100 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-300">
+              <span class="text-gray-400 font-medium">No Image</span>
+            </div>
+          </ng-template>
+        </div>
       </div>
     </div>
 
-    <!-- Action Buttons -->
-    <div class="flex justify-end gap-3 mb-6">
+    <!-- Action Footer -->
+    <div class="flex justify-end items-center gap-4 mt-8 pt-2">
       <button (click)="onCancel()"
-              class="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition">
+        class="px-8 py-3 bg-[#e5e7eb] hover:bg-[#d1d5db] text-[#374151] font-bold rounded-xl transition-all duration-200">
         Cancel
       </button>
       <button (click)="openReason('Rejected')"
-              class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">
+        class="px-8 py-3 bg-[#e4342a] hover:bg-[#c92b22] text-white font-bold rounded-xl shadow-[0_4px_12px_rgba(228,52,42,0.3)] transition-all duration-200">
         Reject
       </button>
-      <button (click)="openReason('Approved')"
-              [disabled]="product?.status === 'Approved'"
-              class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition disabled:opacity-50">
+      <button (click)="openReason('Approved')" [disabled]="product?.status === 'Approved'"
+        class="px-8 py-3 bg-[#1e9a56] hover:bg-[#178144] text-white font-bold rounded-xl shadow-[0_4px_12px_rgba(30,154,86,0.3)] transition-all duration-200 disabled:opacity-50 disabled:shadow-none">
         Approve
       </button>
     </div>
 
-    <!-- Reason Modal -->
+    <!-- Reason Overlay -->
     <div *ngIf="showReasonModal"
-         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div class="bg-white rounded-3xl shadow-lg w-full max-w-2xl p-6">
-        <!-- Modal Header -->
-        <h2 class="text-lg font-semibold text-gray-800 mb-4"
-            *ngIf="actionType === 'Approved'">
-          Approve Product
-        </h2>
-        <h2 class="text-lg font-semibold text-white mb-4 bg-red-500 p-2 rounded"
-            *ngIf="actionType === 'Rejected'">
-          Reject Product
+      class="absolute inset-0 z-[1000] flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-6 animate-fade-in">
+      <div
+        class="bg-white rounded-[2rem] shadow-2xl w-full max-w-xl p-8 border border-gray-100 transform animate-scale-up">
+
+        <h2 class="text-2xl font-extrabold text-[#111827] mb-6 tracking-tight">
+          {{ actionType === 'Approved' ? 'Approve Product' : 'Reject Product' }}
         </h2>
 
-        <!-- Modal Body -->
-        <div class="space-y-4">
-          <label class="block text-sm font-medium mb-1">
-            {{ actionType === 'Approved' ? 'Optional Note' : 'Reason or Note' }}
+        <div class="mb-6">
+          <label class="block text-sm font-bold text-[#111827] mb-2 uppercase tracking-wider">
+            {{ actionType === 'Approved' ? 'Optional Note' : 'Reason for rejection' }}
           </label>
-          <textarea [(ngModel)]="reason"
-                    rows="3"
-                    maxlength="250"
-                    placeholder="{{ actionType === 'Approved' ? 'Add a note for approval...' : 'Enter reason or note' }}"
-                    class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2"
-                    [ngClass]="{'focus:ring-green-400': actionType==='Approved', 'focus:ring-red-400': actionType==='Rejected'}">
-          </textarea>
-          <p class="text-xs text-gray-500 mt-1">{{ reason.length }}/250</p>
+          <textarea [(ngModel)]="reason" rows="4" maxlength="250"
+            [placeholder]="actionType === 'Approved' ? 'Add a note for approval...' : 'Why is this product being rejected?'"
+            class="w-full bg-[#f9fafb] border-2 border-gray-100 rounded-2xl px-5 py-4 focus:outline-none focus:border-blue-400 transition-colors text-[15px] font-medium placeholder-gray-400"></textarea>
+          <div class="flex justify-end mt-2">
+            <span class="text-xs font-bold" [ngClass]="reason.length >= 240 ? 'text-red-500' : 'text-gray-400'">
+              {{ reason.length }}/250
+            </span>
+          </div>
         </div>
 
-        <!-- Modal Footer -->
-        <div class="flex justify-end gap-3 mt-4">
+        <div class="flex justify-end gap-3">
           <button (click)="closeReason()"
-                  class="px-4 py-2 rounded-lg border hover:bg-gray-100 transition">
-            Cancel
-          </button>
-          <button *ngIf="actionType === 'Rejected'"
-                  (click)="confirmAction(reason, 'Rejected')"
-                  [disabled]="!reason?.trim()"
-                  class="px-4 py-2 rounded-lg text-white bg-red-500 hover:bg-red-600">
+            class="px-6 py-2.5 font-bold text-gray-500 hover:text-gray-700 transition">Cancel</button>
+          <button *ngIf="actionType === 'Rejected'" (click)="confirmAction(reason, 'Rejected')"
+            [disabled]="!reason?.trim()"
+            class="px-8 py-2.5 bg-[#e4342a] text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50">
             Reject
           </button>
-          <button *ngIf="actionType === 'Approved'"
-                  (click)="confirmAction(reason, 'Approved')"
-                  class="px-4 py-2 rounded-lg text-white bg-green-500 hover:bg-green-600">
+          <button *ngIf="actionType === 'Approved'" (click)="confirmAction(reason, 'Approved')"
+            class="px-8 py-2.5 bg-[#1e9a56] text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all">
             Approve
           </button>
         </div>

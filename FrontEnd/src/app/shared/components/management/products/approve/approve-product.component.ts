@@ -15,21 +15,21 @@ export class ApproveProductComponent {
   // =========================
   // Snackbar for notifications
   // =========================
-  snackbar = {
+  snackbar: { show: boolean; message: string; type: 'success' | 'error' | 'warning' } = {
     show: false,
     message: '',
-    success: true
+    type: 'success'
   };
 
   private snackbarTimeout?: any;
 
   /** Show snackbar with success or error */
-  showSnackbar(message: string, success: boolean = true, duration: number = 5000) {
+  showSnackbar(message: string, type: 'success' | 'error' | 'warning' = 'success', duration: number = 5000) {
     // Clear any existing timeout
     if (this.snackbarTimeout) clearTimeout(this.snackbarTimeout);
 
     this.snackbar.message = message;
-    this.snackbar.success = success;
+    this.snackbar.type = type;
     this.snackbar.show = true;
 
     this.snackbarTimeout = setTimeout(() => {
@@ -91,24 +91,18 @@ getImageUrl(imageName?: string): string {
   /** Confirm approval or rejection action */
   confirmAction(reason: string, actionType: 'Approved' | 'Rejected') {
     if (actionType === 'Rejected' && !reason.trim()) {
-      this.showSnackbar('Reason is required for rejection.', false);
+      this.showSnackbar('Reason is required for rejection.', 'error');
       return;
     }
 
-    // Show snackbar immediately
-    const msg = actionType === 'Approved'
-      ? 'Product approved successfully!'
-      : 'Product rejected.';
-    this.showSnackbar(msg, actionType === 'Approved');
-
-    // Emit event to parent component after a short delay to show snackbar
+    // Emit event to parent component after a very short delay to allow UI to breathe
     setTimeout(() => {
       this.approve.emit({
         status: actionType,
         reason
       });
       this.closeReason();
-    }, 500);
+    }, 100);
   }
   /** Cancel modal */
   onCancel() {

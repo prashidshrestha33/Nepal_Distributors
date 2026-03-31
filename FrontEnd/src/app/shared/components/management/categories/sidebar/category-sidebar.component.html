@@ -1,0 +1,96 @@
+<div
+  class="w-[270px] bg-white flex flex-col flex-shrink-0 border-r border-gray-100 h-full overflow-y-auto custom-scrollbar">
+  <div class="px-6 py-5">
+    <p class="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-4">Categories</p>
+
+    <!-- All Categories Pill -->
+    <button (click)="onSelectCategory(null)"
+      class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-semibold text-sm"
+      [ngClass]="selectedCategoryId === null ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'">
+      <span>All Categories</span>
+    </button>
+  </div>
+
+  <!-- Recursive Category Tree -->
+  <div class="px-2 pb-6">
+    <ng-container
+      *ngTemplateOutlet="recursiveCategoryList; context: { $implicit: categories, depth: 0 }"></ng-container>
+
+    <ng-template #recursiveCategoryList let-cats let-depth="depth">
+      <div *ngFor="let cat of cats" class="mt-0.5">
+
+        <div class="flex items-center group w-full">
+          <!-- Main Label -->
+          <button
+            (click)="cat.children && cat.children.length > 0 ? toggleCollapse(cat, $event) : onSelectCategory(cat.id)"
+            class="flex-1 flex items-center justify-between py-2.5 px-3 rounded-xl transition-all duration-300 group"
+            [ngClass]="[
+              selectedCategoryId === cat.id ? 'bg-blue-50/50 text-blue-600' : 'text-gray-600 hover:bg-gray-50',
+              depth === 0 ? 'font-bold text-[15px]' : 'font-medium text-[14px]'
+            ]" [style.padding-left.px]="(depth * 24) + 16">
+            <span class="truncate">{{ cat.name }}</span>
+
+            <!-- Toggle Chevron (only for items with children) -->
+            <div *ngIf="cat.children && cat.children.length > 0" class="ml-2 w-5 h-5 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 transition-transform duration-300"
+                [ngClass]="isExpanded(cat.id) ? 'rotate-0 text-blue-500' : '-rotate-90 text-gray-400'" fill="none"
+                viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </button>
+        </div>
+
+        <!-- Indented Children -->
+        <div *ngIf="cat.children && cat.children.length > 0 && isExpanded(cat.id)"
+          class="overflow-hidden transition-all duration-300">
+          <ng-container
+            *ngTemplateOutlet="recursiveCategoryList; context: { $implicit: cat.children, depth: depth + 1 }"></ng-container>
+        </div>
+
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- Top Brands Section -->
+  <div class="px-6 py-5 border-t border-gray-100 bg-gray-50/50">
+    <p class="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-4">Top Brands</p>
+
+    <div *ngIf="topBrands && topBrands.length > 0" class="space-y-1">
+      <button *ngFor="let brand of topBrands" (click)="brandSelected.emit(brand.id)"
+        class="w-full flex items-center justify-between py-2 px-3 rounded-xl transition-all duration-300 hover:bg-white hover:shadow-sm group">
+        <div class="flex items-center gap-3 overflow-hidden">
+          <div class="w-1.5 h-1.5 rounded-full bg-blue-400/40 group-hover:bg-blue-500 transition-colors"></div>
+          <span class="text-[13px] text-gray-600 font-bold truncate group-hover:text-gray-900">{{ brand.name }}</span>
+        </div>
+        <span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold tabular-nums">{{
+          brand.productCount }}</span>
+      </button>
+    </div>
+
+    <div *ngIf="!topBrands || topBrands.length === 0" class="px-3 py-1">
+      <p class="text-[12px] text-gray-400 italic">No brands found</p>
+    </div>
+  </div>
+
+  <!-- Top Manufacturers Section -->
+  <!-- <div class="px-6 py-5 border-t border-gray-100 bg-gray-50/50">
+    <p class="text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-4">Top Manufacturers</p>
+    
+    <div *ngIf="topManufacturers && topManufacturers.length > 0" class="space-y-1">
+       <button *ngFor="let m of topManufacturers" 
+               (click)="manufacturerSelected.emit(m.id)"
+               class="w-full flex items-center justify-between py-2 px-3 rounded-xl transition-all duration-300 hover:bg-white hover:shadow-sm group">
+         <div class="flex items-center gap-3 overflow-hidden">
+           <div class="w-1.5 h-1.5 rounded-full bg-indigo-400/40 group-hover:bg-indigo-500 transition-colors"></div>
+           <span class="text-[13px] text-gray-600 font-bold truncate group-hover:text-gray-900">{{ m.name }}</span>
+         </div>
+         <span class="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-bold tabular-nums">{{ m.productCount }}</span>
+       </button>
+    </div>
+
+    <div *ngIf="!topManufacturers || topManufacturers.length === 0" class="px-3 py-1">
+      <p class="text-[12px] text-gray-400 italic">No manufacturers found</p>
+    </div>
+  </div> -->
+</div>

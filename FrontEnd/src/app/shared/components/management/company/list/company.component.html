@@ -47,12 +47,8 @@
           d="M21 21l-4.35-4.35m2.1-5.4a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" />
       </svg>
 
-      <input
-        type="text"
-        placeholder="Search by name, contact person, or phone number..."
-        [(ngModel)]="searchTerm"
-        (keyup)="onSearch()"
-        class="w-full outline-none text-gray-700">
+      <input type="text" placeholder="Search by name, contact person, or phone number..." [(ngModel)]="searchTerm"
+        (keyup)="onSearch()" class="w-full outline-none text-gray-700">
     </div>
 
     <button class="ml-4 px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-100">
@@ -60,353 +56,366 @@
     </button>
 
   </div>
-<!-- SUCCESS MODAL -->
-<div *ngIf="successModal2"
-     class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+  <!-- SUCCESS MODAL -->
+  <div *ngIf="successModal2" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
 
-  <div class="bg-white p-6 rounded-lg shadow-lg text-center w-80">
-    <h3 class="text-lg font-semibold mb-2">Success</h3>
-    <p class="text-gray-600 mb-4">{{ successMessage2 }}</p>
+    <div class="bg-white p-6 rounded-lg shadow-lg text-center w-80">
+      <h3 class="text-lg font-semibold mb-2">Success</h3>
+      <p class="text-gray-600 mb-4">{{ successMessage2 }}</p>
 
-    <button
-      class="bg-blue-600 text-white px-4 py-2 rounded"
-      (click)="successModal2 = false">
-      OK
-    </button>
-  </div>
-
-</div>
-
-
-<!-- APPROVE COMPANY MODAL -->
-<div *ngIf="showApproveModal"
-     class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-
-  <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 overflow-auto">
-
-    <h2 class="text-lg font-semibold mb-4">
-      Approve Company
-    </h2>
-
-    <table class="w-full border text-sm mb-6">
-      <tbody>
-
-        <tr class="border-b">
-          <th class="px-4 py-2 text-left">Name</th>
-          <td class="px-4 py-2">{{ companylst.name || '-' }}</td>
-        </tr>
-
-        <tr class="border-b">
-          <th class="px-4 py-2 text-left">Email</th>
-          <td class="px-4 py-2">{{ companylst.email || '-' }}</td>
-        </tr>
-
-        <tr class="border-b">
-          <th class="px-4 py-2 text-left">Mobile Phone</th>
-          <td class="px-4 py-2">{{ companylst.mobilePhone || '-' }}</td>
-        </tr>
-
-        <tr class="border-b">
-          <th class="px-4 py-2 text-left">Contact Person</th>
-          <td class="px-4 py-2">{{ companylst.contactPerson || '-' }}</td>
-        </tr>
-
-        <tr class="border-b">
-          <th class="px-4 py-2 text-left">Location</th>
-          <td class="px-4 py-2">{{ companylst.location || '-' }}</td>
-        </tr>
-
-        <!-- GOOGLE MAP -->
-        <tr class="border-b">
-          <th class="px-4 py-2 text-left">Google Map</th>
-          <td class="px-4 py-2">
-
-            <iframe
-              *ngIf="getGoogleMapUrl(companylst.googleMapLocation) as mapUrl"
-              [src]="mapUrl | safeHtml:'url'"
-              class="w-full h-48 border rounded"
-              loading="lazy">
-            </iframe>
-
-            <span *ngIf="!getGoogleMapUrl(companylst.googleMapLocation)">
-              No map available
-            </span>
-
-          </td>
-        </tr>
-
-        <!-- DOCUMENT -->
-        <tr>
-          <th class="px-4 py-2 text-left">Registration Document</th>
-          <td class="px-4 py-2">
-
-            <ng-container *ngIf="companylst.registrationDocument; else noDoc">
-
-              <img
-                *ngIf="isImage(companylst.registrationDocument)"
-                [src]="getImageUrl(companylst.registrationDocument)"
-                class="max-w-xs max-h-40 rounded border cursor-pointer"
-                (click)="openImage(companylst.registrationDocument)"
-              />
-
-              <a
-                *ngIf="isPDF(companylst.registrationDocument)"
-                [href]="getImageUrl(companylst.registrationDocument)"
-                target="_blank"
-                class="text-blue-600 underline">
-                View PDF
-              </a>
-
-            </ng-container>
-
-            <ng-template #noDoc>
-              <span class="text-gray-500">No document</span>
-            </ng-template>
-
-          </td>
-        </tr>
-
-      </tbody>
-    </table>
-
-    <!-- MODAL ACTIONS -->
-    <div class="flex justify-end gap-3">
-
-      <button
-        (click)="closeApproveModal()"
-        class="px-4 py-2 border rounded">
-        Cancel
+      <button class="bg-blue-600 text-white px-4 py-2 rounded" (click)="successModal2 = false">
+        OK
       </button>
-
-      <button
-        (click)="openApprovestep1Modal('r')"
-        class="px-4 py-2 bg-red-500 text-white rounded">
-        Reject
-      </button>
-
-      <button
-        (click)="openApprovestep1Modal('a')"
-        class="px-4 py-2 bg-green-600 text-white rounded">
-        Approve
-      </button>
-
     </div>
 
   </div>
 
-</div>
-<div class="bg-white rounded-xl shadow border overflow-hidden">
 
-  <table class="w-full text-sm">
+  <!-- APPROVE COMPANY MODAL -->
+  <div *ngIf="showApproveModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
 
-    <!-- Header -->
-    <thead class="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
-      <tr>
-        <th class="px-6 py-4 text-left">Company Name</th>
-        <th class="px-6 py-4 text-left">Type</th>
-        <th class="px-6 py-4 text-left">Credits</th>
-        <th class="px-6 py-4 text-left">Status</th>
-        <th class="px-6 py-4 text-left">Approved on</th>
-        <th class="px-6 py-4 text-center">Actions</th>
-      </tr>
-    </thead>
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 overflow-auto">
 
-    <!-- Body -->
-    <tbody class="divide-y">
+      <h2 class="text-lg font-semibold mb-4">
+        Approve Company
+      </h2>
 
-      <tr *ngFor="let Company of filteredCompany"
-          class="hover:bg-gray-50 transition">
+      <table class="w-full border text-sm mb-6">
+        <tbody>
 
-        <!-- Company Identity -->
-        <td class="px-6 py-4">
+          <tr class="border-b">
+            <th class="px-4 py-2 text-left">Name</th>
+            <td class="px-4 py-2">{{ companylst.name || '-' }}</td>
+          </tr>
 
-          <div class="flex items-center gap-4">
+          <tr class="border-b">
+            <th class="px-4 py-2 text-left">Email</th>
+            <td class="px-4 py-2">{{ companylst.email || '-' }}</td>
+          </tr>
 
-            <!-- Avatar -->
-            <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-200 text-gray-700 font-semibold">
-              {{ Company.name?.charAt(0) }}
+          <tr class="border-b">
+            <th class="px-4 py-2 text-left">Mobile Phone</th>
+            <td class="px-4 py-2">{{ companylst.mobilePhone || '-' }}</td>
+          </tr>
+
+          <tr class="border-b">
+            <th class="px-4 py-2 text-left">Contact Person</th>
+            <td class="px-4 py-2">{{ companylst.contactPerson || '-' }}</td>
+          </tr>
+
+          <tr class="border-b">
+            <th class="px-4 py-2 text-left">Location</th>
+            <td class="px-4 py-2">{{ companylst.location || '-' }}</td>
+          </tr>
+
+          <!-- STATUS -->
+          <tr class="border-b">
+            <th class="px-4 py-2 text-left">Status</th>
+            <td class="px-4 py-2">
+              <span [ngClass]="{
+                'bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200': companylst.status === 'Approved',
+                'bg-gray-200 text-gray-800 ': companylst.status === 'inactive',
+                'bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200': companylst.status === 'pending'
+              }" class="inline-block px-3 py-1 rounded-full text-xs font-semibold">
+                {{ companylst.status | titlecase }}
+              </span>
+            </td>
+          </tr>
+
+          <!-- GOOGLE MAP -->
+          <tr class="border-b">
+            <th class="px-4 py-2 text-left">Google Map</th>
+            <td class="px-4 py-2">
+
+              <iframe *ngIf="getGoogleMapUrl(companylst.googleMapLocation) as mapUrl" [src]="mapUrl | safeHtml:'url'"
+                class="w-full h-48 border rounded" loading="lazy">
+              </iframe>
+
+              <span *ngIf="!getGoogleMapUrl(companylst.googleMapLocation)">
+                No map available
+              </span>
+
+            </td>
+          </tr>
+
+          <!-- DOCUMENT -->
+          <tr>
+            <th class="px-4 py-2 text-left">Registration Document</th>
+            <td class="px-4 py-2">
+
+              <ng-container *ngIf="companylst.registrationDocument; else noDoc">
+
+                <img *ngIf="isImage(companylst.registrationDocument)"
+                  [src]="getImageUrl(companylst.registrationDocument)"
+                  class="max-w-xs max-h-40 rounded border cursor-pointer"
+                  (click)="openImage(companylst.registrationDocument)" />
+
+                <a *ngIf="isPDF(companylst.registrationDocument)" [href]="getImageUrl(companylst.registrationDocument)"
+                  target="_blank" class="text-blue-600 underline">
+                  View PDF
+                </a>
+
+              </ng-container>
+
+              <ng-template #noDoc>
+                <span class="text-gray-500">No document</span>
+              </ng-template>
+
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+
+      <!-- MODAL ACTIONS -->
+      <div class="flex justify-end gap-3">
+
+        <button (click)="closeApproveModal()" class="px-4 py-2 border rounded">
+          Cancel
+        </button>
+
+        <button (click)="openApprovestep1Modal('r')" class="px-4 py-2 bg-red-500 text-white rounded">
+          Reject
+        </button>
+
+        <button (click)="openApprovestep1Modal('a')" class="px-4 py-2 bg-green-600 text-white rounded">
+          Approve
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+  <div *ngIf="showApproveModal1" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    {{isreject}}
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 custompopupmodel1">
+      <h2 class="text-lg font-semibold text-gray-800  mb-4" *ngIf="!isreject">
+        Approve Company
+      </h2>
+      <h2 class="text-lg font-semibold text-gray-800  mb-4 bg-red-500" *ngIf="isreject">
+        Reject Company
+      </h2>
+      <div class="custom model-body1">
+        <div class="w-full" *ngIf="!isreject">
+          <label class="block text-sm font-medium mb-1">Select Catagory</label>
+          <ng-select [items]="nestedCategories" bindLabel="name" class="Selectorcustom" bindValue="id" [multiple]="true"
+            [closeOnSelect]="false" [searchable]="true" placeholder="Select categories"
+            [(ngModel)]="selectedCategoryIds" class="w-full">
+
+            <ng-template ng-label-tmp let-item="item">
+              <span [style.paddingLeft.px]="(item.depth || 0) * 10">{{ item.name }}</span>
+            </ng-template>
+
+            <ng-template ng-option-tmp let-item="item">
+              <span [style.paddingLeft.px]="(item.depth || 0) * 20">{{ item.name }}</span>
+            </ng-template>
+          </ng-select>
+        </div>
+        <div class="w-full" *ngIf="isreject">
+          <label class="block text-sm font-medium mb-1">
+            Reject Reason
+          </label>
+
+          <textarea [(ngModel)]="rejectReason" name="rejectReason" rows="3" placeholder="Enter rejection reason"
+            class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400">
+  </textarea>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button (click)="closeApproveModal()" class="px-4 py-2 rounded-lg border">
+          Cancel
+        </button>
+        <button (click)="confirmApprove()" class="px-4 py-2 rounded-lg bg-green-500 text-white">
+          <span *ngIf="isreject">Reject </span>
+          <span *ngIf="!isreject">Approve </span>
+        </button>
+
+      </div>
+    </div>
+  </div>
+  <div class="bg-white rounded-xl shadow border overflow-hidden">
+
+    <table class="w-full text-sm">
+
+      <!-- Header -->
+      <thead class="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
+        <tr>
+          <th class="px-6 py-4 text-left">Company Name</th>
+          <th class="px-6 py-4 text-left">Type</th>
+          <th class="px-6 py-4 text-left">Credits</th>
+          <th class="px-6 py-4 text-left">Status</th>
+          <th class="px-6 py-4 text-left">Approved on</th>
+          <th class="px-6 py-4 text-center">Actions</th>
+        </tr>
+      </thead>
+
+      <!-- Body -->
+      <tbody class="divide-y">
+
+        <tr *ngFor="let Company of filteredCompany" class="hover:bg-gray-50 transition">
+
+          <!-- Company Identity -->
+          <td class="px-6 py-4">
+
+            <div class="flex items-center gap-4">
+
+              <!-- Avatar -->
+              <div
+                class="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-200 text-gray-700 font-semibold">
+                {{ Company.name?.charAt(0) }}
+              </div>
+
+              <!-- Company Info -->
+              <div>
+                <p class="font-semibold text-gray-800">
+                  {{ Company.name }}
+                </p>
+
+                <p class="text-gray-500 text-xs">
+                  Contact: {{ Company.contactPerson }}
+                </p>
+              </div>
+
             </div>
 
-            <!-- Company Info -->
-            <div>
-              <p class="font-semibold text-gray-800">
-                {{ Company.name }}
-              </p>
-
-              <p class="text-gray-500 text-xs">
-                Contact: {{ Company.contactPerson }}
-              </p>
-            </div>
-
-          </div>
-
-        </td>
+          </td>
 
 
-        <!-- Type -->
-        <td class="px-6 py-4">
+          <!-- Type -->
+          <td class="px-6 py-4">
 
-          <span
-            class="px-3 py-1 rounded-full text-xs font-semibold"
-            [ngClass]="{
+            <span class="px-3 py-1 rounded-full text-xs font-semibold" [ngClass]="{
               'bg-gray-200 text-gray-700': Company.companyType === 'manufacturer',
               'bg-blue-100 text-blue-700': Company.companyType === 'retailer'
             }">
 
-            {{ Company.companyType | uppercase }}
+              {{ Company.companyType | uppercase }}
 
-          </span>
+            </span>
 
-        </td>
+          </td>
 
 
-        <!-- Credits -->
-        <td class="px-6 py-4">
+          <!-- Credits -->
+          <td class="px-6 py-4">
 
-          <div class="font-semibold text-gray-800">
-            {{ Company.credits }}
-          </div>
+            <div class="font-semibold text-gray-800">
+              {{ Company.credits }}
+            </div>
 
-          <div class="text-xs font-medium"
-               [ngClass]="{
+            <div class="text-xs font-medium" [ngClass]="{
                  'text-blue-600': (Company.credits ?? 0) <= 3,
                  'text-gray-600': (Company.credits ?? 0) > 3 && (Company.credits ?? 0) <= 4,
                  'text-yellow-600': (Company.credits ?? 0) > 4
                }">
-            {{
-              (Company.credits ?? 0) <= 3 ? 'BASIC TIER' :
-              (Company.credits ?? 0) > 3 && (Company.credits ?? 0) <= 4 ? 'SILVER TIER' :
-              'GOLD TIER'
-            }}
-          </div>
+              {{
+              (Company.credits ?? 0) <= 3 ? 'BASIC TIER' : (Company.credits ?? 0)> 3 && (Company.credits ?? 0) <= 4
+                  ? 'SILVER TIER' : 'GOLD TIER' }} </div>
 
-        </td>
+          </td>
 
 
-        <!-- Status -->
-        <td class="px-6 py-4">
+          <!-- Status -->
+          <td class="px-6 py-4">
 
-          <span
-  class="px-3 py-1 rounded-full text-xs font-semibold"
-  [ngClass]="{
+            <span class="px-3 py-1 rounded-full text-xs font-semibold" [ngClass]="{
     'bg-green-100 text-green-700': Company.approveFg?.toUpperCase() === 'Y',
     'bg-gray-200 text-gray-700': Company.approveFg?.toUpperCase() === 'N',
     'bg-yellow-100 text-yellow-700': !Company.approveFg
   }">
 
-  {{
-    Company.approveFg?.toUpperCase() === 'Y' ? 'Approved' :
-    Company.approveFg?.toUpperCase() === 'N' ? 'Rejected' :
-    'Pending'
-  }}
+              {{
+              Company.approveFg?.toUpperCase() === 'Y' ? 'Approved' :
+              Company.approveFg?.toUpperCase() === 'N' ? 'Rejected' :
+              'Pending'
+              }}
 
-</span>
+            </span>
 
-        </td>
+          </td>
 
 
-        <!-- Onboarding -->
-        <td class="px-6 py-4">
-
-          <div class="text-gray-800">
-            {{ Company.approveTs | date:'MMM dd, yyyy' }}
-          </div>
-
-        </td>
-
-        <!-- Actions -->
+          <!-- Onboarding -->
           <td class="px-6 py-4">
-  <div class="flex justify-center gap-3">
 
-    <!-- View -->
-    <button
-      (click)="openCompanyProfile(Company.id!)"
-      title="View Profile"
-      class="cursor-pointer w-9 h-9 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition transform hover:scale-110 flex items-center justify-center"
-    >
-      👁
-    </button>
+            <div class="text-gray-800">
+              {{ Company.approveTs | date:'MMM dd, yyyy' }}
+            </div>
 
-    <!-- Users -->
-    <button
-      (click)="openUsersList(Company.id!)"
-      title="Users List"
-      class="cursor-pointer w-9 h-9 rounded-full bg-orange-50 text-orange-500 hover:bg-orange-500 hover:text-white transition transform hover:scale-110 flex items-center justify-center"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg"
-           class="w-5 h-5"
-           fill="currentColor"
-           viewBox="0 0 24 24">
-        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/>
-        <path fill-rule="evenodd"
-              d="M12 14c-4.418 0-8 1.79-8 4v2h16v-2c0-2.21-3.582-4-8-4z"
-              clip-rule="evenodd"/>
-      </svg>
-    </button>
+          </td>
 
-    <!-- Register -->
-    <button
-      (click)="openRegisterUser(Company.id!)"
-      title="Register User"
-      class="cursor-pointer w-9 h-9 rounded-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition transform hover:scale-110 flex items-center justify-center"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg"
-           class="w-5 h-5"
-           fill="none"
-           viewBox="0 0 24 24"
-           stroke="currentColor">
-        <path stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m0 0v10a2 2 0 01-2 2H5a2 2 0 01-2-2V8m18 0L12 13 3 8"/>
-      </svg>
-    </button>
+          <!-- Actions -->
+          <td class="px-6 py-4">
+            <div class="flex justify-center gap-3">
 
-    <!-- Approve -->
-    <button
-      (click)="openApproveModal(Company.id!)"
-      title="Approve"
-      class="cursor-pointer w-9 h-9 rounded-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition transform hover:scale-110 flex items-center justify-center"
-    >
-      ✔
-    </button>
+              <!-- View -->
+              <button (click)="openCompanyProfile(Company.id!)" title="View Profile"
+                class="cursor-pointer w-9 h-9 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition transform hover:scale-110 flex items-center justify-center">
+                👁
+              </button>
+
+              <!-- Users -->
+              <button (click)="openUsersList(Company.id!)" title="Users List"
+                class="cursor-pointer w-9 h-9 rounded-full bg-orange-50 text-orange-500 hover:bg-orange-500 hover:text-white transition transform hover:scale-110 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z" />
+                  <path fill-rule="evenodd" d="M12 14c-4.418 0-8 1.79-8 4v2h16v-2c0-2.21-3.582-4-8-4z"
+                    clip-rule="evenodd" />
+                </svg>
+              </button>
+
+              <!-- Register -->
+              <button (click)="openRegisterUser(Company.id!)" title="Register User"
+                class="cursor-pointer w-9 h-9 rounded-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition transform hover:scale-110 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m0 0v10a2 2 0 01-2 2H5a2 2 0 01-2-2V8m18 0L12 13 3 8" />
+                </svg>
+              </button>
+
+              <!-- Approve -->
+              <button (click)="openApproveModal(Company.id!)" title="Approve"
+                class="cursor-pointer w-9 h-9 rounded-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition transform hover:scale-110 flex items-center justify-center">
+                ✔
+              </button>
+
+            </div>
+          </td>
+
+        </tr>
+
+
+        <!-- Empty -->
+        <tr *ngIf="!loading && filteredCompany.length === 0">
+          <td colspan="6" class="text-center py-10 text-gray-500">
+            No Company found
+          </td>
+        </tr>
+
+      </tbody>
+
+    </table>
 
   </div>
-</td>
+  <!-- Footer -->
+  <div class="ng-container">
+    <div *ngIf="!loading && company.length > 0"
+      class="flex justify-between items-center bg-white p-4 rounded-xl shadow">
 
-      </tr>
+      <span class="text-sm text-gray-500">
+        Showing {{ filteredCompany.length }} of {{ company.length }} companies
+      </span>
 
+      <div class="flex gap-2">
+        <button class="px-4 py-1 border rounded-lg text-gray-600 hover:bg-gray-100">
+          Prev
+        </button>
+        <button class="px-4 py-1 border rounded-lg text-gray-600 hover:bg-gray-100">
+          Next
+        </button>
+      </div>
 
-      <!-- Empty -->
-      <tr *ngIf="!loading && filteredCompany.length === 0">
-        <td colspan="6" class="text-center py-10 text-gray-500">
-          No Company found
-        </td>
-      </tr>
-
-    </tbody>
-
-  </table>
-
-</div>
-<!-- Footer -->
- <div class="ng-container">
-  <div *ngIf="!loading && company.length > 0"
-       class="flex justify-between items-center bg-white p-4 rounded-xl shadow">
-
-    <span class="text-sm text-gray-500">
-      Showing {{ filteredCompany.length }} of {{ company.length }} companies
-    </span>
-
-    <div class="flex gap-2">
-      <button class="px-4 py-1 border rounded-lg text-gray-600 hover:bg-gray-100">
-        Prev
-      </button>
-      <button class="px-4 py-1 border rounded-lg text-gray-600 hover:bg-gray-100">
-        Next
-      </button>
     </div>
-
   </div>
-</div>
-

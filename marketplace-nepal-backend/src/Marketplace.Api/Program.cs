@@ -106,6 +106,12 @@ builder.Services.AddControllers(options =>
 {
     // Apply global authorize filter - controllers can opt-out using [AllowAnonymous]
     options.Filters.Add(new AuthorizeFilter(requireAuthenticatedPolicy));
+})
+.AddJsonOptions(options =>
+{
+    // Use camelCase for all JSON responses (e.g., 'data' instead of 'Data', 'totalCount' instead of 'TotalCount')
+    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
 });
 
 // --- Swagger/OpenAPI with JWT support ---

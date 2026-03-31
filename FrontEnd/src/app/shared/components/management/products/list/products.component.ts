@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { ApproveProductComponent } from '../approve/approve-product.component';
+import { ProductFormComponent } from '../form/product-form.component';
 import { PaginationComponent } from '../../Pagination/app-pagination.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule, FormGroup } from '@angular/forms';
@@ -10,6 +11,7 @@ import type { ImportStatusResponse, Product as ProductBase } from '../../../../s
 import { Category, CategoryService, Users, StaticValueCatalog, StaticValueService, StaticValue } from '../../../../services/management/management.service';
 import { environment } from '../../../../../../environments/environment';
 import { ProductListPopupComponent } from '../../../CustomComponents/ProductList/product-list-popup.component';
+import { CategorySidebarComponent } from '../../categories/sidebar/category-sidebar.component';
 import { HttpEvent, HttpEventType, HttpClient } from '@angular/common/http';
 import { interval } from 'rxjs';
 import { switchMap, takeWhile } from 'rxjs/operators';
@@ -20,7 +22,7 @@ type Product = ProductBase & { selected?: boolean };
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ApproveProductComponent, PaginationComponent,ProductListPopupComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ApproveProductComponent, ProductFormComponent, PaginationComponent, ProductListPopupComponent, CategorySidebarComponent],
   templateUrl:'./products.component.html',
   styleUrls: ['./products.component.css']
 })
@@ -47,25 +49,40 @@ export class ProductsComponent implements OnInit {
   brandMap = new Map<number, string>();
   loadings: boolean = false;
   isPanelOpen: boolean = false;
+  mobileSidebarOpen: boolean = false;
 
   progress = 0;
   rowsInserted = 0;
   uploadMessage = '';
 
-  // Bulk selection flags
   allSelected = false;
   canBulkApprove = false;
+  showProductFormModal = false;
+  editProductId: number | null = null;
 
   // Pagination
   currentPage = 1;
-  pageSize = 20;
+  pageSize = 10;
   totalCount = 0;
   totalPages = 0;
 
   Math = Math;
-  alertMessage = '';
-  alertType: 'success' | 'error' | null = null;
-    tempOrderItems: any[] = [];
+  snackbar: { show: boolean; message: string; type: 'success' | 'error' | 'warning' } = { show: false, message: '', type: 'success' };
+  tempOrderItems: any[] = [];
+  selectedCategoryId: number | null = null;
+  sortColumn: string = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
+  isMyProducts: boolean = false;
+  
+  stats = {
+    myProductsCount: 0,
+    waitingApprovalCount: 0,
+    globalCatalogCount: 0,
+    topBrands: [] as any[],
+    topManufacturers: [] as any[]
+  };
+  selectedBrandId: number | null = null;
+  selectedManufacturerId: number | null = null;
 
   constructor(
     private productService: ProductService,
@@ -78,30 +95,125 @@ export class ProductsComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.fetchStats();
     this.loadProducts();
     this.loadCategoryTree();
     this.loadBrandStaticValues();
+
+    // Check for snackbar from navigation state
+    const nav = this.router.getCurrentNavigation();
+    const stateSnackbar = nav?.extras?.state?.['snackbar'] || 
+                         (window.history.state?.['snackbar']); // Fallback for some Angular versions
+
+    if (stateSnackbar) {
+      this.showSnackbar(stateSnackbar.message, stateSnackbar.success ? 'success' : 'error');
+    }
+  }
+
+  showSnackbar(message: string, type: 'success' | 'error' | 'warning' = 'success', duration: number = 5000) {
+    this.snackbar = { show: true, message, type };
+    setTimeout(() => {
+      this.snackbar.show = false;
+      this.cdr.detectChanges();
+    }, duration);
+    this.cdr.detectChanges();
   }
 
   // ----------------------
+  
+  fetchStats() {
+    let companyId: number | null = null;
+    if (this.isMyProducts) {
+      try {
+        const claimsStr = localStorage.getItem('userClaims');
+        if (claimsStr) {
+          const claims = JSON.parse(claimsStr);
+          companyId = claims.company_id ? Number(claims.company_id) : null;
+        }
+      } catch (e) {}
+    }
+
+    this.productService.getDashboardStats(this.isMyProducts, companyId).subscribe({
+      next: (res: any) => {
+        const data = res.result || res;
+        this.stats = {
+          globalCatalogCount: data.globalCatalogCount || 0,
+          myProductsCount: data.myProductsCount || 0,
+          waitingApprovalCount: data.waitingApprovalCount || 0,
+          topBrands: data.topBrands || [],
+          topManufacturers: data.topManufacturers || []
+        };
+        this.cdr.detectChanges(); // Force immediate UI update for name/count changes
+      },
+      error: () => console.log('Failed to load dashboard stats')
+    });
+  }
+
+  // ----------------------
+  // Modal Handlers
+  // ----------------------
+  openAddProductModal() {
+    this.showProductFormModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeProductFormModal() {
+    this.showProductFormModal = false;
+    this.editProductId = null;
+    this.cdr.detectChanges();
+  }
+
+  onProductSaved() {
+    const msg = this.editProductId
+      ? 'Product updated successfully!'
+      : 'Product added successfully!';
+    this.showSnackbar(msg);
+    this.loadProducts();
+    this.fetchStats();
+    this.showProductFormModal = false;
+    this.editProductId = null;
+    this.cdr.detectChanges();
+  }
   // Load products & pagination
   // ----------------------
   loadProducts() {
     this.loading = true;
-    this.productService.getProducts(this.currentPage, this.pageSize).subscribe({
-      next: (response: any) => {
-        this.products = response.result.map((p: Product) => ({
-          ...p,
-          imageUrl: this.getImageUrl(p.imageName)
-        }));
-        this.filteredProducts = [...this.products];
-        this.totalCount = this.products.length;
-        this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+
+    let companyId: number | null = null;
+    if (this.isMyProducts) {
+      try {
+        const claimsStr = localStorage.getItem('userClaims');
+        if (claimsStr) {
+          const claims = JSON.parse(claimsStr);
+          companyId = claims.company_id ? Number(claims.company_id) : null;
+        }
+      } catch (e) {
+        console.error('Error parsing userClaims:', e);
+      }
+    }
+
+    this.productService.getProducts(this.currentPage, this.pageSize, this.selectedCategoryId, this.isMyProducts, companyId, this.selectedBrandId, this.selectedManufacturerId).subscribe({
+      next: (pagedData: any) => {
+        if (pagedData && pagedData.data) {
+          this.products = pagedData.data.map((p: Product) => ({
+            ...p,
+            imageUrl: this.getImageUrl(p.imageName)
+          }));
+          this.filteredProducts = [...this.products];
+          this.totalCount = pagedData.totalCount ?? 0;
+          this.totalPages = Math.ceil(this.totalCount / this.pageSize);
+        } else {
+          this.products = [];
+          this.filteredProducts = [];
+        }
         this.loading = false;
+        this.fetchStats(); // Update stats as well
+        this.cdr.markForCheck();
       },
       error: err => {
         console.error('Error loading products:', err);
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -121,6 +233,38 @@ getBrandName(brandId?: number | null): string {
     this.pageSize = newSize;
     this.currentPage = 1;
     this.loadProducts();
+  }
+
+  onSidebarCategorySelect(id: number | null) {
+    this.selectedCategoryId = id;
+    this.selectedBrandId = null; 
+    this.selectedManufacturerId = null;
+    this.currentPage = 1;
+    this.loadProducts();
+  }
+
+  onSidebarBrandSelect(brandId: number) {
+    this.selectedBrandId = brandId;
+    this.selectedCategoryId = null; 
+    this.selectedManufacturerId = null;
+    this.currentPage = 1;
+    this.loadProducts();
+  }
+
+  onSidebarManufacturerSelect(mId: number) {
+    this.selectedManufacturerId = mId;
+    this.selectedCategoryId = null;
+    this.selectedBrandId = null;
+    this.currentPage = 1;
+    this.loadProducts();
+  }
+
+  toggleMyProducts(isMy: boolean) {
+    this.isMyProducts = isMy;
+    this.currentPage = 1;
+    this.selectedCategoryId = null;
+    this.loadProducts();
+    this.fetchStats(); // Refresh dashboard counts for the new mode
   }
 
   // ----------------------
@@ -174,8 +318,7 @@ onFileSelected(event: any) {
 uploadCSV(selectedFile: File) {
 
   if (!selectedFile) {
-    this.alertType = 'error';
-    this.alertMessage = 'CSV upload failed.';
+    this.showSnackbar('CSV upload failed.', 'error');
     return;
   }
 
@@ -188,14 +331,11 @@ uploadCSV(selectedFile: File) {
       const statusUrl = response?.result?.jobId;
 
       if (!statusUrl) {
-        this.alertType = 'success';
-        this.alertMessage = 'File uploaded successfully.';
+        this.showSnackbar('File uploaded successfully.', 'success');
         return;
       }
 
-      this.alertType = 'success';
-      this.alertMessage = 'CSV uploaded. Processing started...';
-
+      this.showSnackbar('CSV uploaded. Processing started...', 'success');
       this.isPanelOpen = false;
 
       // Start checking job status
@@ -204,10 +344,8 @@ uploadCSV(selectedFile: File) {
 
     error: (err) => {
       console.error(err);
-
       this.loading = false;
-      this.alertType = 'error';
-      this.alertMessage = 'CSV upload failed.';
+      this.showSnackbar('CSV upload failed.', 'error');
       this.isPanelOpen = false;
     }
   });
@@ -278,35 +416,25 @@ onApproveSave(event: { status: string; reason?: string }) {
 
       // Optionally, you can fetch the product list from the server again to ensure data is in sync
       this.refreshProductList();  // Re-fetch to ensure data is updated
+      this.fetchStats();          // Re-fetch global stats to ensure consistency
 
       // Close the modal after the operation is done
       this.showApproveModal = false;
+
+      const msg = event.status === 'Approved' ? 'Product approved successfully!' : 'Product rejected.';
+      const type = event.status === 'Approved' ? 'success' : 'warning';
+      this.showSnackbar(msg, type);
     },
     error: (err) => {
       console.error('Error updating product status:', err);
+      this.showSnackbar('Operation failed', 'error');
     },
   });
 }
 
 // Method to refresh the product list (fetching from the server)
 refreshProductList() {
-  this.productService.getProducts(this.currentPage, this.pageSize).subscribe({
-    next: (response: any) => {
-      // Update the local list with the fetched data
-      this.products = response.result.map((p: Product) => ({
-        ...p,
-        imageUrl: this.getImageUrl(p.imageName),
-      }));
-      this.filteredProducts = [...this.products]; // Update filtered products
-
-      // Recalculate pagination
-      this.totalCount = this.products.length;
-      this.totalPages = Math.ceil(this.totalCount / this.pageSize);
-    },
-    error: (err) => {
-      console.error('Error refreshing product list:', err);
-    },
-  });
+  this.loadProducts();
 }
 
 onApproveCancel() {
@@ -368,10 +496,13 @@ downloadTemplate() {
         this.canBulkApprove = false;
         this.allSelected = false;
         this.loading = false;
+        this.fetchStats();
+        this.showSnackbar(`${selectedProducts.length} products approved successfully!`, 'success');
       },
       error: err => {
         console.error('Bulk approve failed', err);
         this.loading = false;
+        this.showSnackbar('Bulk approve failed', 'error');
       }
     });
   }
@@ -390,8 +521,11 @@ getImageUrl(imageName?: string): string {
   }
 
   onSearch() {
+    const term = (this.searchTerm || '').toLowerCase();
     this.filteredProducts = this.products.filter(p =>
-      p.name.toLowerCase().includes(this.searchTerm.toLowerCase())
+      p.name.toLowerCase().includes(term) ||
+      this.getBrandName(p.brandId).toLowerCase().includes(term) ||
+      this.getCategoryName(p.categoryId).toLowerCase().includes(term)
     );
   }
 
@@ -408,7 +542,27 @@ getImageUrl(imageName?: string): string {
 }
 
   goToEditProduct(id: number) {
-    this.router.navigate(['/management/products/edit', id]);
+    this.editProductId = id;
+    this.showProductFormModal = true;
+    this.cdr.detectChanges();
+  }
+
+  deleteProduct(product: Product) {
+    if (!product.id) return;
+    
+    if (confirm(`Are you sure you want to delete "${product.name}"?`)) {
+      this.productService.deleteProduct(product.id).subscribe({
+        next: () => {
+          this.showSnackbar('Product deleted successfully', 'success');
+          this.loadProducts();
+          this.fetchStats();
+        },
+        error: (err) => {
+          console.error('Delete error:', err);
+          this.showSnackbar('Error deleting product. It might be linked to orders.', 'error');
+        }
+      });
+    }
   }
   openProductListPopup(product: Product) {
   this.ui.openProductList(
@@ -417,79 +571,102 @@ getImageUrl(imageName?: string): string {
     'list' // or 'table' or 'scroll'
   );
 }
-closeAlert() {
-  this.alertType = null;
-  this.alertMessage = '';
-}
+  onSort(column: string) {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
 
-checkImportStatus(jobId: string) {
-  const pollInterval = 3000; // 3 seconds
-  const timer$ = interval(pollInterval);
+    this.filteredProducts.sort((a, b) => {
+      let valA: any;
+      let valB: any;
 
-  const subscription = timer$
-    .pipe(
-      switchMap(() => this.productService.importStatus(jobId)),
-      takeWhile(
-        (res: ImportStatusResponse) =>
-          res.result?.status !== 'Completed' && res.result?.status !== 'Failed',
-        true
-      )
-    )
-    .subscribe({
-      next: (res: ImportStatusResponse) => {
-        const errors: string[] = res.result?.errors || [];
-
-        // Separate warnings (duplicates) vs real errors
-        const warnings: string[] = errors.filter((e: string) =>
-          e.includes('already exists')
-        );
-        const realErrors: string[] = errors.filter((e: string) =>
-          !e.includes('already exists')
-        );
-
-        if (res.result?.status === 'Completed') {
-          this.alertType = 'success';
-          this.alertMessage = `CSV import completed successfully. Processed: ${res.result?.processed ?? 0}/${res.result?.total ?? 0}`;
-
-          // Append warnings to alert message
-if (warnings.length > 0) {
-  this.alertMessage += ` Warnings: ${warnings.join('; ')}`;
-}
-
-// Show real errors if there are any
-if (realErrors.length > 0) {
-  this.alertType = 'error';
-  this.alertMessage = `CSV import failed. Errors: ${realErrors.join('; ')}`;
-}
-          subscription.unsubscribe();
-          this.loadProducts();
-        }
-
-        if (res.result?.status === 'Failed') {
-          this.alertType = 'error';
-          this.alertMessage = `CSV import failed.`;
-
-          if (realErrors.length) {
-            this.alertMessage += ` Errors: ${realErrors.join('; ')}`;
-          }
-
-          if (warnings.length > 0) {
-  const cleanedWarnings = warnings.map(w => {
-    const index = w.indexOf(':');
-    return index !== -1 ? w.substring(index + 1).trim() : w;
-  });
-
-  this.alertMessage += ` Warnings: ${cleanedWarnings.join('; ')}`;
-}
-          subscription.unsubscribe();
-        }
-      },
-      error: (err: any) => {
-        console.error('Status check error:', err);
-        this.alertType = 'error';
-        this.alertMessage = 'Error checking import status.';
-        subscription.unsubscribe();
+      switch (column) {
+        case 'name':
+          valA = a.name?.toLowerCase() || '';
+          valB = b.name?.toLowerCase() || '';
+          break;
+        case 'category':
+          valA = this.getCategoryName(a.categoryId).toLowerCase();
+          valB = this.getCategoryName(b.categoryId).toLowerCase();
+          break;
+        case 'brand':
+          valA = this.getBrandName(a.brandId).toLowerCase();
+          valB = this.getBrandName(b.brandId).toLowerCase();
+          break;
+        case 'rate':
+          valA = a.rate || 0;
+          valB = b.rate || 0;
+          break;
+        case 'status':
+          valA = (a.status || 'Pending').toLowerCase();
+          valB = (b.status || 'Pending').toLowerCase();
+          break;
+        default:
+          return 0;
       }
+
+      if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
+      return 0;
     });
-}
+    this.cdr.detectChanges();
+  }
+  checkImportStatus(jobId: string) {
+    const pollInterval = 3000;
+    const timer$ = interval(pollInterval);
+
+    const subscription = timer$
+      .pipe(
+        switchMap(() => this.productService.importStatus(jobId)),
+        takeWhile(
+          (res: ImportStatusResponse) =>
+            res.result?.status !== 'Completed' && res.result?.status !== 'Failed',
+          true
+        )
+      )
+      .subscribe({
+        next: (res: ImportStatusResponse) => {
+          if (res?.result?.status === 'Completed') {
+            const errors: string[] = res.result.errors || [];
+            const duplicates = errors.filter(e => e.toLowerCase().includes('already exists'));
+            const realErrors = errors.filter(e => !e.toLowerCase().includes('already exists'));
+            
+            const processedCount = res.result.processed || 0;
+            const totalCount = res.result.total || 0;
+
+            let message = `${processedCount} product(s) inserted successfully.`;
+            
+            if (duplicates.length > 0) {
+              message += ` ${duplicates.length} skipped (duplicates found).`;
+              // Try to extract a clean message from the first duplicate error
+              const firstDup = duplicates[0].includes(':') 
+                ? duplicates[0].split(':').slice(1).join(':').trim() 
+                : duplicates[0];
+              message += ` Example: ${firstDup}`;
+            }
+
+            if (realErrors.length > 0) {
+              message += ` ${realErrors.length} other errors occurred.`;
+            }
+
+            // Show for longer (10s) since it contains detail
+            this.showSnackbar(message, realErrors.length === 0 ? 'success' : 'error', 10000);
+            
+            this.loadProducts();
+            subscription.unsubscribe();
+          } else if (res?.result?.status === 'Failed') {
+            this.showSnackbar('CSV import failed. Please check the file format.', 'error');
+            subscription.unsubscribe();
+          }
+        },
+        error: (err: any) => {
+          console.error('Status check error:', err);
+          this.showSnackbar('Error checking import status', 'error');
+          subscription.unsubscribe();
+        }
+      });
+  }
 }

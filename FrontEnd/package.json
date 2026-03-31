@@ -52,7 +52,7 @@
     "rxjs": "~7.8.0",
     "sweetalert2": "^11.26.17",
     "swiper": "^11.2.10",
-    "tslib": "^2.3.0",
+    "tslib": "^2.8.1",
     "zone.js": "~0.15.0"
   },
   "devDependencies": {
@@ -70,6 +70,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "picomatch": "^4.0.4",
     "postcss": "^8.5.6",
     "postcss-nested": "^7.0.2",
     "postcss-nesting": "^13.0.2",

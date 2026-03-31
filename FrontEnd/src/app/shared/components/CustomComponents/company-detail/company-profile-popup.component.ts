@@ -66,7 +66,7 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
     private ui: UiService,
     private sanitizer: DomSanitizer,
     private ngZone: NgZone
-  ) {}
+  ) { }
 
   /* ---------------------- LIFECYCLE ---------------------- */
 
@@ -83,7 +83,7 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
         this.map.off();
         this.map.remove();
       }
-    } catch {}
+    } catch { }
   }
 
   /* ---------------------- API CALL ---------------------- */
@@ -342,7 +342,7 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       try {
         this.map.invalidateSize();
-      } catch {}
+      } catch { }
     }, 100);
 
     this.mapInitialized = true;
@@ -385,19 +385,19 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
     });
   }
   downloadDocument(fileName?: string): void {
-  if (!fileName) return;
+    if (!fileName) return;
 
-  const url = this.getImageUrl(fileName);
+    const url = this.getImageUrl(fileName);
 
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  link.target = '_blank';
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.target = '_blank';
 
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
   /* ---------------------- CLOSE POPUP ---------------------- */
 

@@ -1,258 +1,248 @@
-
 <!-- Snackbar Notification -->
 <div *ngIf="snackbar.show"
-     [ngStyle]="{
-       'background-color': snackbar.success ? 'rgba(16, 185, 129, 0.85)' : 'rgba(220, 38, 38, 0.85)'
-     }"
-     class="fixed top-6 right-6 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-semibold transition-all duration-300 animate-fade-in">
-  {{ snackbar.message }}
-</div>
+  class="fixed top-6 right-6 z-[9999] min-w-[320px] max-w-md bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] border-l-4 p-4 flex gap-4 transition-all duration-300 animate-slide-in"
+  [ngClass]="snackbar.success ? 'border-green-500' : 'border-red-500'">
 
-<div class="min-h-screen bg-gray-100 flex items-center justify-center p-6">
-  <div class="w-full max-w-3xl bg-gray-50 shadow-xl rounded-2xl border border-gray-200  p-8 space-y-8">
-
-    <h2 class="text-3xl font-extrabold text-gray-800  text-center">
-      {{ editMode ? 'Update Product' : 'Add Product' }}
-    </h2>
-
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
-
-      <!-- Product Name -->
-      <div class="space-y-1">
-        <label class="block text-sm font-semibold text-gray-700 ">
-          Name <span class="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          formControlName="name"
-          placeholder="Enter product name"
-          class="w-full bg-gray-100 border border-gray-300  rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <span *ngIf="isFieldInvalid('name')" class="text-red-500 text-xs">
-          Name is required.
-        </span>
-      </div>
-
-      <!-- Product Details -->
-      <div class="space-y-1">
-        <label class="block text-sm font-semibold text-gray-700 ">
-          Details <span class="text-red-500">*</span>
-        </label>
-        <textarea
-          formControlName="description"
-          rows="3"
-          placeholder="Enter product description"
-          class="w-full bg-gray-100 border border-gray-300  rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        ></textarea>
-        <span *ngIf="isFieldInvalid('description')" class="text-red-500 text-xs">
-          Details is required.
-        </span>
-      </div>
-<!-- Product Images Upload -->
-<div class="space-y-3">
-  <label class="block text-sm font-semibold text-gray-700">
-    Upload Images
-  </label>
-
-  <p class="text-xs text-gray-500">
-    You can upload up to 8 images
-    ({{ productImages.length }}/8)
-  </p>
-
-  <div class="flex flex-wrap gap-4">
-
-    <!-- Add Image Box -->
-    <div
-      *ngIf="productImages.length < 8"
-      (click)="fileInput.click()"
-      class="w-32 h-32 border-2 border-dashed border-gray-300 
-             rounded-xl flex flex-col items-center justify-center 
-             cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition"
-    >
-      <span class="text-3xl text-gray-400">+</span>
-      <span class="text-xs text-gray-500 mt-1">Add a photo</span>
+  <div class="flex-shrink-0">
+    <div *ngIf="snackbar.success"
+      class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+      </svg>
     </div>
-
-    <!-- Image Thumbnails -->
-    <div
-      *ngFor="let img of productImages; let i = index"
-      class="w-32"
-    >
-      <div class="relative w-32 h-32 rounded-xl overflow-hidden border">
-
-        <!-- Image -->
-        <img
-          [src]="img.previewUrl"
-          class="w-full h-full object-cover"
-        />
-
-        <!-- Delete Icon -->
-        <button
-  type="button"
-  (click)="removeImage(img.previewUrl)"
-  class="absolute top-2 right-2 bg-white rounded-full p-2 shadow 
-         hover:bg-red-100 hover:text-red-600 transition duration-150"
->
-  <!-- Clean trash bin icon -->
-  <svg xmlns="http://www.w3.org/2000/svg"
-       class="h-5 w-5 text-gray-700"
-       fill="currentColor"
-       viewBox="0 0 24 24">
-    <path d="M9 3V4H4V6H5V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V6H20V4H15V3H9ZM7 6H17V19H7V6Z"/>
-  </svg>
-</button>
-      </div>
-
-      <!-- Set Default -->
-      <div class="flex items-center mt-2 space-x-2">
-        <input
-          type="checkbox"
-          [checked]="img.isDefault"
-          (change)="setDefaultImage(i)"
-          class="accent-blue-600"
-        />
-        <span class="text-xs text-gray-600">Set as default</span>
-      </div>
+    <div *ngIf="!snackbar.success"
+      class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+      </svg>
     </div>
   </div>
 
-  <!-- Hidden Input -->
-  <input
-    #fileInput
-    type="file"
-    multiple
-    accept="image/*"
-    class="hidden"
-    (change)="onMultipleImageChange($event)"
-  />
+  <div class="flex-grow">
+    <div class="flex justify-between items-start">
+      <h3 class="text-sm font-bold" [ngClass]="snackbar.success ? 'text-green-800' : 'text-red-800'">
+        {{ snackbar.success ? 'Success!' : 'Error!' }}
+      </h3>
+      <button (click)="snackbar.show = false" class="text-gray-400 hover:text-gray-600">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <p class="text-xs text-gray-500 mt-1 font-medium leading-relaxed">
+      {{ snackbar.message }}
+    </p>
+  </div>
 </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- Product Rate -->
-        <div class="space-y-1">
-            <label class="block text-sm font-semibold text-gray-700 ">
-               Rate <span class="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              formControlName="rate"
-              placeholder="Rate"
-              min="0"
-              step="1"
-              pattern="\d*"
-              inputmode="numeric"
-              class="w-full bg-gray-100 border border-gray-300  rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 no-spinner"
-            />
-            <span *ngIf="isFieldInvalid('rate')" class="text-red-500 text-xs">
-             Rate is required.
-            </span>
+
+<!-- Product Form Modal / Full Page Container -->
+<div [class.min-h-screen]="!isModal" [class.bg-[#f3f6fa]]="!isModal"
+  class="flex flex-col items-center justify-center overflow-hidden">
+
+  <div class="flex flex-col w-full relative" [class.max-w-4xl]="!isModal" [class.bg-white]="true"
+    [class.shadow-2xl]="!isModal" [class.rounded-2xl]="true" [class.border]="!isModal"
+    [class.border-indigo-50/60]="!isModal" [class.max-h-[95vh]]="isModal" [class.h-full]="!isModal"
+    [class.h-auto]="isModal" [class.overflow-hidden]="isModal">
+
+    <!-- Sticky Header -->
+    <header
+      class="flex items-center justify-between px-8 py-3 border-b border-gray-100 flex-shrink-0 bg-white rounded-t-2xl z-20">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+          </svg>
+        </div>
+        <h2 class="text-xl font-black text-gray-900 tracking-tight">
+          {{ editMode ? 'Update Product' : 'Register New Product' }}
+        </h2>
+      </div>
+      <button *ngIf="isModal" (click)="closeModal.emit()"
+        class="p-2.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all active:scale-95">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </header>
+
+    <!-- Scrollable Body -->
+    <main class="flex-1 overflow-y-auto p-8 sm:p-10 custom-scrollbar">
+      <form [formGroup]="form" class="space-y-10">
+
+        <!-- Section: Basic Information -->
+        <section class="space-y-6">
+
+          <div class="space-y-1.5">
+            <label class="block text-sm font-bold text-gray-700">Product Name <span
+                class="text-red-500">*</span></label>
+            <input type="text" formControlName="name" placeholder="Enter product name..."
+              class="w-full bg-gray-50/50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium">
+            <span *ngIf="isFieldInvalid('name')" class="text-red-500 text-xs font-bold mt-1 block">Name is
+              required</span>
           </div>
 
-        <!-- HS Code -->
-        <div class="space-y-1">
-          <label class="block text-sm font-semibold text-gray-700 ">HS Code</label>
-           <input
-            type="text"
-            formControlName="hsCode"
-            placeholder="HS Code"
-            class="w-full bg-gray-100 border border-gray-300  rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-           />
+          <div class="space-y-1.5">
+            <label class="block text-sm font-bold text-gray-700">Description <span class="text-red-500">*</span></label>
+            <textarea formControlName="description" rows="3" placeholder="Briefly describe the product..."
+              class="w-full bg-gray-50/50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium resize-y min-h-[100px]"></textarea>
+            <span *ngIf="isFieldInvalid('description')" class="text-red-500 text-xs font-bold mt-1 block">Description is
+              required</span>
+          </div>
+        </section>
+
+        <!-- Section: Visuals -->
+        <section class="space-y-6">
+          <div
+            class="flex items-center gap-4 text-xs font-bold text-gray-400 uppercase tracking-widest pb-2 border-b border-gray-50">
+            <span>Product Gallery</span>
+            <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px]">{{ productImages.length }}/8
+              Images</span>
+          </div>
+
+          <div class="flex flex-wrap gap-4">
+            <!-- Add Image Box -->
+            <button type="button" *ngIf="productImages.length < 8" (click)="fileInput.click()"
+              class="w-32 h-32 border-2 border-dashed border-gray-200 bg-gray-50/50 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all group">
+              <div
+                class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                </svg>
+              </div>
+              <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Add Photo</span>
+            </button>
+
+            <!-- Image Thumbnails -->
+            <div *ngFor="let img of productImages; let i = index" class="relative group">
+              <div class="w-32 h-32 rounded-2xl overflow-hidden border border-gray-100 shadow-sm relative">
+                <img [src]="img.previewUrl" class="w-full h-full object-cover">
+                <div
+                  class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <button type="button" (click)="setDefaultImage(i)" [class.text-yellow-400]="img.isDefault"
+                    class="p-2 bg-white rounded-lg shadow hover:scale-110 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
+                      [attr.fill]="img.isDefault ? 'currentColor' : 'none'" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.382-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                    </svg>
+                  </button>
+                  <button type="button" (click)="removeImage(img.previewUrl)"
+                    class="p-2 bg-white text-red-600 rounded-lg shadow hover:scale-110 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div *ngIf="img.isDefault"
+                class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-yellow-400 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm">
+                Default</div>
+            </div>
+          </div>
+          <input #fileInput type="file" multiple accept="image/*" class="hidden"
+            (change)="onMultipleImageChange($event)">
+        </section>
+
+        <!-- Section: Specifications -->
+        <section class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-1.5">
+              <label class="block text-sm font-bold text-gray-700">Rate <span class="text-red-500">*</span></label>
+              <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">Rs.</span>
+                <input type="number" formControlName="rate" placeholder="0.00"
+                  class="w-full bg-gray-50/50 border border-gray-200 text-gray-900 rounded-xl pl-12 pr-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-bold tracking-tight">
+              </div>
+              <span *ngIf="isFieldInvalid('rate')" class="text-red-500 text-xs font-bold mt-1 block">Rate must be
+                greater than 0</span>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="block text-sm font-bold text-gray-700">HS Code</label>
+              <input type="text" formControlName="hsCode" placeholder="Enter HS code..."
+                class="w-full bg-gray-50/50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium">
+            </div>
+
+            <div class="col-span-full space-y-1.5">
+              <label class="block text-sm font-bold text-gray-700">Category <span class="text-red-500">*</span></label>
+              <app-category-dynamic [initialCategoryId]="selectedCategoryId"
+                (categorySelected)="onCategoryChosen($event)"></app-category-dynamic>
+              <span *ngIf="isFieldInvalid('categoryId')" class="text-red-500 text-xs font-bold mt-1 block">Category is
+                required</span>
+            </div>
+
+            <!-- Brand -->
+            <div class="space-y-1.5 relative">
+              <label class="block text-sm font-bold text-gray-700">Brand <span class="text-red-500">*</span></label>
+              <div class="relative">
+                <input type="text" [formControl]="brandControl" placeholder="Select brand..."
+                  (focus)="showBrandMenu = true"
+                  class="w-full bg-gray-50/50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium">
+                <button *ngIf="form.get('brandId')?.value" type="button" (click)="clearBrand()"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-600 transition-colors">✕</button>
+              </div>
+              <div *ngIf="showBrandMenu && filteredBrands.length > 0"
+                class="absolute z-[30] w-full bottom-full mb-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-48 overflow-auto py-2">
+                <button type="button" *ngFor="let brand of filteredBrands" (click)="selectBrand(brand)"
+                  class="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm font-medium text-gray-700 border-b border-gray-50 last:border-0">{{
+                  brand.staticValueKey }}</button>
+              </div>
+              <span *ngIf="isFieldInvalid('brandId')" class="text-red-500 text-xs font-bold mt-1 block">Brand is
+                required</span>
+            </div>
+
+            <!-- Manufacture -->
+            <div class="space-y-1.5 relative">
+              <label class="block text-sm font-bold text-gray-700">Manufacture <span
+                  class="text-red-500">*</span></label>
+              <div class="relative">
+                <input type="text" [formControl]="manufactureControl" placeholder="Select manufacture..."
+                  (focus)="showManufactureMenu = true"
+                  class="w-full bg-gray-50/50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium">
+                <button *ngIf="form.get('manufacturerId')?.value" type="button" (click)="clearManufacture()"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-600 transition-colors">✕</button>
+              </div>
+              <div *ngIf="showManufactureMenu && filteredManufacture.length > 0"
+                class="absolute z-[30] w-full bottom-full mb-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-48 overflow-auto py-2">
+                <button type="button" *ngFor="let m of filteredManufacture" (click)="selectManufacture(m)"
+                  class="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm font-medium text-gray-700 border-b border-gray-50 last:border-0">{{
+                  m.staticValueKey }}</button>
+              </div>
+              <span *ngIf="isFieldInvalid('manufacturerId')"
+                class="text-red-500 text-xs font-bold mt-1 block">Manufacture is required</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Global Error message -->
+        <div *ngIf="error"
+          class="p-4 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-700 font-bold text-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          {{ error }}
         </div>
-      </div>
+      </form>
+    </main>
 
-      <div class="space-y-1">
-  <!-- Category Dropdown -->
-  <div class="col-span-3 md:col-span-4 space-y-1 relative">
-    <label class="block text-sm font-semibold text-gray-700">
-      Category <span class="text-red-500">*</span>
-    </label>
-    <app-category-dynamic 
-    (categorySelected)="onCategoryChosen($event)">
-    </app-category-dynamic>
-    <span *ngIf="isFieldInvalid('categoryId')" class="text-red-500 text-xs">
-      Category is required.
-    </span>
-  </div>
-  </div>  
+    <!-- Sticky Footer -->
+    <footer
+      class="flex items-center justify-end gap-4 px-8 py-3 border-t border-gray-100 flex-shrink-0 bg-white rounded-b-2xl z-20">
+      <button type="button" (click)="goBack()"
+        class="px-8 py-3.5 text-sm font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-all active:scale-95">
+        Cancel
+      </button>
+      <button type="submit" (click)="onSubmit()" [disabled]="form.invalid || loading"
+        class="px-10 py-3.5 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center gap-3">
+        <span *ngIf="loading" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+        {{ loading ? 'Saving...' : (editMode ? 'Update Product' : 'Add Product') }}
+      </button>
+    </footer>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <!-- Brand -->
-<div class="space-y-1 relative">
-  <label class="block text-sm font-semibold text-gray-700">Brand <span class="text-red-500">*</span></label>
-  <input type="text"
-         [formControl]="brandControl"
-         placeholder="Select Brand"
-         class="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-         (focus)="showBrandMenu = true">
-  <button *ngIf="form.get('brandId')?.value"
-          type="button"
-          class="absolute right-2 top-1/2 text-gray-500 hover:text-red-600"
-          (click)="clearBrand()">✕</button>
-  <div *ngIf="showBrandMenu && filteredBrands.length > 0"
-       class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-auto">
-    <ul>
-      <li *ngFor="let brand of filteredBrands">
-        <button type="button" class="w-full text-left px-4 py-2 hover:bg-blue-100"
-                (click)="selectBrand(brand)">
-          {{ brand.staticValueKey }}
-        </button>
-      </li>
-    </ul>
-  </div>
-  <span *ngIf="isFieldInvalid('brandId')" class="text-red-500 text-xs">Brand is required.</span>
-</div>
-
-<!-- Manufacture -->
-<div class="space-y-1 relative">
-  <label class="block text-sm font-semibold text-gray-700">Manufacture <span class="text-red-500">*</span></label>
-  <input type="text"
-         [formControl]="manufactureControl"
-         placeholder="Select Manufacture"
-         class="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-         (focus)="showManufactureMenu = true">
-  <button *ngIf="form.get('manufacturerId')?.value"
-          type="button"
-          class="absolute right-2 top-1/2 text-gray-500 hover:text-red-600"
-          (click)="clearManufacture()">✕</button>
-  <div *ngIf="showManufactureMenu && filteredManufacture.length > 0"
-       class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-auto">
-    <ul>
-      <li *ngFor="let m of filteredManufacture">
-        <button type="button" class="w-full text-left px-4 py-2 hover:bg-blue-100"
-                (click)="selectManufacture(m)">
-          {{ m.staticValueKey }}
-        </button>
-      </li>
-    </ul>
-  </div>
-  <span *ngIf="isFieldInvalid('manufacturerId')" class="text-red-500 text-xs">Manufacture is required.</span>
-</div>
-      </div>
-      <!-- Error -->
-      <div *ngIf="error" class="text-red-600 font-medium text-sm p-3 bg-red-50 border border-red-300 rounded-lg">
-        {{ error }}
-      </div>      
-      <!-- Buttons -->
-      <div class="flex gap-4 justify-end">
-        <button
-          type="button"
-          (click)="goBack()"
-          class="bg-gray-500 hover:bg-gray-600 text-white font-bold px-6 py-2 rounded-lg shadow-md transition"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          [disabled]="form.invalid || loading"
-          class="px-6 py-2 rounded-lg font-bold shadow-md transition
-                 bg-blue-600 text-white
-                 hover:bg-blue-700
-                 disabled:bg-gray-400
-                 disabled:cursor-not-allowed
-                 disabled:hover:bg-gray-400"
-        >
-          {{ loading ? (editMode ? 'Updating...' : 'Saving...') : (editMode ? 'Update Product' : 'Save Product') }}
-        </button>
-      </div>
-    </form>
   </div>
 </div>

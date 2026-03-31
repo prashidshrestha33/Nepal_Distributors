@@ -8,7 +8,7 @@ import { CatagoryDynamicComponent } from '../../../CustomComponents/CatagoryDyna
   standalone: true,
   imports: [CommonModule, CatagoryDynamicComponent],
   template: `
-    <div *ngIf="isOpen" class="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center z-50">
+    <div *ngIf="isOpen" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div class="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full mx-4 animate-in fade-in duration-300">
 
         <!-- Header -->
@@ -28,7 +28,11 @@ import { CatagoryDynamicComponent } from '../../../CustomComponents/CatagoryDyna
         </div>
 
         <!-- Category Selection -->
-        <app-category-dynamic (categorySelected)="onCategoryChosen($event)"></app-category-dynamic>
+        <app-category-dynamic 
+          [initialCategoryId]="category?.parentId || 0"
+          [excludeCategoryIds]="[category?.id]"
+          (categorySelected)="onCategoryChosen($event)">
+        </app-category-dynamic>
 
         <!-- Buttons -->
         <div class="flex gap-3 mt-6">
@@ -70,17 +74,11 @@ export class CategoryMoveModalComponent implements OnInit {
 
   selectedCategoryId?: number;
 
-  ngOnInit() {}
+  ngOnInit() { }
 
   /** Emit selected category ID to parent */
   onSubmit(newParentId: number) {
     this.submit.emit(newParentId);
-    if(newParentId)
-    {
-      alert("This is moved");
-      
-    }
-    
     this.close.emit();
   }
 
