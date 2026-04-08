@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Category } from '../../../../services/management/management.service';
 
@@ -15,7 +15,7 @@ export interface SidebarBrand {
   templateUrl: './category-sidebar.component.html',
   styleUrls: ['./category-sidebar.component.css']
 })
-export class CategorySidebarComponent {
+export class CategorySidebarComponent implements OnInit, OnChanges {
   @Input() categories: Category[] = [];
   @Input() selectedCategoryId: number | null = null;
   @Input() topBrands: SidebarBrand[] = [];
@@ -26,6 +26,14 @@ export class CategorySidebarComponent {
 
   // Use a Set to track expanded parent categories
   expandedCategories: Set<number> = new Set<number>();
+
+  ngOnInit() {
+    console.log('CategorySidebarComponent categories:', this.categories);
+  }
+
+  ngOnChanges() {
+    console.log('CategorySidebarComponent categories changed:', this.categories);
+  }
 
   onSelectCategory(id: number | null) {
     this.categorySelected.emit(id);
