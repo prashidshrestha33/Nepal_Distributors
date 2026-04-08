@@ -5,12 +5,13 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CategoryService } from '../../../../services/management/management.service';
 import type { Category } from '../../../../services/management/management.service';
 import { CategoryMoveModalComponent } from '../move/category-move-modal.component';
+import { CategoryFormComponent } from '../form/category-form.component';
 import { environment } from '../../../../../../environments/environment';
 
 @Component({
   selector: 'app-categories',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, CategoryMoveModalComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, CategoryMoveModalComponent, CategoryFormComponent],
   templateUrl: './categories.component.html',
   styleUrl: './categories.component.css'
 })
@@ -28,6 +29,10 @@ export class CategoriesComponent implements OnInit {
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
   snackbar: { show: boolean; message: string; type: 'success' | 'error' | 'warning' } = { show: false, message: '', type: 'success' };
+
+  // Modal properties for add/edit category
+  showCategoryFormModal = false;
+  editCategoryId: number | null = null;
 
   // Pagination properties
   pageSize: number = 10;
@@ -172,6 +177,13 @@ export class CategoriesComponent implements OnInit {
   }
 
   /**
+   * Get total pages as a property for template binding
+   */
+  get totalPages(): number {
+    return this.getTotalPages();
+  }
+
+  /**
    * Get array of page numbers for pagination display
    */
   getPageNumbers(): number[] {
@@ -289,6 +301,37 @@ export class CategoriesComponent implements OnInit {
   }
 
   goToEdit(id: number) {
-    this.router.navigate(['/management/categories/edit', id]);
+    this.editCategoryId = id;
+    this.showCategoryFormModal = true;
+    this.cdr.markForCheck();
+  }
+
+  openAddCategoryModal() {
+    this.showCategoryFormModal = true;
+    this.editCategoryId = null;
+    this.cdr.markForCheck();
+  }
+
+  openEditCategoryModal(id: number) {
+    this.editCategoryId = id;
+    this.showCategoryFormModal = true;
+    this.cdr.markForCheck();
+  }
+
+  closeCategoryFormModal() {
+    this.showCategoryFormModal = false;
+    this.editCategoryId = null;
+    this.cdr.markForCheck();
+  }
+
+  onCategorySaved() {
+    const msg = this.editCategoryId
+      ? 'Category updated successfully!'
+      : 'Category created successfully!';
+    this.showSnackbar(msg, 'success');
+    this.load();
+    this.showCategoryFormModal = false;
+    this.editCategoryId = null;
+    this.cdr.markForCheck();
   }
 }
