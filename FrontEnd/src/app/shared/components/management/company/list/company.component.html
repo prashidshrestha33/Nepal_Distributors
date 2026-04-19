@@ -1,61 +1,54 @@
 <div class="p-4 space-y-6 bg-gray-50 min-h-screen">
 
-  <!-- Header -->
-  <div class="flex items-center justify-between">
-    <div>
-      <h1 class="text-3xl font-bold text-gray-800">Company Management</h1>
-      <p class="text-gray-500">Manage, edit and monitor all partner organizations.</p>
-    </div>
-
-    <!-- <button
-      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow">
-      + Add New Company
-    </button> -->
-  </div>
-
   <!-- Stats -->
+   <div>
+    <h1 class="text-gray-900 font-bold text-base sm:text-lg tracking-tight">Company Info</h1>
+   </div>
   <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-
-    <div class="bg-white rounded-xl shadow p-6 border-l-4 border-gray-400">
+    
+    <div class="bg-white p-3 sm:p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between group hover:border-orange-100 transition-colors">
       <p class="text-sm text-gray-500">TOTAL COMPANIES</p>
-      <p class="text-3xl font-bold">128</p>
+      <p class="text-3xl font-bold">0</p>
     </div>
 
-    <div class="bg-white rounded-xl shadow p-6 border-l-4 border-yellow-400">
+    <div class="bg-white p-3 sm:p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between group hover:border-orange-100 transition-colors">
       <p class="text-sm text-gray-500">PENDING APPROVAL</p>
-      <p class="text-3xl font-bold">12</p>
+      <p class="text-3xl font-bold">0</p>
     </div>
 
-    <div class="bg-white rounded-xl shadow p-6 border-l-4 border-green-500">
+    <div class="bg-white p-3 sm:p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between group hover:border-orange-100 transition-colors">
       <p class="text-sm text-gray-500">ACTIVE PARTNERS</p>
-      <p class="text-3xl font-bold">114</p>
+      <p class="text-3xl font-bold">0</p>
     </div>
 
-    <div class="bg-white rounded-xl shadow p-6 border-l-4 border-blue-500">
+    <div class="bg-white p-3 sm:p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between group hover:border-orange-100 transition-colors">
       <p class="text-sm text-gray-500">NEW THIS MONTH</p>
-      <p class="text-3xl font-bold text-blue-600">+8</p>
+      <p class="text-3xl font-bold text-blue-600">0</p>
     </div>
 
   </div>
 
   <!-- Search -->
-  <div class="bg-white p-4 rounded-xl shadow flex items-center justify-between">
-
-    <div class="flex items-center gap-3 w-full">
-      <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M21 21l-4.35-4.35m2.1-5.4a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" />
-      </svg>
-
+    <div class="relative w-full max-w-6xl mx-auto">
+      <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+        <svg class="w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M21 21l-4.35-4.35m2.1-5.4a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" />
+        </svg>
+      </div>
       <input type="text" placeholder="Search by name, contact person, or phone number..." [(ngModel)]="searchTerm"
-        (keyup)="onSearch()" class="w-full outline-none text-gray-700">
+        (keyup)="onSearch()"
+        class="w-full pl-12 pr-4 py-3 sm:py-3.5 bg-white border border-gray-200 rounded-[1.125rem] text-sm font-semibold text-gray-900 shadow-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:outline-none transition-all placeholder:text-gray-400" />
     </div>
 
-    <button class="ml-4 px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-100">
-      Filter
-    </button>
-
+  <!-- Error State -->
+  <div *ngIf="error" class="bg-red-50 border border-red-200 p-4 rounded-xl text-red-700 flex items-center gap-3 max-w-6xl mx-auto">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span class="text-sm font-semibold">{{ error }}</span>
   </div>
+
   <!-- SUCCESS MODAL -->
   <div *ngIf="successModal2" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
 
@@ -234,29 +227,56 @@
       </div>
     </div>
   </div>
-  <div class="bg-white rounded-xl shadow border overflow-hidden">
+  <div class="bg-white rounded-[1.25rem] border border-gray-200 shadow-sm relative flex flex-col overflow-hidden">
+    <div *ngIf="loading"
+      class="absolute inset-0 bg-white/60 backdrop-blur-sm z-20 flex flex-col items-center justify-center">
+      <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      <span class="mt-4 text-sm font-bold text-gray-900 tracking-tight">Syncing Data...</span>
+    </div>
 
-    <table class="w-full text-sm">
+    <div class="overflow-x-auto w-full">
+      <table class="w-full text-left border-collapse whitespace-nowrap">
 
-      <!-- Header -->
-      <thead class="bg-gray-100 text-gray-600 uppercase text-xs tracking-wider">
-        <tr>
-          <th class="px-6 py-4 text-left">Company Name</th>
-          <th class="px-6 py-4 text-left">Type</th>
-          <th class="px-6 py-4 text-left">Credits</th>
-          <th class="px-6 py-4 text-left">Status</th>
-          <th class="px-6 py-4 text-left">Approved on</th>
-          <th class="px-6 py-4 text-center">Actions</th>
-        </tr>
-      </thead>
+        <!-- Header -->
+        <thead>
+          <tr class="bg-gray-50 border-b border-gray-200">
+            <th class="px-4 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-left cursor-pointer hover:bg-gray-100 transition-colors group select-none" (click)="onSort('name')">
+              <div class="flex items-center gap-1">
+                Company Name
+                <span class="text-gray-400 group-hover:text-blue-500" *ngIf="sortColumn !== 'name'">↕</span>
+                <span class="text-blue-600" *ngIf="sortColumn === 'name' && sortDirection === 'asc'">↑</span>
+                <span class="text-blue-600" *ngIf="sortColumn === 'name' && sortDirection === 'desc'">↓</span>
+              </div>
+            </th>
+            <th class="px-4 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-left cursor-pointer hover:bg-gray-100 transition-colors group select-none" (click)="onSort('companyType')">
+              <div class="flex items-center gap-1">
+                Type
+                <span class="text-gray-400 group-hover:text-blue-500" *ngIf="sortColumn !== 'companyType'">↕</span>
+                <span class="text-blue-600" *ngIf="sortColumn === 'companyType' && sortDirection === 'asc'">↑</span>
+                <span class="text-blue-600" *ngIf="sortColumn === 'companyType' && sortDirection === 'desc'">↓</span>
+              </div>
+            </th>
+            <th class="px-4 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-left">Credits</th>
+            <th class="px-4 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-left cursor-pointer hover:bg-gray-100 transition-colors group select-none" (click)="onSort('status')">
+              <div class="flex items-center gap-1">
+                Status
+                <span class="text-gray-400 group-hover:text-blue-500" *ngIf="sortColumn !== 'status'">↕</span>
+                <span class="text-blue-600" *ngIf="sortColumn === 'status' && sortDirection === 'asc'">↑</span>
+                <span class="text-blue-600" *ngIf="sortColumn === 'status' && sortDirection === 'desc'">↓</span>
+              </div>
+            </th>
+            <th class="px-4 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-left">Approved on</th>
+            <th class="px-4 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">Actions</th>
+          </tr>
+        </thead>
 
       <!-- Body -->
       <tbody class="divide-y">
 
-        <tr *ngFor="let Company of filteredCompany" class="hover:bg-gray-50 transition">
+        <tr *ngFor="let Company of filteredCompany | slice: (currentPage - 1) * itemsPerPage : currentPage * itemsPerPage" class="hover:bg-gray-50 transition">
 
           <!-- Company Identity -->
-          <td class="px-6 py-4">
+          <td class="px-4 py-4">
 
             <div class="flex items-center gap-4">
 
@@ -283,7 +303,7 @@
 
 
           <!-- Type -->
-          <td class="px-6 py-4">
+          <td class="px-4 py-4">
 
             <span class="px-3 py-1 rounded-full text-xs font-semibold" [ngClass]="{
               'bg-gray-200 text-gray-700': Company.companyType === 'manufacturer',
@@ -298,7 +318,7 @@
 
 
           <!-- Credits -->
-          <td class="px-6 py-4">
+          <td class="px-4 py-4">
 
             <div class="font-semibold text-gray-800">
               {{ Company.credits }}
@@ -317,7 +337,7 @@
 
 
           <!-- Status -->
-          <td class="px-6 py-4">
+          <td class="px-4 py-4">
 
             <span class="px-3 py-1 rounded-full text-xs font-semibold" [ngClass]="{
     'bg-green-100 text-green-700': Company.approveFg?.toUpperCase() === 'Y',
@@ -337,7 +357,7 @@
 
 
           <!-- Onboarding -->
-          <td class="px-6 py-4">
+          <td class="px-4 py-4">
 
             <div class="text-gray-800">
               {{ Company.approveTs | date:'MMM dd, yyyy' }}
@@ -346,39 +366,31 @@
           </td>
 
           <!-- Actions -->
-          <td class="px-6 py-4">
-            <div class="flex justify-center gap-3">
+          <td class="px-4 py-4">
+            <div class="flex items-center justify-end gap-1">
+
+              <!-- Approve -->
+              <button (click)="openApproveModal(Company.id!)" class="p-1 hover:scale-110 transition-transform"
+                title="Approve">
+                <span class="text-base">✅</span>
+              </button>
 
               <!-- View -->
-              <button (click)="openCompanyProfile(Company.id!)" title="View Profile"
-                class="cursor-pointer w-9 h-9 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition transform hover:scale-110 flex items-center justify-center">
-                👁
+              <button (click)="openCompanyProfile(Company.id!)" class="p-1 hover:scale-110 transition-transform"
+                title="View Profile">
+                <span class="text-base">👁️</span>
               </button>
 
               <!-- Users -->
-              <button (click)="openUsersList(Company.id!)" title="Users List"
-                class="cursor-pointer w-9 h-9 rounded-full bg-orange-50 text-orange-500 hover:bg-orange-500 hover:text-white transition transform hover:scale-110 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z" />
-                  <path fill-rule="evenodd" d="M12 14c-4.418 0-8 1.79-8 4v2h16v-2c0-2.21-3.582-4-8-4z"
-                    clip-rule="evenodd" />
-                </svg>
+              <button (click)="openUsersList(Company.id!)" class="p-1 hover:scale-110 transition-transform"
+                title="Users List">
+                <span class="text-base">👥</span>
               </button>
 
               <!-- Register -->
-              <button (click)="openRegisterUser(Company.id!)" title="Register User"
-                class="cursor-pointer w-9 h-9 rounded-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition transform hover:scale-110 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m0 0v10a2 2 0 01-2 2H5a2 2 0 01-2-2V8m18 0L12 13 3 8" />
-                </svg>
-              </button>
-
-              <!-- Approve -->
-              <button (click)="openApproveModal(Company.id!)" title="Approve"
-                class="cursor-pointer w-9 h-9 rounded-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition transform hover:scale-110 flex items-center justify-center">
-                ✔
+              <button (click)="openRegisterUser(Company.id!)" class="p-1 hover:scale-110 transition-transform"
+                title="Register User">
+                <span class="text-base">✉️</span>
               </button>
 
             </div>
@@ -389,8 +401,13 @@
 
         <!-- Empty -->
         <tr *ngIf="!loading && filteredCompany.length === 0">
-          <td colspan="6" class="text-center py-10 text-gray-500">
-            No Company found
+          <td colspan="6" class="py-20 text-center">
+            <div class="flex flex-col items-center justify-center opacity-60">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+              <span class="text-lg font-bold text-gray-500 tracking-tight">No company found</span>
+            </div>
           </td>
         </tr>
 
@@ -400,22 +417,27 @@
 
   </div>
   <!-- Footer -->
-  <div class="ng-container">
-    <div *ngIf="!loading && company.length > 0"
-      class="flex justify-between items-center bg-white p-4 rounded-xl shadow">
-
-      <span class="text-sm text-gray-500">
-        Showing {{ filteredCompany.length }} of {{ company.length }} companies
-      </span>
-
-      <div class="flex gap-2">
-        <button class="px-4 py-1 border rounded-lg text-gray-600 hover:bg-gray-100">
-          Prev
-        </button>
-        <button class="px-4 py-1 border rounded-lg text-gray-600 hover:bg-gray-100">
-          Next
-        </button>
+  <div *ngIf="!loading && company.length > 0" class="px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-white text-sm rounded-b-[1.25rem] overflow-hidden">
+    <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">PAGE {{ currentPage }} OF {{ totalPages || 1 }}</div>
+    <div class="flex items-center gap-1">
+      <button (click)="onPageChange(currentPage - 1)" [disabled]="currentPage === 1"
+        class="px-2.5 sm:px-3.5 py-1.5 border border-gray-200 rounded-lg font-semibold text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors shadow-sm text-xs sm:text-sm">Previous</button>
+      <div class="flex items-center gap-1 px-1 sm:px-3">
+        <ng-container *ngFor="let page of [].constructor(totalPages); let i = index">
+          <button
+            *ngIf="i + 1 === 1 || i + 1 === totalPages || (i + 1 >= currentPage - 1 && i + 1 <= currentPage + 1)"
+            (click)="onPageChange(i + 1)"
+            [ngClass]="currentPage === i + 1 ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'text-gray-600 hover:bg-gray-50 hover:border-gray-300 bg-white'"
+            class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg font-bold text-xs border border-transparent transition-all">
+            {{ i + 1 }}
+          </button>
+          <span *ngIf="totalPages > 5 && (i + 1 === 2 && currentPage > 3)"
+            class="text-gray-300 tracking-widest px-1">...</span>
+          <span *ngIf="totalPages > 5 && (i + 1 === totalPages - 1 && currentPage < totalPages - 2)"
+            class="text-gray-300 tracking-widest px-1">...</span>
+        </ng-container>
       </div>
-
+      <button (click)="onPageChange(currentPage + 1)" [disabled]="currentPage === totalPages"
+        class="px-2.5 sm:px-3.5 py-1.5 border border-gray-200 rounded-lg font-semibold text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors shadow-sm text-xs sm:text-sm">Next</button>
     </div>
   </div>

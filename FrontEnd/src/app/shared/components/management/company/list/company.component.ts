@@ -39,6 +39,11 @@ export class CompanyComponent implements OnInit {
   successModal2: boolean = false;
   successMessage2: string = '';
 
+  // ===================== PAGINATION =====================
+  currentPage: number = 1;
+  itemsPerPage: number = 10;
+  totalPages: number = 1;
+
   companylst: company = {
     id: undefined,
     name: '',
@@ -85,8 +90,8 @@ export class CompanyComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        console.error('Failed to load categories:', err);
-        this.error = 'Failed to load categories. Please try again.';
+        console.error('Failed to load Companies:', err);
+        this.error = 'Failed to load Companies. Please try again.';
         this.loading = false;
       }
     });
@@ -215,15 +220,19 @@ export class CompanyComponent implements OnInit {
   // ===================== LOAD & SEARCH =====================
   loadCompanys() {
     this.loading = true;
+    this.error = null;
     this.CompanyService.getCompanys().subscribe({
       next: (data: company[]) => {
         this.company = data;
         this.filteredCompany = data;
+        this.applySort();
+        this.currentPage = 1;
+        this.updatePagination();
         this.loading = false;
       },
       error: (err) => {
-        console.error('Failed to load Companys:', err);
-        this.error = 'Failed to load Companys. Please try again.';
+        console.error('Failed to load companies:', err);
+        this.error = 'Failed to load companies. Please try again.';
         this.loading = false;
       }
     });
@@ -236,6 +245,63 @@ export class CompanyComponent implements OnInit {
       (c.email?.toLowerCase().includes(term) ?? false) ||
       (c.mobilePhone?.toLowerCase().includes(term) ?? false)
     );
+    this.applySort();
+    this.currentPage = 1;
+    this.updatePagination();
+  }
+
+  // ===================== SORTING =====================
+  sortColumn: string = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
+
+  onSort(column: string) {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+    this.applySort();
+  }
+
+  applySort() {
+    if (!this.sortColumn) return;
+
+    this.filteredCompany.sort((a, b) => {
+      let valA: any = '';
+      let valB: any = '';
+
+      switch (this.sortColumn) {
+        case 'name':
+          valA = (a.name || '').toLowerCase();
+          valB = (b.name || '').toLowerCase();
+          break;
+        case 'companyType':
+          valA = (a.companyType || '').toLowerCase();
+          valB = (b.companyType || '').toLowerCase();
+          break;
+        case 'status':
+          valA = (a.status || 'Pending').toLowerCase();
+          valB = (b.status || 'Pending').toLowerCase();
+          break;
+      }
+
+      if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+
+  // ===================== PAGINATION =====================
+  updatePagination() {
+    this.totalPages = Math.ceil(this.filteredCompany.length / this.itemsPerPage);
+    if (this.totalPages === 0) this.totalPages = 1;
+  }
+
+  onPageChange(page: number) {
+    if (page < 1 || page > this.totalPages) return;
+    this.currentPage = page;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   // ===================== GOOGLE MAP =====================

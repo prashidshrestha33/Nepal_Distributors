@@ -3,14 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { StaticValueService } from '../../../../services/management/management.service';
-import type { StaticValue ,StaticValueCatalog} from '../../../../services/management/management.service';
+import type { StaticValue, StaticValueCatalog } from '../../../../services/management/management.service';
 
 @Component({
   selector: 'app-static-values',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './static-values-catalog.component.html',
-  
+
   styleUrl: './static-values-catalog.component.css'
 })
 export class StaticValuesCatalogComponent implements OnInit {
@@ -18,7 +18,7 @@ export class StaticValuesCatalogComponent implements OnInit {
   filteredItems: StaticValueCatalog[] = [];
   searchTerm = '';
 
-  constructor(private service: StaticValueService,private router: Router) {}
+  constructor(private service: StaticValueService, private router: Router) { }
 
   ngOnInit() {
     this.load();
@@ -32,7 +32,7 @@ export class StaticValuesCatalogComponent implements OnInit {
   }
   viewStaticValues(catalogId: number): void {
     this.router.navigate(['/management/static-values'], {
-      queryParams: { catalogId:  catalogId }
+      queryParams: { catalogId: catalogId }
     });
   }
   onSearch() {

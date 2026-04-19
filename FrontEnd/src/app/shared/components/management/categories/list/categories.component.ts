@@ -22,6 +22,7 @@ export class CategoriesComponent implements OnInit {
   expandedCategoryIds = new Set<number>();
   searchTerm = '';
   loading = false;
+  error: string | null = null;
   showMoveModal = false;
   selectedCategoryForMove: Category | null = null;
   moveFormLoading = false;
@@ -70,23 +71,25 @@ export class CategoriesComponent implements OnInit {
   }
 
   load() {
-  this.loading = true;
-  this.service.getAllCategories().subscribe({
-    next: (data: Category[]) => {
-      this.itemsTree = data;
-      this.items = this.flattenVisibleCategoryTree(this.itemsTree);
+    this.loading = true;
+    this.error = null;
+    this.service.getAllCategories().subscribe({
+      next: (data: Category[]) => {
+        this.itemsTree = data;
+        this.items = this.flattenVisibleCategoryTree(this.itemsTree);
 
-      this.filteredItems = this.items;
-      this.currentPage = 1;
-      this.updatePaginatedItems();
-      this.loading = false;
-    },
-    error: (err: any) => {
-      this.loading = false;
-      console.error('Failed to load categories', err);
-    }
-  });
-}
+        this.filteredItems = this.items;
+        this.currentPage = 1;
+        this.updatePaginatedItems();
+        this.loading = false;
+      },
+      error: (err: any) => {
+        this.loading = false;
+        this.error = 'Failed to load categories. Please try again.';
+        console.error('Failed to load categories', err);
+      }
+    });
+  }
 
   toggleExpand(categoryId: number, event: Event) {
     event.stopPropagation();

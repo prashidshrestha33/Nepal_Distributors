@@ -178,6 +178,7 @@ export class ProductsComponent implements OnInit {
   // ----------------------
   loadProducts() {
     this.loading = true;
+    this.error = undefined; // clear previously established error string
 
     let companyId: number | null = null;
     if (this.isMyProducts) {
@@ -212,6 +213,7 @@ export class ProductsComponent implements OnInit {
       },
       error: err => {
         console.error('Error loading products:', err);
+        this.error = 'Failed to load products. Please try again.';
         this.loading = false;
         this.cdr.markForCheck();
       }
@@ -599,6 +601,10 @@ getImageUrl(imageName?: string): string {
         case 'rate':
           valA = a.rate || 0;
           valB = b.rate || 0;
+          break;
+        case 'addedBy':
+          valA = (a.createdBy || '').toLowerCase();
+          valB = (b.createdBy || '').toLowerCase();
           break;
         case 'status':
           valA = (a.status || 'Pending').toLowerCase();

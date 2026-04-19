@@ -11,30 +11,28 @@
     'translate-x-0': isMobileOpen$ | async,
     '-translate-x-full': !(isMobileOpen$ | async),
     'xl:translate-x-0': true
-  }"
-  (mouseenter)="onSidebarMouseEnter()"
-  (mouseleave)="sidebarService.setHovered(false)"
->
-  <div
-    class="py-8 flex"
-    [ngClass]="{
-      'xl:justify-center': !((isExpanded$ | async) || (isHovered$ | async)),
-      'justify-start': (isExpanded$ | async) || (isHovered$ | async)
-    }"
-  >
-    <!-- Sidebar Header -->
+  }" (mouseenter)="onSidebarMouseEnter()" (mouseleave)="sidebarService.setHovered(false)">
+  <div class="py-7 flex w-full items-center border-b border-gray-100/50 mb-4" [ngClass]="{
+      'xl:justify-center px-0': !((isExpanded$ | async) || (isHovered$ | async)),
+      'justify-start px-2': (isExpanded$ | async) || (isHovered$ | async)
+    }">
+    <div class="flex flex-col transition-all duration-500 ease-in-out px-1" [ngClass]="{
+            'opacity-0 w-0 -translate-x-10 pointer-events-none': !((isExpanded$ | async) || (isHovered$ | async) || (isMobileOpen$ | async)),
+            'opacity-100 w-auto translate-x-0': ((isExpanded$ | async) || (isHovered$ | async) || (isMobileOpen$ | async))
+          }">
+      <h1 class="text-2xl font-black tracking-tighter leading-none text-blue-800 drop-shadow-sm">
+        Nepal Distributors
+      </h1>
+    </div>
   </div>
 
   <div class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
     <nav class="mb-6">
       <ul class="flex flex-col gap-1">
         <li *ngFor="let item of navItems">
-          <a
-            [routerLink]="item.path"
-            [queryParams]="item.queryParams"
+          <a [routerLink]="item.path" [queryParams]="item.queryParams"
             class="menu-item group cursor-pointer flex items-center gap-4 p-2 rounded-md hover:bg-gray-100"
-            [ngClass]="{ 'bg-gray-200': isActive(item.path) }"
-          >
+            [ngClass]="{ 'bg-gray-200': isActive(item.path) }">
             <span [innerHTML]="item.icon | safeHtml"></span>
             <span>{{ item.name }}</span>
           </a>
@@ -45,11 +43,9 @@
       <ul class="flex flex-col gap-1 mt-4">
         <li *ngFor="let item of othersItems">
           <div>
-            <button
-              (click)="toggleSubmenu(item.name)"
+            <button (click)="toggleSubmenu(item.name)"
               class="menu-item group cursor-pointer flex items-center gap-4 p-2 rounded-md hover:bg-gray-100 w-full text-left"
-              [ngClass]="{ 'bg-gray-200': isActive(item.path) }"
-            >
+              [ngClass]="{ 'bg-gray-200': isActive(item.path) }">
               <span [innerHTML]="item.icon | safeHtml"></span>
               <span>{{ item.name }}</span>
             </button>
@@ -57,11 +53,9 @@
             <!-- Submenu for Authentication -->
             <ul *ngIf="openSubmenu === item.name" class="ml-4 mt-2">
               <li *ngFor="let subItem of item.subItems">
-                <a
-                  [routerLink]="subItem.path"
+                <a [routerLink]="subItem.path"
                   class="menu-item group cursor-pointer flex items-center gap-4 p-2 rounded-md hover:bg-gray-100"
-                  [ngClass]="{ 'bg-gray-200': isActive(subItem.path) }"
-                >
+                  [ngClass]="{ 'bg-gray-200': isActive(subItem.path) }">
                   <span>{{ subItem.name }}</span>
                 </a>
               </li>
