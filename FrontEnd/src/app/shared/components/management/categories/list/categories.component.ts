@@ -5,12 +5,13 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CategoryService } from '../../../../services/management/management.service';
 import type { Category } from '../../../../services/management/management.service';
 import { CategoryMoveModalComponent } from '../move/category-move-modal.component';
+import { CategoryFormComponent } from '../form/category-form.component';
 import { environment } from '../../../../../../environments/environment';
 
 @Component({
   selector: 'app-categories',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, CategoryMoveModalComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, CategoryMoveModalComponent, CategoryFormComponent],
   templateUrl: './categories.component.html',
   styleUrl: './categories.component.css'
 })
@@ -21,6 +22,7 @@ export class CategoriesComponent implements OnInit {
   expandedCategoryIds = new Set<number>();
   searchTerm = '';
   loading = false;
+  error: string | null = null;
   showMoveModal = false;
   selectedCategoryForMove: Category | null = null;
   moveFormLoading = false;
@@ -28,6 +30,10 @@ export class CategoriesComponent implements OnInit {
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
   snackbar: { show: boolean; message: string; type: 'success' | 'error' | 'warning' } = { show: false, message: '', type: 'success' };
+
+  // Modal properties for add/edit category
+  showCategoryFormModal = false;
+  editCategoryId: number | null = null;
 
   // Pagination properties
   pageSize: number = 10;
@@ -65,23 +71,25 @@ export class CategoriesComponent implements OnInit {
   }
 
   load() {
-  this.loading = true;
-  this.service.getAllCategories().subscribe({
-    next: (data: Category[]) => {
-      this.itemsTree = data;
-      this.items = this.flattenVisibleCategoryTree(this.itemsTree);
+    this.loading = true;
+    this.error = null;
+    this.service.getAllCategories().subscribe({
+      next: (data: Category[]) => {
+        this.itemsTree = data;
+        this.items = this.flattenVisibleCategoryTree(this.itemsTree);
 
-      this.filteredItems = this.items;
-      this.currentPage = 1;
-      this.updatePaginatedItems();
-      this.loading = false;
-    },
-    error: (err: any) => {
-      this.loading = false;
-      console.error('Failed to load categories', err);
-    }
-  });
-}
+        this.filteredItems = this.items;
+        this.currentPage = 1;
+        this.updatePaginatedItems();
+        this.loading = false;
+      },
+      error: (err: any) => {
+        this.loading = false;
+        this.error = 'Failed to load categories. Please try again.';
+        console.error('Failed to load categories', err);
+      }
+    });
+  }
 
   toggleExpand(categoryId: number, event: Event) {
     event.stopPropagation();
@@ -169,6 +177,13 @@ export class CategoriesComponent implements OnInit {
    */
   getTotalPages(): number {
     return Math.ceil(this.filteredItems.length / this.pageSize);
+  }
+
+  /**
+   * Get total pages as a property for template binding
+   */
+  get totalPages(): number {
+    return this.getTotalPages();
   }
 
   /**
@@ -289,6 +304,37 @@ export class CategoriesComponent implements OnInit {
   }
 
   goToEdit(id: number) {
-    this.router.navigate(['/management/categories/edit', id]);
+    this.editCategoryId = id;
+    this.showCategoryFormModal = true;
+    this.cdr.markForCheck();
+  }
+
+  openAddCategoryModal() {
+    this.showCategoryFormModal = true;
+    this.editCategoryId = null;
+    this.cdr.markForCheck();
+  }
+
+  openEditCategoryModal(id: number) {
+    this.editCategoryId = id;
+    this.showCategoryFormModal = true;
+    this.cdr.markForCheck();
+  }
+
+  closeCategoryFormModal() {
+    this.showCategoryFormModal = false;
+    this.editCategoryId = null;
+    this.cdr.markForCheck();
+  }
+
+  onCategorySaved() {
+    const msg = this.editCategoryId
+      ? 'Category updated successfully!'
+      : 'Category created successfully!';
+    this.showSnackbar(msg, 'success');
+    this.load();
+    this.showCategoryFormModal = false;
+    this.editCategoryId = null;
+    this.cdr.markForCheck();
   }
 }

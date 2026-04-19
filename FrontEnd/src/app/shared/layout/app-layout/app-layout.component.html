@@ -44,16 +44,16 @@
   <div
       class="flex-1 flex flex-col transition-all duration-300 ease-in-out"
       [ngClass]="{
-        'xl:ml-[290px]': (isExpanded$ | async) || (isHovered$ | async),
-        'xl:ml-[90px]': !(isExpanded$ | async) && !(isHovered$ | async),
+        'xl:ml-[250px]': (isExpanded$ | async) || (isHovered$ | async),
+        'xl:ml-[70px]': !(isExpanded$ | async) && !(isHovered$ | async),
         'ml-0': (isMobileOpen$ | async)
       }"
   >
     <!-- Fixed Header -->
     <div class="fixed top-0 right-0 left-0 z-20 transition-all duration-300 ease-in-out"
       [ngClass]="{
-        'xl:left-[290px]': (isExpanded$ | async) || (isHovered$ | async),
-        'xl:left-[90px]': !(isExpanded$ | async) && !(isHovered$ | async),
+        'xl:left-[250px]': (isExpanded$ | async) || (isHovered$ | async),
+        'xl:left-[70px]': !(isExpanded$ | async) && !(isHovered$ | async),
         'left-0': (isMobileOpen$ | async)
       }">
       <app-header/>
