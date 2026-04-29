@@ -25,6 +25,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
         Task<ProductModel> GetByIdAsync(int id, IDbTransaction tx);
         Task InsertProductImagesAsync(int productId, List<ProductImageModel> images);
         Task DeleteProductImagesByIdsAsync(int productId, List<int> imageIds);
+        Task UpdateProductImageDefaultAsync(int productId, int? defaultImageId);
 
         Task ApproveProductAsync(
             int id,

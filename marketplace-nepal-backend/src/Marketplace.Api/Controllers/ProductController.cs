@@ -375,6 +375,17 @@ namespace Marketplace.Api.Controllers
                 }
             }
 
+            // 🔹 Handle existing image default status
+            if (dto.DefaultExistingImageId.HasValue)
+            {
+                await repositorysitory.UpdateProductImageDefaultAsync(id, dto.DefaultExistingImageId.Value);
+            }
+            else if (dto.DefaultImageIndex.HasValue)
+            {
+                // We are setting a new image as default, so clear any existing defaults first
+                await repositorysitory.UpdateProductImageDefaultAsync(id, null);
+            }
+
             // 🔹 Handle new image uploads if any
             if (dto.ImageFiles != null && dto.ImageFiles.Count > 0)
             {

@@ -834,6 +834,18 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
             var query = "DELETE FROM ProductImages WHERE ProductId = @ProductId AND Id IN @ImageIds";
             await _db.ExecuteAsync(query, new { ProductId = productId, ImageIds = imageIds });
         }
+
+        public async Task UpdateProductImageDefaultAsync(int productId, int? defaultImageId)
+        {
+            var clearSql = "UPDATE ProductImages SET IsDefault = 0 WHERE ProductId = @ProductId";
+            await _db.ExecuteAsync(clearSql, new { ProductId = productId });
+
+            if (defaultImageId.HasValue)
+            {
+                var setSql = "UPDATE ProductImages SET IsDefault = 1 WHERE ProductId = @ProductId AND Id = @DefaultImageId";
+                await _db.ExecuteAsync(setSql, new { ProductId = productId, DefaultImageId = defaultImageId.Value });
+            }
+        }
         public async Task<IEnumerable<ProductModel>> SearchProductsAsync(
     string? categoryIds,
     string? keyword,

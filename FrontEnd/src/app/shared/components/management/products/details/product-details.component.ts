@@ -52,6 +52,8 @@ export class ProductDetailsComponent implements OnInit {
   currentIndex: number = 0;
   carouselInterval: any; // To clear interval on destroy
   images?: ProductImage[];
+  
+  currentUserCompanyName: string = 'System';
 
   constructor(
     private route: ActivatedRoute,
@@ -73,11 +75,26 @@ export class ProductDetailsComponent implements OnInit {
     this.loadProduct(id);
     this.loadCategories();
     this.loadStaticValues();
+    this.loadUserClaims();
     this.carouselInterval = setInterval(() => {
       if (this.product?.images?.length) {
         this.selectedImageIndex = (this.selectedImageIndex + 1) % this.product.images.length;
       }
     }, 5000); 
+  }
+
+  loadUserClaims() {
+    try {
+      const claimsStr = sessionStorage.getItem('userClaims') || localStorage.getItem('userClaims');
+      if (claimsStr) {
+        const claims = JSON.parse(claimsStr);
+        if (claims.company_Name) {
+          this.currentUserCompanyName = claims.company_Name;
+        }
+      }
+    } catch (e) {
+      console.error('Error parsing user claims', e);
+    }
   }
 
   ngOnDestroy(): void {
@@ -218,41 +235,52 @@ export class ProductDetailsComponent implements OnInit {
   }
 
   // ----------------------
-  // Approve Product
+  // Approve / Reject with Reason Modal
   // ----------------------
-  approveProduct(product: Product) {
-    this.approveProductData = {
-      ...product,
-      categoryName: this.getCategoryName(product.categoryId),
-      brandName: this.getBrandName(product.brandId),
-    };
-    this.approveStatus = product.status || 'Pending';
-    this.showApproveModal = true;
+  showReasonModal = false;
+  actionType: 'Approved' | 'Rejected' | null = null;
+  reason = '';
+
+  openReason(action: 'Approved' | 'Rejected') {
+    this.actionType = action;
+    this.reason = '';
+    this.showReasonModal = true;
   }
 
-  onApproveCancel() {
-    this.showApproveModal = false;
+  closeReason() {
+    this.showReasonModal = false;
+    this.actionType = null;
+    this.reason = '';
   }
 
-  onApproveSave(event: { status: string; reason?: string }) {
-    if (!this.approveProductData) return;
+  confirmAction() {
+    if (this.actionType === 'Rejected' && !this.reason.trim()) {
+      this.showSnackbar('Reason is required for rejection.', 'error');
+      return;
+    }
+    if (this.actionType) {
+      this.executeStatusUpdate(this.actionType, this.reason);
+    }
+    this.closeReason();
+  }
 
-    // Prepare payload for approval or removal
+  private executeStatusUpdate(status: string, remarks: string) {
+    if (!this.product) return;
+
     const payload = {
-      id: this.approveProductData.id,
-      action: event.status,
-      remarks: event.reason || '',
+      id: this.product.id,
+      action: status,
+      remarks: remarks,
     };
 
-    this.productService.ApprovedProductById(this.approveProductData.id, payload).subscribe({
+    this.productService.ApprovedProductById(this.product.id, payload).subscribe({
       next: (updatedProduct: Product) => {
         if (this.product && this.product.id === updatedProduct.id) {
           this.product.status = updatedProduct.status;
         }
-        this.showApproveModal = false;
         
-        const msg = payload.action === 'Approved' ? 'Product approved successfully!' : 'Product rejected.';
-        const type = payload.action === 'Approved' ? 'success' : 'warning';
+        const msg = status === 'Approved' ? 'Product approved successfully!' : 'Product rejected.';
+        const type = status === 'Approved' ? 'success' : 'warning';
         this.showSnackbar(msg, type);
         
         // Refresh product data

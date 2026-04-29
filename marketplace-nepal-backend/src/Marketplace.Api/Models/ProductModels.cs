@@ -1,4 +1,4 @@
-﻿using Marketplace.Model.Models;
+using Marketplace.Model.Models;
 using System.Text.Json.Serialization;
 
 namespace Marketplace.Api.Models
@@ -28,6 +28,7 @@ namespace Marketplace.Api.Models
 
         // Default index
         public int? DefaultImageIndex { get; set; }
+        public int? DefaultExistingImageId { get; set; }
         public List<ProductImageModel> Images { get; set; } = new();
         // New property to accept deleted image IDs (if any)
         public string? ImageIdsToDelete { get; set; }

@@ -55,6 +55,8 @@ export interface Product {
   imageUrl?: string;
   imageName?: string;
   images?: ProductImage[];
+  companyId?: number;
+  companyName?: string;
 }
 export interface ProductResponse {
   data: Product[];
@@ -341,23 +343,26 @@ updateProduct(id: number, product: Product, images?: { file?: File, isDefault: b
 
   // ------------------- Handle Image Uploads -------------------
   if (images && images.length > 0) {
-    let defaultIndex = 0;
+    let newFileIndex = 0;
 
-    images.forEach((img, index) => {
+    images.forEach((img) => {
       if (img.file) {
         formData.append('ImageFiles', img.file); // append new image files
-      }
-
-      if (img.isDefault) {
-        defaultIndex = index; // set default image index
-      }
-
-      if (img.id) {
-        formData.append('ExistingImageIds', img.id.toString()); // append existing image IDs
+        
+        if (img.isDefault) {
+          formData.append('DefaultImageIndex', newFileIndex.toString()); // set default image index for new files
+        }
+        newFileIndex++;
+      } else {
+        if (img.id) {
+          formData.append('ExistingImageIds', img.id.toString()); // append existing image IDs
+          
+          if (img.isDefault) {
+            formData.append('DefaultExistingImageId', img.id.toString()); // set default for existing file
+          }
+        }
       }
     });
-
-    formData.append('DefaultImageIndex', defaultIndex.toString()); // append default image index
   }
   formData.forEach((value, key) => {
   });
