@@ -19,6 +19,7 @@ export interface Category {
   children?: Category[];
   createdAt?: string;
   updatedAt?: string;
+  activeFlag?: boolean;
 }
 export interface ProductImage {
   id: number;
@@ -45,6 +46,7 @@ export interface Product {
   isFeatured?: boolean;
   seoTitle: string;
   seoDescription: string;
+  activeFlag?: boolean;
   attributes?: string;
   createdBy: string;
   imageFile?: File | string;
@@ -335,6 +337,7 @@ updateProduct(id: number, product: Product, images?: { file?: File, isDefault: b
   formData.append('SeoDescription', product.seoDescription ?? '');
   formData.append('Attributes', product.attributes ?? '');
   formData.append('CreatedBy', product.createdBy ?? '');
+  formData.append('ActiveFlag', product.activeFlag ? 'true' : 'false');
 
   // ------------------- Handle Image Deletions -------------------
   if (deletedImageIds.length > 0) {

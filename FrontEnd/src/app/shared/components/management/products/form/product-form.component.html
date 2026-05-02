@@ -57,13 +57,27 @@
           {{ editMode ? 'Update Product' : 'Register New Product' }}
         </h2>
       </div>
-      <button *ngIf="isModal" (click)="closeModal.emit()"
+
+      <div class="flex items-center gap-4">
+        <!-- Active Toggle (Only Edit Mode) -->
+        <div *ngIf="editMode" [formGroup]="form" class="flex items-center gap-3">
+          <span class="text-[11px] font-black text-gray-400 tracking-[0.15em] uppercase">Active</span>
+          <label class="relative inline-flex items-center cursor-pointer group">
+            <input type="checkbox" formControlName="activeFlag" class="sr-only peer">
+            <div
+              class="w-12 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all duration-300 peer-checked:bg-[#3b82f6] shadow-sm group-hover:shadow-md">
+            </div>
+          </label>
+        </div>
+
+        <button *ngIf="isModal" (click)="closeModal.emit()"
         class="p-2.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all active:scale-95">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
-    </header>
+    </div>
+  </header>
 
     <!-- Scrollable Body -->
     <main class="flex-1 overflow-y-auto p-8 sm:p-10 custom-scrollbar">

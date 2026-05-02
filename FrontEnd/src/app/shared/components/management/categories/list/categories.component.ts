@@ -108,12 +108,21 @@ export class CategoriesComponent implements OnInit {
   flattenVisibleCategoryTree(categories: Category[], depth: number = 0): any[] {
     let result: any[] = [];
     
-    // Sort at current level if name sorting is active
+    // Sort at current level if sorting is active
     let sortedCats = [...categories];
     if (this.sortColumn === 'name') {
       sortedCats.sort((a, b) => {
         const valA = a.name?.toLowerCase() || '';
         const valB = b.name?.toLowerCase() || '';
+        if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
+        if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    } else if (this.sortColumn === 'status') {
+      sortedCats.sort((a, b) => {
+        // Map Active (true) to 1 and Inactive (false) to 0 for consistent comparison
+        const valA = a.activeFlag ? 1 : 0;
+        const valB = b.activeFlag ? 1 : 0;
         if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
         if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
         return 0;

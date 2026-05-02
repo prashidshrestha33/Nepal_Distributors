@@ -58,7 +58,8 @@ export class CategoryFormComponent implements OnInit {
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
       slug: ['', Validators.required],
       parent_id: [null],
-      image: [null]
+      image: [null],
+      activeFlag: [true]
     });
   }
 
@@ -95,7 +96,8 @@ export class CategoryFormComponent implements OnInit {
         this.form.patchValue({
           name: data.name,
           slug: data.slug,
-          parent_id: data.parentId
+          parent_id: data.parentId,
+          activeFlag: data.activeFlag ?? true
         });
         this.initialParentId = data.parentId;
 
@@ -152,6 +154,17 @@ export class CategoryFormComponent implements OnInit {
   onCategoryChosen(categoryId: any): void {
     if (typeof categoryId === 'number' && categoryId > 0) {
       this.form.get('parent_id')?.setValue(categoryId);
+
+      // 🔹 Check parent status: if parent is inactive, child should be inactive default
+      this.categoryService.getCategoryById(categoryId).subscribe({
+        next: (res: any) => {
+          const parent = res?.result ?? res;
+          if (parent && parent.activeFlag === false) {
+            this.form.get('activeFlag')?.setValue(false);
+            this.showSnackbar('Parent category is inactive. This category will also be set to inactive.', 'warning');
+          }
+        }
+      });
     } else {
       this.form.get('parent_id')?.setValue(null);
       this.parentSlugBase = '';
@@ -344,6 +357,7 @@ onSubmit(): void {
   if (this.selectedImage) {
     formData.append('Image', this.selectedImage);
   }
+  formData.append('ActiveFlag', this.form.value.activeFlag ? 'true' : 'false');
 
   if (this.isEditMode) {
       this.categoryService.updateCategory(this.categoryId!, formData).subscribe({

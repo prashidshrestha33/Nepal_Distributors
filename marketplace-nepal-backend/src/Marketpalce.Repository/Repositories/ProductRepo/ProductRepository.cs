@@ -34,6 +34,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
         p.Attributes,
         p.Created_By AS CreatedBy,
         p.Created_At AS CreatedAt,
+        p.ActiveFlag,
 
         pi.Id,
         pi.ProductId,
@@ -143,7 +144,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
                     p.Brand_Id AS BrandId, p.Manufacturer_Id AS ManufacturerId, p.Hs_Code AS HsCode,
                     p.Status, p.Is_Featured AS IsFeatured, p.Seo_Title AS SeoTitle,
                     p.Seo_Description AS SeoDescription, p.Attributes, p.Created_By AS CreatedBy,
-                    p.Created_At AS CreatedAt,
+                    p.Created_At AS CreatedAt, p.ActiveFlag,
                     pi.Id, pi.ProductId, pi.ImageName, pi.IsDefault, pi.CreatedAt
                 FROM Products p
                 LEFT JOIN ProductImages pi ON p.Id = pi.ProductId
@@ -185,7 +186,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
             try
             {
                 const string sql = @"
-    SELECT id AS Id, name AS Name, slug AS Slug, parent_id AS ParentId, depth AS Depth, imageUrl as Image
+    SELECT id AS Id, name AS Name, slug AS Slug, parent_id AS ParentId, depth AS Depth, imageUrl as Image, ActiveFlag AS ActiveFlag
     FROM dbo.Product_Categories
     ORDER BY depth ASC";
 
@@ -245,7 +246,8 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
             name AS Name,
             slug AS Slug,
             parent_id AS ParentId,
-            depth AS Depth
+            depth AS Depth,
+            ActiveFlag AS ActiveFlag
         FROM [NepalDistributers].[dbo].[Product_Categories] where 1=1";
 
 
@@ -289,6 +291,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
         p.attributes AS Attributes,
         p.created_by AS CreatedBy,
         p.created_at AS CreatedAt,
+        p.ActiveFlag,
 
         pi.Id,
         pi.ProductId,
@@ -347,11 +350,11 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
         INSERT INTO [NepalDistributers].[dbo].[products]
         (company_id, sku, name, description, short_description, category_id, brand_id, manufacturer_id,
          rate, hs_code, status, is_featured, seo_title, seo_description, attributes,
-         created_by, created_at, updated_at)
+         created_by, created_at, updated_at, ActiveFlag)
         VALUES
         (@CompanyId, @Sku, @Name, @Description, @ShortDescription, @CategoryId, @BrandId, @ManufacturerId,
          @Rate, @HsCode, @Status, @IsFeatured, @SeoTitle, @SeoDescription, @Attributes,
-         @CreatedBy, SYSDATETIME(), SYSDATETIME());
+         @CreatedBy, SYSDATETIME(), SYSDATETIME(), @ActiveFlag);
 
         SELECT CAST(SCOPE_IDENTITY() AS INT);
     ";
@@ -429,6 +432,9 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
                 parameters.Add("@SeoTitle", product.SeoTitle);
             }
 
+            setClauses.Add("ActiveFlag = @ActiveFlag");
+            parameters.Add("@ActiveFlag", product.ActiveFlag);
+
             if (!string.IsNullOrEmpty(product.SeoDescription))
             {
                 setClauses.Add("seo_description = @SeoDescription");
@@ -496,7 +502,13 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
 
             await _db.ExecuteAsync("dbo.sp_AddCategory", p, commandType: CommandType.StoredProcedure);
 
-            return p.Get<long>("@new_id");
+            long newId = p.Get<long>("@new_id");
+
+            // 🔹 Ensure ActiveFlag is set correctly (in case SP doesn't handle it or defaults to 1)
+            await _db.ExecuteAsync("UPDATE dbo.Product_Categories SET ActiveFlag = @ActiveFlag WHERE id = @Id", 
+                new { ActiveFlag = dto.ActiveFlag, Id = newId });
+
+            return newId;
         }
 
         // Move (re-parent) a category via sp_MoveCategory
@@ -586,7 +598,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
         // Get single category by id
         public async Task<CategoryDto?> GetCatagoryByIdAsync(long id)
         {
-            var sql = @"SELECT id AS Id, name AS Name, slug AS Slug, parent_id AS ParentId, depth AS Depth, ImageUrl AS Image 
+            var sql = @"SELECT id AS Id, name AS Name, slug AS Slug, parent_id AS ParentId, depth AS Depth, ImageUrl AS Image, ActiveFlag AS ActiveFlag 
                         FROM dbo.Product_Categories WHERE id = @id";
             return await _db.QueryFirstOrDefaultAsync<CategoryDto>(sql, new { id });
         }
@@ -651,6 +663,9 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
                     parameters.Add("@ImageUrl", imageUrl);
                 }
 
+                setClauses.Add("ActiveFlag = @ActiveFlag");
+                parameters.Add("@ActiveFlag", dto.ActiveFlag);
+
                 if (!setClauses.Any())
                     throw new Exception("No fields to update");
 
@@ -659,11 +674,28 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
                 parameters.Add("@Id", id);
 
                 var sql = $@"
-        UPDATE dbo.Product_Categories
-        SET {string.Join(", ", setClauses)}
-        WHERE id = @Id";
+                    UPDATE dbo.Product_Categories
+                    SET {string.Join(", ", setClauses)}
+                    WHERE id = @Id";
 
                 var rows = await _db.ExecuteAsync(sql, parameters);
+
+                // 🔹 Cascading deactivation: If parent is inactive, all descendants become inactive
+                if (rows > 0 && !dto.ActiveFlag)
+                {
+                    const string cascadeSql = @"
+                        WITH CategoryTree AS (
+                            SELECT id FROM dbo.Product_Categories WHERE parent_id = @Id
+                            UNION ALL
+                            SELECT c.id FROM dbo.Product_Categories c
+                            INNER JOIN CategoryTree ct ON c.parent_id = ct.id
+                        )
+                        UPDATE dbo.Product_Categories 
+                        SET ActiveFlag = 0, updated_at = SYSUTCDATETIME()
+                        WHERE id IN (SELECT id FROM CategoryTree)";
+                    
+                    await _db.ExecuteAsync(cascadeSql, new { Id = id });
+                }
 
                 return rows > 0;
             }

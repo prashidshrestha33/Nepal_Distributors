@@ -121,7 +121,8 @@ export class ProductFormComponent implements OnInit {
       brandId: ['', Validators.required],
       manufacturerId: ['', Validators.required],
       rate: [0, [Validators.required, Validators.min(1)]],
-      hsCode: ['']
+      hsCode: [''],
+      activeFlag: [true]
     });
 
   }
@@ -345,7 +346,10 @@ export class ProductFormComponent implements OnInit {
         const product: Product =
           (res as any)?.result ?? res;
 
-        this.form.patchValue(product);
+        this.form.patchValue({
+          ...product,
+          activeFlag: product.activeFlag ?? true
+        });
 
 
         /* -------- BRAND -------- */
@@ -596,7 +600,8 @@ export class ProductFormComponent implements OnInit {
 
     const product: Product = {
       ...this.form.getRawValue(),
-      isFeatured: true
+      isFeatured: true,
+      activeFlag: this.form.get('activeFlag')?.value ?? true
     };
 
     this.loading = true;
