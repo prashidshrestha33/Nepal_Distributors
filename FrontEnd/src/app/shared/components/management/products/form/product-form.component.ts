@@ -103,6 +103,8 @@ export class ProductFormComponent implements OnInit {
 
   deletedImageIds: number[] = [];
 
+  isAdmin: boolean = false;
+
 
   constructor(
     private fb: FormBuilder,
@@ -125,6 +127,12 @@ export class ProductFormComponent implements OnInit {
       activeFlag: [true]
     });
 
+    this.checkUserRole();
+    if (!this.isAdmin) {
+      this.form.get('rate')?.clearValidators();
+      this.form.get('rate')?.updateValueAndValidity();
+    }
+
   }
 
 
@@ -146,7 +154,7 @@ export class ProductFormComponent implements OnInit {
         this.productId = +routeId;
         this.editMode = true;
       }
-      
+
       this.editMode = !!this.productId;
 
       if (snackbar) {
@@ -330,6 +338,19 @@ export class ProductFormComponent implements OnInit {
 
   }
 
+  checkUserRole() {
+    const claimsStr = sessionStorage.getItem('userClaims');
+    if (claimsStr) {
+      try {
+        const claims = JSON.parse(claimsStr);
+        const roleKey = 'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
+        const role = claims[roleKey];
+        this.isAdmin = role === 'sadmin';
+      } catch (e) {
+        console.error('Error parsing user claims', e);
+      }
+    }
+  }
 
   /* =========================================================
      LOAD PRODUCT FOR EDIT

@@ -40,91 +40,119 @@ namespace Marketplace.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Get([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] int? categoryId = null, [FromQuery] bool myProducts = false, [FromQuery] long? companyId = null, [FromQuery] long? brandId = null, [FromQuery] long? manufacturerId = null)
+        public async Task<IActionResult> Get(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] int? categoryId = null,
+            [FromQuery] long? companyId = null,
+            [FromQuery] long? brandId = null,
+            [FromQuery] long? manufacturerId = null,
+            [FromQuery] string? keyword = null,
+            [FromQuery] bool? activeFlag = null,
+            [FromQuery] bool myProducts = false)
         {
-            if (myProducts && companyId == null)
+            string? userEmail = null;
+            if (myProducts)
             {
-                var companyIdClaim = User.FindFirst("company_id")?.Value ?? User.FindFirst("CompanyId")?.Value;
-                if (!string.IsNullOrEmpty(companyIdClaim) && long.TryParse(companyIdClaim, out var parsedCompanyId))
-                {
-                    companyId = parsedCompanyId;
-                }
+                userEmail = User.FindFirstValue(ClaimTypes.Email) 
+                           ?? User.FindFirstValue("email") 
+                           ?? User.FindFirstValue("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress");
             }
-            var result = await repositorysitory.GetPaginatedAsync(page, pageSize, categoryId, companyId, brandId, manufacturerId);
+
+            var result = await repositorysitory.GetPaginatedAsync(page, pageSize, categoryId, companyId, brandId, manufacturerId, keyword, activeFlag, userEmail);
             return Ok(ApiResponse<Marketplace.Model.Models.PagedResult<ProductModel>>.Ok(result));
         }
 
         [HttpGet("stats")]
         public async Task<IActionResult> GetDashboardStats([FromQuery] bool myProducts = false, [FromQuery] long? companyId = null)
         {
-            if (myProducts && companyId == null)
+            try
             {
-                var companyIdClaim = User.FindFirst("company_id")?.Value ?? User.FindFirst("CompanyId")?.Value;
-                if (!string.IsNullOrEmpty(companyIdClaim) && long.TryParse(companyIdClaim, out var parsedCompanyId))
+                // Resolve User Email if myProducts is true
+                string? userEmail = null;
+                if (myProducts)
                 {
-                    companyId = parsedCompanyId;
+                    userEmail = User.FindFirstValue(ClaimTypes.Email) 
+                               ?? User.FindFirstValue("email") 
+                               ?? User.FindFirstValue("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress");
                 }
+
+                var param = new DynamicParameters();
+                param.Add("CompanyId", companyId);
+                param.Add("UserEmail", userEmail);
+
+                // Filter logic: 
+                // If myProducts is true, filter by created_by = @UserEmail
+                // Else if companyId is provided, filter by company_id = @CompanyId
+                string filter = " WHERE 1=1";
+                if (myProducts && !string.IsNullOrEmpty(userEmail))
+                {
+                    filter = " WHERE prod.created_by = @UserEmail";
+                }
+                else if (companyId.HasValue)
+                {
+                    filter = " WHERE prod.company_id = @CompanyId";
+                }
+
+                // Card 1: Total Count
+                var totalSql = $"SELECT COUNT(*) FROM products prod {filter}";
+                int totalCount = await _db.ExecuteScalarAsync<int>(totalSql, param);
+                
+                // Card 2: Approved
+                var approvedSql = $@"SELECT COUNT(*) FROM products prod {filter} 
+                                   AND (UPPER(prod.status) = 'APPROVED' OR prod.approve_fg = '1')";
+                int approvedCount = await _db.ExecuteScalarAsync<int>(approvedSql, param);
+
+                // Card 3: Pending
+                var pendingSql = $@"SELECT COUNT(*) FROM products prod {filter} 
+                                  AND (UPPER(prod.status) = 'PENDING' OR prod.status IS NULL OR prod.approve_fg = '0')";
+                int waitingCount = await _db.ExecuteScalarAsync<int>(pendingSql, param);
+
+                // Sidebar Joins Filter
+                string joinFilter = "";
+                if (myProducts && !string.IsNullOrEmpty(userEmail))
+                {
+                    joinFilter = " AND prod.created_by = @UserEmail";
+                }
+                else if (companyId.HasValue)
+                {
+                    joinFilter = " AND prod.company_id = @CompanyId";
+                }
+
+                var topBrands = await _db.QueryAsync<dynamic>($@"
+                    SELECT TOP 4 
+                        COALESCE(sv.static_value, 'Brand ' + CAST(prod.brand_id AS VARCHAR)) AS name, 
+                        prod.brand_id AS id, 
+                        COUNT(*) AS productCount
+                    FROM products prod
+                    LEFT JOIN static_value sv ON prod.brand_id = sv.static_id
+                    WHERE prod.brand_id > 0 {joinFilter}
+                    GROUP BY sv.static_value, prod.brand_id
+                    ORDER BY productCount DESC", param);
+
+                var topManufacturers = await _db.QueryAsync<dynamic>($@"
+                    SELECT TOP 4 
+                        COALESCE(m.name, 'Manuf. ' + CAST(prod.manufacturer_id AS VARCHAR)) AS name, 
+                        prod.manufacturer_id AS id, 
+                        COUNT(*) AS productCount
+                    FROM products prod
+                    LEFT JOIN manufacturers m ON prod.manufacturer_id = m.id
+                    WHERE prod.manufacturer_id > 0 {joinFilter}
+                    GROUP BY m.name, prod.manufacturer_id
+                    ORDER BY productCount DESC", param);
+
+                return Ok(new {
+                    globalCatalogCount = totalCount,
+                    myProductsCount = approvedCount,
+                    waitingApprovalCount = waitingCount,
+                    topBrands = topBrands,
+                    topManufacturers = topManufacturers
+                });
             }
-
-            // 1. Resolve CompanyId (Priority: Query Param > JWT)
-            var jwtCompanyIdClaim = User.FindFirst("company_id")?.Value ?? User.FindFirst("CompanyId")?.Value;
-            long? resolvedCompanyId = null;
-            if (!string.IsNullOrEmpty(jwtCompanyIdClaim) && long.TryParse(jwtCompanyIdClaim, out var pId))
+            catch (Exception ex)
             {
-                resolvedCompanyId = pId;
+                return StatusCode(500, new { error = ex.Message, details = ex.StackTrace });
             }
-            if (companyId.HasValue) resolvedCompanyId = companyId.Value;
-
-            var dParam = new { CompanyId = resolvedCompanyId };
-            string scopeFilter = (myProducts && resolvedCompanyId.HasValue) ? " WHERE Company_Id = @CompanyId" : "";
-
-            // Card 1: Global/Total Catalog (Contextual: Marketplace Total OR My Total)
-            int totalCount = await _db.ExecuteScalarAsync<int>($"SELECT COUNT(*) FROM Products {scopeFilter}", dParam);
-            
-            // Card 2: Approved (Contextual: All Approved OR My Approved)
-            string approvedWhere = string.IsNullOrEmpty(scopeFilter) ? " WHERE UPPER(Status) = 'APPROVED'" : scopeFilter + " AND UPPER(Status) = 'APPROVED'";
-            int approvedCount = await _db.ExecuteScalarAsync<int>($"SELECT COUNT(*) FROM Products {approvedWhere}", dParam);
-
-            // Card 3: Pending/Waiting (Contextual: All Pending OR My Pending)
-            string pendingWhere = string.IsNullOrEmpty(scopeFilter) ? " WHERE (UPPER(Status) = 'PENDING' OR Status IS NULL)" : scopeFilter + " AND (UPPER(Status) = 'PENDING' OR Status IS NULL)";
-            int waitingCount = await _db.ExecuteScalarAsync<int>($"SELECT COUNT(*) FROM Products {pendingWhere}", dParam);
-
-            // Sidebar aggregation: Contextual based on mode
-            var sidebarFilter = (myProducts && resolvedCompanyId.HasValue) ? " AND company_id = @CompanyId" : "";
-            var sidebarParam = new { CompanyId = resolvedCompanyId };
-
-            var topBrands = await _db.QueryAsync<dynamic>($@"
-                SELECT TOP 4 
-                    COALESCE(sv.static_value, 'Brand ' + CAST(p.brand_id AS VARCHAR)) AS name, 
-                    p.brand_id AS id, 
-                    COUNT(*) AS productCount
-                FROM products p
-                LEFT JOIN static_value sv ON p.brand_id = sv.static_id
-                WHERE p.brand_id > 0
-                  {sidebarFilter}
-                GROUP BY sv.static_value, p.brand_id
-                ORDER BY productCount DESC", sidebarParam);
-
-            var topManufacturers = await _db.QueryAsync<dynamic>($@"
-                SELECT TOP 4 
-                    COALESCE(m.name, 'Manuf. ' + CAST(p.manufacturer_id AS VARCHAR)) AS name, 
-                    p.manufacturer_id AS id, 
-                    COUNT(*) AS productCount
-                FROM products p
-                LEFT JOIN manufacturers m ON p.manufacturer_id = m.id
-                WHERE p.manufacturer_id > 0
-                  {sidebarFilter}
-                GROUP BY m.name, p.manufacturer_id
-                ORDER BY productCount DESC", sidebarParam);
-
-            return Ok(new
-            {
-                globalCatalogCount = totalCount,
-                myProductsCount = approvedCount,
-                waitingApprovalCount = waitingCount,
-                topBrands = topBrands,
-                topManufacturers = topManufacturers
-            });
         }
 
         [HttpGet("Categories")]
@@ -297,7 +325,8 @@ namespace Marketplace.Api.Controllers
                 Rate = dto.Rate,
                 CompanyId = companyId,
                 CreatedBy = userEmail,
-                Status = "Pending"
+                Status = "Pending",
+                ActiveFlag = dto.ActiveFlag
             };
 
             product.Id = await repositorysitory.CreateAsync(product);
@@ -360,6 +389,7 @@ namespace Marketplace.Api.Controllers
             product.BrandId = dto.BrandId;
             product.ManufacturerId = dto.ManufacturerId;
             product.Rate = dto.Rate;
+            product.ActiveFlag = dto.ActiveFlag;
             product.UpdatedAt = DateTime.UtcNow;
 
             await repositorysitory.UpdateAsync(product);
@@ -435,18 +465,24 @@ namespace Marketplace.Api.Controllers
     [FromBody] ProductDecisionRequest request)
         {
             var email =
-                User.FindFirstValue(ClaimTypes.Email)
-                ?? User.FindFirstValue("email");
+                request.Email
+                ?? User.FindFirstValue(ClaimTypes.Email)
+                ?? User.FindFirstValue("email")
+                ?? User.FindFirstValue("sub"); // Some tokens use sub for email/identity
 
             if (string.IsNullOrEmpty(email))
-                return Unauthorized();
+                return Unauthorized(new { error = "Administrator email is required" });
 
             var companyClaim =
                 User.FindFirstValue("company_id")
                 ?? User.FindFirstValue("CompanyId");
 
-            if (!int.TryParse(companyClaim, out int companyId))
-                return Unauthorized(new { error = "Invalid CompanyId claim" });
+            // Make companyId optional - fallback to 0 if not present (Super Admins might not have one)
+            int companyId = 0;
+            if (!string.IsNullOrEmpty(companyClaim))
+            {
+                int.TryParse(companyClaim, out companyId);
+            }
 
             if (_db.State != ConnectionState.Open)
                 _db.Open();
@@ -461,32 +497,33 @@ namespace Marketplace.Api.Controllers
                 {
                     await repositorysitory.ApproveProductAsync(
                         id,
+                        (product.CompanyId ?? companyId),
                         email,
+                        request.Remarks ?? "Approved",
                         tx
                     );
 
                     await repositorysitory.AddProductCreditAsync(
-                        companyId,
+                        (product.CompanyId ?? companyId),
                         product.Id,
                         request.Remarks ?? "Approved",
+                        email,
                         tx
                     );
+
+                    // Removed InsertProductNoteAsync call - auditing now handled by ApproveProductAsync via user_logs table
                 }
                 else if (request.Action == "Rejected")
                 {
                     await repositorysitory.RejectProductAsync(
                         id,
-                        email,
-                        tx
-                    );
-
-                    await repositorysitory.InsertRejectNoteAsync(
-                        companyId,
-                        product.Id,
+                        (product.CompanyId ?? companyId),
                         email,
                         request.Remarks ?? "Rejected",
                         tx
                     );
+
+                    // Removed InsertProductNoteAsync call - auditing now handled by RejectProductAsync via user_logs table
                 }
                 else
                 {

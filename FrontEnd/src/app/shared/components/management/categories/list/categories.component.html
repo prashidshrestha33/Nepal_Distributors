@@ -77,25 +77,57 @@
     <!-- Content Area -->
     <main class="flex-1 w-full overflow-y-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
 
-      <!-- Toolbar: Search -->
-      <div class="py-1 w-full">
-        <div class="relative w-full group">
+      <!-- Toolbar: Search & Filters Row -->
+      <div class="flex items-center gap-3 w-full bg-white p-2 rounded-2xl border border-gray-100 shadow-sm">
+        <!-- Search -->
+        <div class="relative flex-1 group">
           <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <svg class="w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none"
+            <svg class="w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none"
               stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
             </svg>
           </div>
-          <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()"
-            placeholder="Search by name..."
-            class="w-full pl-12 pr-12 py-3 sm:py-3.5 bg-white border border-gray-200 rounded-[1.125rem] text-sm font-semibold text-gray-900 shadow-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:outline-none transition-all placeholder:text-gray-400">
+          <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Search by name..."
+            class="w-full pl-10 pr-4 py-2.5 bg-gray-50/50 border border-transparent rounded-xl text-sm font-semibold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:outline-none transition-all placeholder:text-gray-400">
         </div>
+
+        <!-- Divider -->
+        <div class="w-px h-8 bg-gray-100 hidden sm:block"></div>
+
+        <!-- Status Filter -->
+        <div class="relative min-w-[140px] hidden sm:block">
+          <select [(ngModel)]="statusFilter" (change)="applyFilters()"
+            class="w-full pl-4 pr-10 py-2.5 bg-gray-50/50 border border-transparent rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:outline-none transition-all appearance-none cursor-pointer">
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Reset Button -->
+        <button (click)="resetFilters()"
+          class="flex items-center gap-2 px-4 py-2.5 text-blue-600 rounded-xl text-sm font-bold hover:bg-blue-50 transition-all active:scale-95 group">
+          <svg xmlns="http://www.w3.org/2000/svg"
+            class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span class="hidden md:inline">Reset</span>
+        </button>
       </div>
 
       <!-- Error State -->
       <div *ngIf="error" class="bg-red-50 border border-red-200 p-4 rounded-xl text-red-700 flex items-center gap-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
@@ -106,17 +138,19 @@
       <div class="bg-white rounded-[1.25rem] border border-gray-200 shadow-sm relative flex flex-col">
         <!-- Loading Overlay -->
         <div *ngIf="loading"
-            class="absolute inset-0 bg-white/60 backdrop-blur-sm z-20 flex flex-col items-center justify-center">
-            <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <span class="mt-4 text-sm font-bold text-gray-900 tracking-tight">Syncing Data...</span>
-          </div>
+          class="absolute inset-0 bg-white/60 backdrop-blur-sm z-20 flex flex-col items-center justify-center">
+          <div class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <span class="mt-4 text-sm font-bold text-gray-900 tracking-tight">Syncing Data...</span>
+        </div>
 
         <!-- Desktop Table (md+) -->
         <div class="hidden md:block overflow-x-auto w-full">
           <table class="w-full text-left border-collapse whitespace-nowrap">
             <thead>
               <tr class="bg-gray-50 border-b border-gray-200">
-                <th class="px-3 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors group select-none" (click)="onSort('name')">
+                <th
+                  class="px-3 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors group select-none"
+                  (click)="onSort('name')">
                   <div class="flex items-center gap-1">
                     Name
                     <span class="text-gray-400 group-hover:text-blue-500" *ngIf="sortColumn !== 'name'">↕</span>
@@ -124,8 +158,12 @@
                     <span class="text-blue-600" *ngIf="sortColumn === 'name' && sortDirection === 'desc'">↓</span>
                   </div>
                 </th>
-                <th class="hidden sm:table-cell px-3 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Slug</th>
-                <th class="px-3 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors group select-none" (click)="onSort('status')">
+                <th
+                  class="hidden sm:table-cell px-3 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                  Slug</th>
+                <th
+                  class="px-3 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors group select-none"
+                  (click)="onSort('status')">
                   <div class="flex items-center gap-1">
                     Status
                     <span class="text-gray-400 group-hover:text-blue-500" *ngIf="sortColumn !== 'status'">↕</span>
@@ -134,39 +172,47 @@
                   </div>
                 </th>
                 <th class="px-3 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Image</th>
-                <th class="px-3 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">Actions</th>
+                <th class="px-3 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">Actions
+                </th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 align-middle">
               <!-- Data Row -->
-              <tr *ngFor="let cat of paginatedItems" class="hover:bg-gray-50/50 transition-colors group border-b border-gray-100">
+              <tr *ngFor="let cat of paginatedItems"
+                class="hover:bg-gray-50/50 transition-colors group border-b border-gray-100">
                 <td class="px-3 py-3 min-w-0">
                   <div class="flex items-center gap-2">
                     <!-- Expand/Collapse Button (for parents) -->
                     <div *ngIf="cat.hasChildren" class="flex-shrink-0">
                       <button (click)="toggleExpand(cat.id, $event)"
                         class="w-6 h-6 flex items-center justify-center text-gray-700 hover:bg-gray-200 rounded-md z-10 bg-white shadow-sm border border-gray-200 transition-colors">
-                        <svg *ngIf="!cat.isExpanded" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg *ngIf="!cat.isExpanded" class="w-4 h-4" fill="none" stroke="currentColor"
+                          viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
-                        <svg *ngIf="cat.isExpanded" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg *ngIf="cat.isExpanded" class="w-4 h-4" fill="none" stroke="currentColor"
+                          viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                       </button>
                     </div>
                     <!-- Spacer for leaves (to align nicely) -->
                     <div *ngIf="!cat.hasChildren" class="w-6"></div>
-                    
+
                     <!-- Icons (Folder/Document) -->
                     <div class="text-gray-500 z-10 flex-shrink-0">
-                      <svg *ngIf="cat.hasChildren" class="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      <svg *ngIf="cat.hasChildren" class="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                          d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                       </svg>
-                      <svg *ngIf="!cat.hasChildren" class="w-5 h-5 sm:w-6 sm:h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      <svg *ngIf="!cat.hasChildren" class="w-5 h-5 sm:w-6 sm:h-6 text-gray-500" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                       </svg>
                     </div>
-                    
+
                     <div class="text-sm font-medium text-gray-900 z-10">
                       {{ cat.name }}
                     </div>
@@ -176,7 +222,7 @@
                   <code class="bg-gray-100 px-2 py-1 rounded text-xs text-gray-800">{{ cat.slug }}</code>
                 </td>
                 <td class="px-3 py-3 whitespace-nowrap">
-                  <span 
+                  <span
                     [ngClass]="cat.activeFlag ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'"
                     class="px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider">
                     {{ cat.activeFlag ? 'Active' : 'Inactive' }}
@@ -202,13 +248,15 @@
                   </div>
                 </td>
               </tr>
-              
+
               <!-- Empty State -->
               <tr *ngIf="!loading && filteredItems.length === 0">
                 <td colspan="5" class="py-24 text-center">
                   <div class="flex flex-col items-center justify-center opacity-60">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-gray-300 mb-4" fill="none"
+                      viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
                     </svg>
                     <span class="text-lg font-bold text-gray-500 tracking-tight">No categories found</span>
                   </div>
@@ -223,8 +271,10 @@
           <!-- Empty State -->
           <div *ngIf="!loading && filteredItems.length === 0" class="py-20 text-center">
             <div class="flex flex-col items-center justify-center opacity-60">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-14 h-14 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-14 h-14 text-gray-300 mb-4" fill="none"
+                viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
               </svg>
               <span class="text-base font-bold text-gray-500 tracking-tight">No categories found</span>
             </div>
@@ -235,11 +285,15 @@
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-3 flex-grow min-w-0">
                 <div class="flex-shrink-0">
-                  <svg *ngIf="cat.hasChildren" class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                  <svg *ngIf="cat.hasChildren" class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                   </svg>
-                  <svg *ngIf="!cat.hasChildren" class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  <svg *ngIf="!cat.hasChildren" class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
                 </div>
                 <div class="min-w-0">
@@ -259,33 +313,33 @@
           </div>
         </div>
 
-    <!-- Pagination Footer -->
-    <div
-      class="px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-white text-sm rounded-b-[1.25rem] overflow-hidden">
-      <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">PAGE {{ currentPage }} OF {{
-        totalPages || 1 }}</div>
-      <div class="flex items-center gap-1">
-        <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1"
-          class="px-2.5 sm:px-3.5 py-1.5 border border-gray-200 rounded-lg font-semibold text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors shadow-sm text-xs sm:text-sm">Previous</button>
-        <div class="flex items-center gap-1 px-1 sm:px-3">
-          <ng-container *ngFor="let page of [].constructor(totalPages); let i = index">
-            <button
-              *ngIf="i + 1 === 1 || i + 1 === totalPages || (i + 1 >= currentPage - 1 && i + 1 <= currentPage + 1)"
-              (click)="goToPage(i + 1)"
-              [ngClass]="currentPage === i + 1 ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'text-gray-600 hover:bg-gray-50 hover:border-gray-300 bg-white'"
-              class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg font-bold text-xs border border-transparent transition-all">
-              {{ i + 1 }}
-            </button>
-            <span *ngIf="totalPages > 5 && (i + 1 === 2 && currentPage > 3)"
-              class="text-gray-300 tracking-widest px-1">...</span>
-            <span *ngIf="totalPages > 5 && (i + 1 === totalPages - 1 && currentPage < totalPages - 2)"
-              class="text-gray-300 tracking-widest px-1">...</span>
-          </ng-container>
+        <!-- Pagination Footer -->
+        <div
+          class="px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-white text-sm rounded-b-[1.25rem] overflow-hidden">
+          <div class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">PAGE {{ currentPage }} OF {{
+            totalPages || 1 }}</div>
+          <div class="flex items-center gap-1">
+            <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1"
+              class="px-2.5 sm:px-3.5 py-1.5 border border-gray-200 rounded-lg font-semibold text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors shadow-sm text-xs sm:text-sm">Previous</button>
+            <div class="flex items-center gap-1 px-1 sm:px-3">
+              <ng-container *ngFor="let page of [].constructor(totalPages); let i = index">
+                <button
+                  *ngIf="i + 1 === 1 || i + 1 === totalPages || (i + 1 >= currentPage - 1 && i + 1 <= currentPage + 1)"
+                  (click)="goToPage(i + 1)"
+                  [ngClass]="currentPage === i + 1 ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'text-gray-600 hover:bg-gray-50 hover:border-gray-300 bg-white'"
+                  class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg font-bold text-xs border border-transparent transition-all">
+                  {{ i + 1 }}
+                </button>
+                <span *ngIf="totalPages > 5 && (i + 1 === 2 && currentPage > 3)"
+                  class="text-gray-300 tracking-widest px-1">...</span>
+                <span *ngIf="totalPages > 5 && (i + 1 === totalPages - 1 && currentPage < totalPages - 2)"
+                  class="text-gray-300 tracking-widest px-1">...</span>
+              </ng-container>
+            </div>
+            <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages"
+              class="px-2.5 sm:px-3.5 py-1.5 border border-gray-200 rounded-lg font-semibold text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors shadow-sm text-xs sm:text-sm">Next</button>
+          </div>
         </div>
-        <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages"
-          class="px-2.5 sm:px-3.5 py-1.5 border border-gray-200 rounded-lg font-semibold text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors shadow-sm text-xs sm:text-sm">Next</button>
-      </div>
-    </div>
 
       </div>
     </main>
@@ -301,8 +355,8 @@
     class="fixed inset-0 z-[110] flex items-center justify-center p-2 md:p-6 bg-black/60 backdrop-blur-sm transition-all duration-300">
     <div class="w-full max-w-4xl max-h-[95vh] relative animate-in fade-in zoom-in slide-in-from-bottom-4 duration-300"
       (click)="$event.stopPropagation()">
-      <app-category-form [isModal]="true" [categoryId]="editCategoryId ?? undefined" (closeModal)="closeCategoryFormModal()"
-        (categorySaved)="onCategorySaved()">
+      <app-category-form [isModal]="true" [categoryId]="editCategoryId ?? undefined"
+        (closeModal)="closeCategoryFormModal()" (categorySaved)="onCategorySaved()">
       </app-category-form>
     </div>
   </div>

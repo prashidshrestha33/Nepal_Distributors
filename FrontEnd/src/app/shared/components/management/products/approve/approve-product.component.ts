@@ -1,6 +1,7 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../../../services/auth.service';
 import type { Product } from '../../../../services/management/management.service';
 import { environment } from '../../../../../../environments/environment';
 @Component({
@@ -11,6 +12,7 @@ import { environment } from '../../../../../../environments/environment';
   styleUrls: ['./approve-product.component.css']
 })
 export class ApproveProductComponent {
+  private authService = inject(AuthService);
 
   // =========================
   // Snackbar for notifications
@@ -57,7 +59,7 @@ getImageUrl(imageName?: string): string {
   @Input() product: (Product & { categoryName?: string; brandName?: string }) | null = null;
 
   /** Emits when product is approved or rejected */
-  @Output() approve = new EventEmitter<{ status: 'Approved' | 'Rejected'; reason?: string }>();
+  @Output() approve = new EventEmitter<{ status: 'Approved' | 'Rejected'; reason?: string; email?: string }>();
 
   /** Emits when modal is cancelled */
   @Output() cancel = new EventEmitter<void>();
@@ -95,11 +97,16 @@ getImageUrl(imageName?: string): string {
       return;
     }
 
+    // Experienced developer: Use AuthService to get synced claims from token
+    const claims = this.authService.getTokenClaims();
+    const email = claims?.email || '';
+
     // Emit event to parent component after a very short delay to allow UI to breathe
     setTimeout(() => {
       this.approve.emit({
         status: actionType,
-        reason
+        reason,
+        email: email
       });
       this.closeReason();
     }, 100);

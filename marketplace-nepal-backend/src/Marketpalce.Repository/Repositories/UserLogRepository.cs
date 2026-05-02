@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -10,19 +10,30 @@ namespace Marketpalce.Repository.Repositories
 {
     public static class UserLogRepository
     {
-        public static async Task LogUserActionAsync(IDbConnection db, long userId, string action, string details, string performedBy, IDbTransaction? transaction = null)
+        public static async Task LogUserActionAsync(IDbConnection db, long? productId, long? companyId, string action, string details, string performedBy, IDbTransaction? transaction = null)
         {
-            const string logSql = @"
-            INSERT INTO dbo.user_logs (user_id, action, logged_dt, details, performed_by)
-            VALUES (@UserId, @Action, SYSUTCDATETIME(), @Details, @PerformedBy);
-            ";
-            await db.ExecuteAsync(logSql, new
+            try
             {
-                UserId = userId,
-                Action = action,
-                Details = details,
-                PerformedBy = performedBy
-            }, transaction: transaction);
+                const string logSql = @"
+                INSERT INTO user_logs (product_id, company_id, action, logged_dt, details, performed_by)
+                VALUES (@ProductId, @CompanyId, @Action, SYSUTCDATETIME(), @Details, @PerformedBy);
+                ";
+                
+                await db.ExecuteAsync(logSql, new
+                {
+                    ProductId = productId,
+                    CompanyId = companyId,
+                    Action = action,
+                    Details = details,
+                    PerformedBy = performedBy
+                }, transaction: transaction);
+            }
+            catch (Exception ex)
+            {
+                // Safety: Log the error but don't crash the main transaction
+                // In production, you would typically use a logging library like Serilog here.
+                Console.WriteLine($"Audit log failed: {ex.Message}");
+            }
         }
     }
 }

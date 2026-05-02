@@ -9,6 +9,7 @@ import { RouterModule, Router } from '@angular/router';
 import { ProductService } from '../../../../services/management/management.service';
 import type { ImportStatusResponse, Product as ProductBase } from '../../../../services/management/management.service';
 import { Category, CategoryService, Users, StaticValueCatalog, StaticValueService, StaticValue } from '../../../../services/management/management.service';
+import { AuthService } from '../../../../services/auth.service';
 import { environment } from '../../../../../../environments/environment';
 import { ProductListPopupComponent } from '../../../CustomComponents/ProductList/product-list-popup.component';
 import { CategorySidebarComponent } from '../../categories/sidebar/category-sidebar.component';
@@ -72,6 +73,7 @@ export class ProductsComponent implements OnInit {
   selectedCategoryId: number | null = null;
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
+  activeStatusFilter: 'all' | 'active' | 'inactive' = 'all';
   isMyProducts: boolean = false;
   
   stats = {
@@ -90,8 +92,9 @@ export class ProductsComponent implements OnInit {
     private categoryService: CategoryService,
     private cdr: ChangeDetectorRef,
     private staticValueService: StaticValueService,
-      public ui: UiService,
-      private http: HttpClient
+    public ui: UiService,
+    private http: HttpClient,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
@@ -193,7 +196,11 @@ export class ProductsComponent implements OnInit {
       }
     }
 
-    this.productService.getProducts(this.currentPage, this.pageSize, this.selectedCategoryId, this.isMyProducts, companyId, this.selectedBrandId, this.selectedManufacturerId).subscribe({
+    let activeFlag: boolean | undefined = undefined;
+    if (this.activeStatusFilter === 'active') activeFlag = true;
+    else if (this.activeStatusFilter === 'inactive') activeFlag = false;
+
+    this.productService.getProducts(this.currentPage, this.pageSize, this.selectedCategoryId, this.isMyProducts, companyId, this.selectedBrandId, this.selectedManufacturerId, this.searchTerm, activeFlag).subscribe({
       next: (pagedData: any) => {
         if (pagedData && pagedData.data) {
           this.products = pagedData.data.map((p: Product) => ({
@@ -275,6 +282,7 @@ getBrandName(brandId?: number | null): string {
   loadCategoryTree() {
     this.categoryService.getTreeCategories().subscribe({
       next: (tree: Category[]) => {
+        console.log('Category Tree Loaded:', tree);
         this.treeCategories = tree;
         this.cascadingDropdowns[0] = tree;
         this.dropdownLabels[0] = 'Parent Category';
@@ -395,14 +403,17 @@ removeProduct(product: Product) {
   this.approveProduct(product);
 }
 
-onApproveSave(event: { status: string; reason?: string }) {
+onApproveSave(event: { status: string; reason?: string; email?: string }) {
   if (!this.approveProductData) return;
+
+  const email = event.email || '';
 
   // Prepare payload for approval or removal
   const payload = {
     id: this.approveProductData.id,
     action: event.status,
     remarks: event.reason || '',
+    email: email
   };
 
   this.productService.ApprovedProductById(this.approveProductData.id, payload).subscribe({
@@ -483,8 +494,23 @@ downloadTemplate() {
     const selectedProducts = this.filteredProducts.filter(p => p.selected);
     if (!selectedProducts.length) return;
 
+    // Experienced developer: Use AuthService to get synced claims from token
+    const claims = this.authService.getTokenClaims();
+    
+    // Support both standard 'email' and .NET identity 'emailaddress' claim keys
+    // In .NET JWT, email is often 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'
+    const email = claims?.email || 
+                  claims?.['email'] ||
+                  claims?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || 
+                  '';
+
     const requests = selectedProducts.map(p => {
-      const payload = { action: 'Approved', remarks: 'Bulk approved' };
+      // Use PascalCase to match .NET DTO properties exactly for better compatibility
+      const payload = { 
+        Action: 'Approved', 
+        Remarks: 'Bulk approved', 
+        Email: email 
+      };
       return this.productService.bulkApproveProduct(p.id, payload);
     });
 
@@ -523,12 +549,15 @@ getImageUrl(imageName?: string): string {
   }
 
   onSearch() {
-    const term = (this.searchTerm || '').toLowerCase();
-    this.filteredProducts = this.products.filter(p =>
-      p.name.toLowerCase().includes(term) ||
-      this.getBrandName(p.brandId).toLowerCase().includes(term) ||
-      this.getCategoryName(p.categoryId).toLowerCase().includes(term)
-    );
+    this.currentPage = 1;
+    this.loadProducts();
+  }
+
+  resetFilters() {
+    this.searchTerm = '';
+    this.activeStatusFilter = 'all';
+    this.currentPage = 1;
+    this.loadProducts();
   }
 
   editProduct(product: Product) {

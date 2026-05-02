@@ -217,9 +217,56 @@ export class CompanyService {
   }
 
   getCategories(): Observable<Category[]> {
-    return this.apiGateway.getWithResult<Category[]>(
-      `${environment.apiBaseUrl}/api/Product/Categories`
+    return this.apiGateway.get<any>(
+      `${environment.apiBaseUrl}/api/Product/Categories`,
+      { requiresAuth: true }
+    ).pipe(
+      map((response: any) => {
+        const raw = response?.result || response?.data || (Array.isArray(response) ? response : []);
+        if (!Array.isArray(raw)) return [];
+
+        // Check if already nested
+        if (raw.some(c => c.children && c.children.length > 0)) {
+          return this.normalizeCategories(raw);
+        }
+        return this.buildTree(raw);
+      })
     );
+  }
+
+  private normalizeCategories(cats: any[]): Category[] {
+    return cats.map((c: any) => ({
+      id: Number(c.id ?? c.Id ?? c.ID),
+      name: c.name ?? c.Name,
+      slug: c.slug ?? c.Slug,
+      parentId: (c.parentId != null && c.parentId !== '') ? Number(c.parentId ?? c.ParentId ?? c.parent_id) : null,
+      depth: c.depth ?? c.Depth ?? 0,
+      activeFlag: c.activeFlag ?? c.ActiveFlag ?? true,
+      children: c.children && Array.isArray(c.children) ? this.normalizeCategories(c.children) : []
+    })) as Category[];
+  }
+
+  private buildTree(flatList: any[]): Category[] {
+    const normalized = this.normalizeCategories(flatList);
+    const map = new Map<number, Category>();
+    const roots: Category[] = [];
+
+    normalized.forEach(c => map.set(c.id, c));
+
+    normalized.forEach(c => {
+      if (c.parentId && c.parentId !== 0) {
+        const parent = map.get(Number(c.parentId));
+        if (parent) {
+          if (!parent.children) parent.children = [];
+          parent.children.push(c);
+        } else {
+          roots.push(c);
+        }
+      } else {
+        roots.push(c);
+      }
+    });
+    return roots;
   }
 
   getCategoriesparent(parentid: number): Observable<Category[]> {

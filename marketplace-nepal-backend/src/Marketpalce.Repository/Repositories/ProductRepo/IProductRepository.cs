@@ -11,7 +11,7 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
     public interface IProductRepository
     {
         Task<IEnumerable<ProductModel>> GetAllAsync();
-        Task<PagedResult<ProductModel>> GetPaginatedAsync(int pageNumber, int pageSize, int? categoryId = null, long? companyId = null, long? brandId = null, long? manufacturerId = null);
+        Task<PagedResult<ProductModel>> GetPaginatedAsync(int pageNumber, int pageSize, int? categoryId = null, long? companyId = null, long? brandId = null, long? manufacturerId = null, string? keyword = null, bool? activeFlag = null, string? createdBy = null);
         Task<List<CategoryDto>> GetAllCategoryAsync();
         Task<ProductModel> GetByIdAsync(int id);
         Task<int> CreateAsync(ProductModel product);
@@ -29,21 +29,26 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
 
         Task ApproveProductAsync(
             int id,
+            int companyId,
             string approvedByEmail,
+            string remarks,
             IDbTransaction tx);
 
         Task RejectProductAsync(
             int id,
+            int companyId,
             string rejectedByEmail,
+            string remarks,
             IDbTransaction tx);
 
         Task AddProductCreditAsync(
             int companyId,
             int productId,
             string remarks,
+            string email,
             IDbTransaction tx);
 
-        Task InsertRejectNoteAsync(
+        Task InsertProductNoteAsync(
             int companyId,
             int productId,
             string email,
@@ -55,6 +60,5 @@ namespace Marketpalce.Repository.Repositories.ProductRepo
         Task<List<CategoryDto>> GetparentChild(int parentid = 0);
         Task<int> AddReviewAsync(ProductReview review);
         Task<bool> UpdateCategoryAsync(int id, CreateCategoryDto dto, string? imageUrl);
-
     }
 }

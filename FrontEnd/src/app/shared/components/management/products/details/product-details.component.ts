@@ -13,6 +13,7 @@ import {
   StaticValue,
   StaticValueCatalog
 } from '../../../../services/management/management.service';
+import { AuthService } from '../../../../services/auth.service';
 import { environment } from '../../../../../../environments/environment';
 
 // Define ProductImage interface
@@ -54,13 +55,15 @@ export class ProductDetailsComponent implements OnInit {
   images?: ProductImage[];
   
   currentUserCompanyName: string = 'System';
+  zoomStyle: any = {};
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private productService: ProductService,
     private categoryService: CategoryService,
-    private staticValueService: StaticValueService
+    private staticValueService: StaticValueService,
+    private authService: AuthService
   ) { }
 
   ngOnInit(): void {
@@ -84,16 +87,10 @@ export class ProductDetailsComponent implements OnInit {
   }
 
   loadUserClaims() {
-    try {
-      const claimsStr = sessionStorage.getItem('userClaims') || localStorage.getItem('userClaims');
-      if (claimsStr) {
-        const claims = JSON.parse(claimsStr);
-        if (claims.company_Name) {
-          this.currentUserCompanyName = claims.company_Name;
-        }
-      }
-    } catch (e) {
-      console.error('Error parsing user claims', e);
+    // Experienced developer: Use AuthService to get synced claims from token
+    const claims = this.authService.getTokenClaims();
+    if (claims && claims.company_Name) {
+      this.currentUserCompanyName = claims.company_Name;
     }
   }
 
@@ -175,9 +172,22 @@ export class ProductDetailsComponent implements OnInit {
 
   private loadCategories() {
     this.categoryService.getCategories().subscribe({
-      next: (cats) => (this.categories = cats),
+      next: (cats) => {
+        this.categories = this.flattenTree(cats);
+      },
       error: (err) => console.error('Error loading categories', err)
     });
+  }
+
+  private flattenTree(tree: Category[]): Category[] {
+    let flat: Category[] = [];
+    tree.forEach(node => {
+      flat.push(node);
+      if (node.children && node.children.length > 0) {
+        flat = flat.concat(this.flattenTree(node.children));
+      }
+    });
+    return flat;
   }
 
   private loadStaticValues() {
@@ -217,6 +227,7 @@ export class ProductDetailsComponent implements OnInit {
   }
 
   getCategoryName(categoryId?: number): string {
+    if (this.product?.categoryName) return this.product.categoryName;
     if (typeof categoryId !== 'number') return 'N/A';
     const cat = this.categories.find(c => c.id === categoryId);
     return cat?.name ?? 'N/A';
@@ -267,10 +278,15 @@ export class ProductDetailsComponent implements OnInit {
   private executeStatusUpdate(status: string, remarks: string) {
     if (!this.product) return;
 
+    // Experienced developer: Use AuthService to get synced claims from token
+    const claims = this.authService.getTokenClaims();
+    const email = claims?.email || '';
+
     const payload = {
       id: this.product.id,
       action: status,
       remarks: remarks,
+      email: email
     };
 
     this.productService.ApprovedProductById(this.product.id, payload).subscribe({
@@ -318,6 +334,24 @@ export class ProductDetailsComponent implements OnInit {
     if (!this.product?.images?.length) return;
     this.selectedImageIndex = index;
   }
+
+  onMouseMove(e: MouseEvent) {
+    const target = e.currentTarget as HTMLElement;
+    const x = (e.offsetX / target.offsetWidth) * 100;
+    const y = (e.offsetY / target.offsetHeight) * 100;
+    this.zoomStyle = {
+      'transform-origin': `${x}% ${y}%`,
+      'transform': 'scale(2.5)'
+    };
+  }
+
+  onMouseLeave() {
+    this.zoomStyle = {
+      'transform': 'scale(1)',
+      'transform-origin': 'center'
+    };
+  }
+
   // Handle image load error
   handleImageError(event: any) {
     if (!event.target.src.includes('no-image.png')) {

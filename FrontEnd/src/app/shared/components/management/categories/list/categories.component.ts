@@ -29,6 +29,7 @@ export class CategoriesComponent implements OnInit {
   moveError: string | null = null;
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
+  statusFilter: 'all' | 'active' | 'inactive' = 'all';
   snackbar: { show: boolean; message: string; type: 'success' | 'error' | 'warning' } = { show: false, message: '', type: 'success' };
 
   // Modal properties for add/edit category
@@ -76,11 +77,7 @@ export class CategoriesComponent implements OnInit {
     this.service.getAllCategories().subscribe({
       next: (data: Category[]) => {
         this.itemsTree = data;
-        this.items = this.flattenVisibleCategoryTree(this.itemsTree);
-
-        this.filteredItems = this.items;
-        this.currentPage = 1;
-        this.updatePaginatedItems();
+        this.applyFilters();
         this.loading = false;
       },
       error: (err: any) => {
@@ -98,7 +95,6 @@ export class CategoriesComponent implements OnInit {
     } else {
       this.expandedCategoryIds.add(categoryId);
     }
-    this.items = this.flattenVisibleCategoryTree(this.itemsTree);
     this.applyFilters();
   }
 
@@ -143,6 +139,21 @@ export class CategoriesComponent implements OnInit {
     return result;
   }
 
+  /**
+   * Flatten the entire tree regardless of expansion state (used for filtering)
+   */
+  flattenEntireTree(categories: Category[], depth: number = 0): any[] {
+    let result: any[] = [];
+    for (const cat of categories) {
+      const hasChildren = !!(cat.children && cat.children.length > 0);
+      result.push({ ...cat, depth, hasChildren });
+      if (hasChildren) {
+        result.push(...this.flattenEntireTree(cat.children!, depth + 1));
+      }
+    }
+    return result;
+  }
+
   onSearch() {
     this.currentPage = 1; // Reset to page 1 when searching
     this.applyFilters();
@@ -152,7 +163,15 @@ export class CategoriesComponent implements OnInit {
    * Apply search filter and pagination
    */
   applyFilters() {
-    let filtered = this.items;
+    // If we are searching or filtering by status, we should look through ALL categories,
+    // not just the currently visible ones in the tree.
+    const isFiltering = this.searchTerm.trim() !== '' || this.statusFilter !== 'all';
+    
+    let source = isFiltering 
+      ? this.flattenEntireTree(this.itemsTree) 
+      : this.flattenVisibleCategoryTree(this.itemsTree);
+
+    let filtered = source;
 
     // Filter by search term
     if (this.searchTerm.trim()) {
@@ -162,9 +181,22 @@ export class CategoriesComponent implements OnInit {
       );
     }
 
+    // Filter by status
+    if (this.statusFilter === 'active') {
+      filtered = filtered.filter(i => i.activeFlag === true);
+    } else if (this.statusFilter === 'inactive') {
+      filtered = filtered.filter(i => i.activeFlag === false);
+    }
+
     this.filteredItems = filtered;
     this.currentPage = 1; // Reset to page 1
     this.updatePaginatedItems();
+  }
+
+  resetFilters() {
+    this.searchTerm = '';
+    this.statusFilter = 'all';
+    this.applyFilters();
   }
   getImageUrl(imageName?: string): string {
     return imageName 
@@ -257,32 +289,36 @@ export class CategoriesComponent implements OnInit {
     this.selectedCategoryForMove = category;
     this.showMoveModal = true;
     this.moveError = null;
+    this.moveFormLoading = false; // Always reset loading on open
   }
 
   closeMoveModal() {
     this.showMoveModal = false;
     this.selectedCategoryForMove = null;
     this.moveError = null;
+    this.moveFormLoading = false; // Always reset loading on close
   }
 
   onMoveSubmit(newParentId: number) {
     if (!this.selectedCategoryForMove?.id) return;
     
     const sourceName = this.selectedCategoryForMove.name;
-    const destName = newParentId === 0 ? 'Root' : this.getCategoryNameFromTree(this.itemsTree, newParentId) || 'New Parent';
+    const destName = newParentId === 0 ? 'Root (Main Category)' : this.getCategoryNameFromTree(this.itemsTree, newParentId) || 'New Parent';
 
     this.moveFormLoading = true;
     this.service.moveCategory(this.selectedCategoryForMove.id, newParentId).subscribe({
       next: () => {
+        this.moveFormLoading = false; // ✅ Reset before closing
         this.closeMoveModal();
         this.load();
-        this.showSnackbar(`Moved successfully ${sourceName} to ${destName}`, 'success');
+        this.showSnackbar(`"${sourceName}" moved to ${destName} successfully`, 'success');
       },
       error: (err: any) => {
         console.error('Error moving category:', err);
-        this.moveError = err?.error?.message || 'Failed to move category. Please try again.';
+        const backendMsg = err?.error?.error || err?.error?.message || err?.message;
+        this.moveError = backendMsg || 'Failed to move category. Please try again.';
         this.moveFormLoading = false;
-        this.showSnackbar('Failed to move category.', 'error');
+        this.showSnackbar(this.moveError || 'Failed to move category.', 'error');
       }
     });
   }
@@ -307,8 +343,6 @@ export class CategoriesComponent implements OnInit {
       this.sortDirection = 'asc';
     }
     
-    // Re-flatten to apply sort
-    this.items = this.flattenVisibleCategoryTree(this.itemsTree);
     this.applyFilters();
   }
 

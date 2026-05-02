@@ -1,4 +1,4 @@
-﻿using Marketpalce.Repository.Repositories.ComponyRepo;
+using Marketpalce.Repository.Repositories.ComponyRepo;
 using Marketplace.Api.Models;
 using Marketplace.Api.Services.Company;
 using Marketplace.Api.Services.EmailService;

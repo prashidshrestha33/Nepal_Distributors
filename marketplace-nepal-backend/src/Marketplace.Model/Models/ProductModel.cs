@@ -44,6 +44,7 @@ namespace Marketplace.Model.Models
         // New property to accept deleted image IDs (if any)
         public string? ImageIdsToDelete { get; set; }
         public bool ActiveFlag { get; set; } = true;
+        public string? CreatedByName { get; set; }
 
     }
 }

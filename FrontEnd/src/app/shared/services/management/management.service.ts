@@ -59,6 +59,7 @@ export interface Product {
   images?: ProductImage[];
   companyId?: number;
   companyName?: string;
+  createdByName?: string;
 }
 export interface ProductResponse {
   data: Product[];
@@ -159,48 +160,74 @@ export class CategoryService {
       { requiresAuth: true }
     ).pipe(
       map((response: any) => {
-        const raw = response?.result?.categories || response?.categories || [];
-        const flatList: Category[] = Array.isArray(raw) ? raw.map((c: any) => ({
-          id: c.Id ?? c.id,
-          name: c.Name ?? c.name,
-          slug: c.Slug ?? c.slug,
-          parentId: c.ParentId ?? c.parent_id ?? null,
-          depth: c.Depth ?? c.depth ?? 0,
-          children: []
-        })) : [];
+        const raw = response?.result?.categories || response?.result || response?.categories || (Array.isArray(response) ? response : []);
+        if (!Array.isArray(raw)) return [];
 
-        // Build the tree
-        const map = new Map<number, Category>();
-        const roots: Category[] = [];
+        // Check if the backend already returned a nested tree
+        const isAlreadyNested = raw.some(c => c.children && Array.isArray(c.children) && c.children.length > 0);
 
-        flatList.forEach(c => map.set(c.id, c));
+        if (isAlreadyNested) {
+          return this.normalizeCategories(raw);
+        }
 
-        map.forEach(c => {
-          if (c.parentId) {
-            const parent = map.get(Number(c.parentId));
-            if (parent) {
-              parent.children = parent.children || [];
-              parent.children.push(c);
-            } else {
-              roots.push(c); // Orphan nodes become roots
-            }
-          } else {
-            roots.push(c); // No parentId means root
-          }
-        });
-
-        // Ensure roots are sorted if needed, though SQL does it
-        return roots;
+        // Otherwise, build the tree from a flat list
+        return this.buildTree(raw);
       })
     );
   }
+
+  private normalizeCategories(cats: any[]): Category[] {
+    return cats.map((c: any) => ({
+      id: Number(c.id ?? c.Id ?? c.ID),
+      name: c.name ?? c.Name,
+      slug: c.slug ?? c.Slug,
+      parentId: (c.parentId != null && c.parentId !== '') ? Number(c.parentId ?? c.ParentId ?? c.parent_id) : null,
+      depth: c.depth ?? c.Depth ?? 0,
+      image: c.image ?? c.Image,
+      activeFlag: c.activeFlag ?? c.ActiveFlag ?? true,
+      children: c.children && Array.isArray(c.children) ? this.normalizeCategories(c.children) : []
+    })) as Category[];
+  }
+
+  private buildTree(flatList: any[]): Category[] {
+    const normalized = this.normalizeCategories(flatList);
+    const map = new Map<number, Category>();
+    const roots: Category[] = [];
+
+    normalized.forEach(c => map.set(c.id, c));
+
+    normalized.forEach(c => {
+      if (c.parentId && c.parentId !== 0) {
+        const parent = map.get(Number(c.parentId));
+        if (parent) {
+          if (!parent.children) parent.children = [];
+          parent.children.push(c);
+        } else {
+          roots.push(c); // Orphan
+        }
+      } else {
+        roots.push(c);
+      }
+    });
+
+    return roots;
+  }
 getAllCategories(): Observable<Category[]> {
-  return this.apiGateway.get<Category>(
+  return this.apiGateway.get<any>(
     '/api/Product/Categories',
     { requiresAuth: true }
   ).pipe(
-    map((response: any) => response?.result || [])
-  );
+      map((response: any) => {
+        const raw = response?.result || response?.data || (Array.isArray(response) ? response : []);
+        if (!Array.isArray(raw)) return [];
+        
+        // Check if already nested
+        if (raw.some(c => c.children && c.children.length > 0)) {
+          return this.normalizeCategories(raw);
+        }
+        return this.buildTree(raw);
+      })
+    );
 }
 
   getCategories(): Observable<Category[]> {
@@ -217,11 +244,11 @@ createCategory(formData: FormData): Observable<Category> {
   );
 }
 
-  moveCategory(categoryId: number, newParentId:  number): Observable<void> {
+  moveCategory(categoryId: number, newParentId: number | null): Observable<void> {
     return this.apiGateway.post<void>(
       '/api/Product/move',
-      { categoryId, newParentId },
-      { requiresAuth:  true }
+      { categoryId, newParentId: newParentId === 0 ? null : newParentId },
+      { requiresAuth: true }
     );
   }
 
@@ -256,8 +283,8 @@ createCategory(formData: FormData): Observable<Category> {
 export class ProductService {
   constructor(private apiGateway: ApiGatewayService) {}
 
-  getProducts(page: number = 1, pageSize: number = 20, categoryId?: number | null, myProducts: boolean = false, companyId?: number | null, brandId?: number | null, manufacturerId?: number | null): Observable<ProductResponse> {
-    const params = this.apiGateway.buildParams({ page, pageSize, categoryId, myProducts, companyId, brandId, manufacturerId });
+  getProducts(page: number = 1, pageSize: number = 20, categoryId?: number | null, myProducts: boolean = false, companyId?: number | null, brandId?: number | null, manufacturerId?: number | null, keyword?: string, activeFlag?: boolean): Observable<ProductResponse> {
+    const params = this.apiGateway.buildParams({ page, pageSize, categoryId, myProducts, companyId, brandId, manufacturerId, keyword, activeFlag });
     return this.apiGateway.getWithResult<ProductResponse>(
       '/api/Product',
       { requiresAuth: true, params }
@@ -384,7 +411,7 @@ updateProduct(id: number, product: Product, images?: { file?: File, isDefault: b
     );
   }
 
-  bulkApproveProduct(productId: number, payload: { action: string; remarks?: string }): Observable<any> {
+  bulkApproveProduct(productId: number, payload: { Action: string; Remarks?: string; Email?: string }): Observable<any> {
   return this.apiGateway.post(`/api/Product/ApproveProduct/${productId}`, payload, {
     requiresAuth: true
   });

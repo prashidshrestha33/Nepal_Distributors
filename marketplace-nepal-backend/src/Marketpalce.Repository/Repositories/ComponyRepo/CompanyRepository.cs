@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Marketplace.Model.Models;
 using Marketplace.Models;
 using System.Collections.Generic;
@@ -176,7 +176,8 @@ OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
 
                 if (approveRows > 0)
                 {
-                    await UserLogRepository.LogUserActionAsync(_db, companieId, "approve", details, approvedBy, transaction);
+                    // Action is on a company, so productId is null and companyId is passed.
+                    await UserLogRepository.LogUserActionAsync(_db, null, companieId, "approve", details, approvedBy, transaction);
                     return true;
                 }
 
@@ -333,8 +334,10 @@ END
 
             if (rows > 0)
             {
+                // Action is on a company, so productId is null and companyId is passed.
                 await UserLogRepository.LogUserActionAsync(
                     _db,
+                    null,
                     request.CompanyId,
                     "update-company-field",
                     $"{request.FieldName} updated",

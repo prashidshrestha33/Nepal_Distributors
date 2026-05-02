@@ -55,7 +55,7 @@
 <div class="w-full h-screen bg-[#F8FAFC] flex flex-col font-sans overflow-hidden">
 
   <!-- Header -->
-  <header class="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 shadow-sm">
+  <header class="bg-white border-b border-gray-200 px-3 sm:px-4 py-2 sm:py-2.5 shadow-sm">
     <!-- Row 1: Title + Add Button (always visible) -->
     <div class="flex items-center justify-between gap-3 flex-wrap">
       <h1 class="text-gray-900 font-bold text-base sm:text-lg tracking-tight">Products Catalog</h1>
@@ -72,55 +72,55 @@
         </button>
       </div>
 
-    <!-- Row 2: Toggle pills + secondary actions (below title on mobile) -->
-    <div class="flex flex-wrap items-center gap-2 sm:gap-3 mt-3">
-      <!-- Toggle Pills for All / My Products -->
-      <div class="flex items-center bg-gray-100 p-1 rounded-xl shadow-inner">
-        <button (click)="toggleMyProducts(false)"
-          [ngClass]="!isMyProducts ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200' : 'text-gray-500 hover:text-gray-700'"
-          class="px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 sm:gap-2">
-          <svg *ngIf="!isMyProducts" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" fill="none" stroke="currentColor"
-            viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+      <!-- Row 2: Toggle pills + secondary actions (below title on mobile) -->
+      <div class="flex flex-wrap items-center gap-2 mt-2">
+        <!-- Toggle Pills for All / My Products -->
+        <div class="flex items-center bg-gray-100 p-1 rounded-xl shadow-inner">
+          <button (click)="toggleMyProducts(false)"
+            [ngClass]="!isMyProducts ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200' : 'text-gray-500 hover:text-gray-700'"
+            class="px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 sm:gap-2">
+            <svg *ngIf="!isMyProducts" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" fill="none" stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+            </svg>
+            All Products
+          </button>
+          <button (click)="toggleMyProducts(true)"
+            [ngClass]="isMyProducts ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200' : 'text-gray-500 hover:text-gray-700'"
+            class="px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 sm:gap-2">
+            <svg *ngIf="isMyProducts" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" fill="none" stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+            </svg>
+            My Products
+          </button>
+        </div>
+
+        <div class="hidden sm:block h-6 w-px bg-gray-200"></div>
+
+        <!-- Approve Selected -->
+        <button (click)="bulkApprove()" [disabled]="!canBulkApprove"
+          class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-blue-200 rounded-xl text-xs sm:text-sm font-semibold text-blue-600 transition-colors shadow-sm hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
           </svg>
-          All Products
+          <span class="hidden sm:inline">Approve Selected</span>
+          <span class="sm:hidden">Approve</span>
         </button>
-        <button (click)="toggleMyProducts(true)"
-          [ngClass]="isMyProducts ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200' : 'text-gray-500 hover:text-gray-700'"
-          class="px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 sm:gap-2">
-          <svg *ngIf="isMyProducts" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" fill="none" stroke="currentColor"
-            viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+
+        <!-- CSV Import -->
+        <button (click)="togglePanel()"
+          class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-200 rounded-xl text-xs sm:text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" fill="none"
+            viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 12v-9m0 0l-3 3m3-3l3 3" />
           </svg>
-          My Products
+          <span class="hidden sm:inline">CSV Import</span>
+          <span class="sm:hidden">CSV</span>
         </button>
-      </div>
-
-      <div class="hidden sm:block h-6 w-px bg-gray-200"></div>
-
-      <!-- Approve Selected -->
-      <button (click)="bulkApprove()" [disabled]="!canBulkApprove"
-        class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-blue-200 rounded-xl text-xs sm:text-sm font-semibold text-blue-600 transition-colors shadow-sm hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24"
-          stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-        </svg>
-        <span class="hidden sm:inline">Approve Selected</span>
-        <span class="sm:hidden">Approve</span>
-      </button>
-
-      <!-- CSV Import -->
-      <button (click)="togglePanel()"
-        class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-200 rounded-xl text-xs sm:text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors shadow-sm">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" fill="none"
-          viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 12v-9m0 0l-3 3m3-3l3 3" />
-        </svg>
-        <span class="hidden sm:inline">CSV Import</span>
-        <span class="sm:hidden">CSV</span>
-      </button>
-      <button (click)="openAddProductModal()"
+        <button (click)="openAddProductModal()"
           class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-blue-600 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm shadow-blue-200 active:scale-95 group">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 group-hover:rotate-90 transition-transform" fill="none"
             viewBox="0 0 24 24" stroke="currentColor">
@@ -129,11 +129,11 @@
           <span class="hidden xs:inline">Add New Product</span>
           <span class="xs:hidden">Add</span>
         </button>
-    </div>
+      </div>
 
     </div>
   </header>
-  
+
 
   <!-- Main Body -->
   <div class="flex flex-1 w-full overflow-hidden relative">
@@ -146,7 +146,7 @@
     <!-- Category Sidebar (Component) -->
     <!-- On mobile: slide-in drawer; on lg+: always visible -->
     <div [class.translate-x-0]="mobileSidebarOpen" [class.-translate-x-full]="!mobileSidebarOpen"
-      class="fixed lg:relative lg:translate-x-0 z-40 lg:z-auto transition-transform duration-300 ease-in-out h-screen lg:h-auto flex-shrink-0 w-full lg:w-auto">
+      class="fixed lg:relative lg:translate-x-0 z-40 lg:z-auto transition-transform duration-300 ease-in-out h-full lg:h-auto flex-shrink-0 w-full lg:w-[250px] border-r border-gray-100 bg-white">
       <app-category-sidebar [categories]="treeCategories" [selectedCategoryId]="selectedCategoryId"
         [topBrands]="stats.topBrands" [topManufacturers]="stats.topManufacturers"
         (categorySelected)="onSidebarCategorySelect($event); mobileSidebarOpen = false"
@@ -156,18 +156,19 @@
     </div>
 
     <!-- Content Area -->
-    <main class="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 relative min-w-0 w-full">
-      <div class="w-full mx-auto space-y-3 sm:space-y-4 lg:space-y-6">
+    <main class="flex-1 overflow-y-auto p-3 sm:p-4 relative min-w-0 w-full">
+      <div class="w-full mx-auto space-y-3 sm:space-y-4">
 
         <!-- Stats Row -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
           <!-- Stat 1: Approved Products -->
           <div
             class="bg-white p-3 sm:p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between group hover:border-blue-100 transition-colors">
             <div class="space-y-1 min-w-0">
               <p class="text-[10px] font-bold text-gray-400 tracking-widest uppercase">Approve</p>
               <div class="flex items-baseline gap-1">
-                <h3 class="text-lg sm:text-xl lg:text-2xl font-black text-gray-900 tracking-tight truncate">{{ stats.myProductsCount }}
+                <h3 class="text-lg sm:text-xl lg:text-2xl font-black text-gray-900 tracking-tight truncate">{{
+                  stats.myProductsCount }}
                 </h3>
                 <span
                   class="text-[9px] font-bold text-green-500 bg-green-50 px-1.5 py-0.5 rounded uppercase tracking-wider flex-shrink-0">Live</span>
@@ -187,7 +188,8 @@
             class="bg-white p-3 sm:p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between group hover:border-orange-100 transition-colors">
             <div class="space-y-1 min-w-0">
               <p class="text-[10px] font-bold text-gray-400 tracking-widest uppercase">Waiting</p>
-              <h3 class="text-lg sm:text-xl lg:text-2xl font-black text-gray-900 tracking-tight truncate">{{ stats.waitingApprovalCount |
+              <h3 class="text-lg sm:text-xl lg:text-2xl font-black text-gray-900 tracking-tight truncate">{{
+                stats.waitingApprovalCount |
                 number:'2.0-0' }}</h3>
             </div>
             <div
@@ -204,7 +206,8 @@
             class="bg-white p-3 sm:p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between group hover:border-purple-100 transition-colors sm:col-span-2 lg:col-span-1">
             <div class="space-y-1 min-w-0">
               <p class="text-[10px] font-bold text-gray-400 tracking-widest uppercase">Global</p>
-              <h3 class="text-lg sm:text-xl lg:text-2xl font-black text-gray-900 tracking-tight truncate">{{ stats.globalCatalogCount >
+              <h3 class="text-lg sm:text-xl lg:text-2xl font-black text-gray-900 tracking-tight truncate">{{
+                stats.globalCatalogCount >
                 1000 ?
                 (stats.globalCatalogCount/1000 | number:'1.1-1') + 'k+' : stats.globalCatalogCount }}</h3>
             </div>
@@ -219,26 +222,59 @@
           </div>
         </div>
 
-        <!-- Toolbar: Search -->
-        <div class="py-1 w-full">
-          <div class="relative w-full group">
+        <!-- Toolbar: Search & Filters Row -->
+        <div class="flex items-center gap-3 w-full bg-white p-2 rounded-2xl border border-gray-200 shadow-sm">
+          <!-- Search -->
+          <div class="relative flex-1 group">
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <svg class="w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none"
+              <svg class="w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none"
                 stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
               </svg>
             </div>
-            <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()"
-              placeholder="Search by name, brand, or category..."
-              class="w-full pl-12 pr-4 py-3 sm:py-3.5 bg-white border border-gray-200 rounded-[1.125rem] text-sm font-semibold text-gray-900 shadow-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:outline-none transition-all placeholder:text-gray-400">
+            <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Search by name or sku..."
+              class="w-full pl-10 pr-4 py-2.5 bg-gray-50/50 border border-transparent rounded-xl text-sm font-semibold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:outline-none transition-all placeholder:text-gray-400">
           </div>
+
+          <!-- Divider -->
+          <div class="w-px h-8 bg-gray-100 hidden sm:block"></div>
+
+          <!-- Status Filter -->
+          <div class="relative min-w-[140px] hidden sm:block">
+            <select [(ngModel)]="activeStatusFilter" (change)="loadProducts()"
+              class="w-full pl-4 pr-10 py-2.5 bg-gray-50/50 border border-transparent rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 focus:outline-none transition-all appearance-none cursor-pointer">
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- Reset Button -->
+          <button (click)="resetFilters()"
+            class="flex items-center gap-2 px-4 py-2.5 text-blue-600 rounded-xl text-sm font-bold hover:bg-blue-50 transition-all active:scale-95 group">
+            <svg xmlns="http://www.w3.org/2000/svg"
+              class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span class="hidden md:inline">Reset</span>
+          </button>
         </div>
 
         <!-- Error State -->
         <div *ngIf="error" class="bg-red-50 border border-red-200 p-4 rounded-xl text-red-700 flex items-center gap-3">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span class="text-sm font-semibold">{{ error }}</span>
         </div>
@@ -261,7 +297,9 @@
                     <input type="checkbox" [checked]="allSelected" (change)="toggleSelectAll($event)"
                       class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
                   </th>
-                  <th class="px-3 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors group select-none" (click)="onSort('name')">
+                  <th
+                    class="px-2 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors group select-none"
+                    (click)="onSort('name')">
                     <div class="flex items-center gap-1">
                       Product
                       <span class="text-gray-400 group-hover:text-blue-500" *ngIf="sortColumn !== 'name'">↕</span>
@@ -269,7 +307,9 @@
                       <span class="text-blue-600" *ngIf="sortColumn === 'name' && sortDirection === 'desc'">↓</span>
                     </div>
                   </th>
-                  <th class="px-3 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors group select-none" (click)="onSort('category')">
+                  <th
+                    class="px-2 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors group select-none"
+                    (click)="onSort('category')">
                     <div class="flex items-center gap-1">
                       Category
                       <span class="text-gray-400 group-hover:text-blue-500" *ngIf="sortColumn !== 'category'">↕</span>
@@ -277,7 +317,9 @@
                       <span class="text-blue-600" *ngIf="sortColumn === 'category' && sortDirection === 'desc'">↓</span>
                     </div>
                   </th>
-                  <th class="px-3 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors group select-none" (click)="onSort('addedBy')">
+                  <th
+                    class="px-2 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors group select-none"
+                    (click)="onSort('addedBy')">
                     <div class="flex items-center gap-1">
                       Added By
                       <span class="text-gray-400 group-hover:text-blue-500" *ngIf="sortColumn !== 'addedBy'">↕</span>
@@ -285,33 +327,37 @@
                       <span class="text-blue-600" *ngIf="sortColumn === 'addedBy' && sortDirection === 'desc'">↓</span>
                     </div>
                   </th>
-                  <th class="px-3 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors group select-none" (click)="onSort('status')">
+                  <th
+                    class="px-2 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors group select-none"
+                    (click)="onSort('status')">
                     <div class="flex items-center gap-1">
-                      Status
+                      Workflow
                       <span class="text-gray-400 group-hover:text-blue-500" *ngIf="sortColumn !== 'status'">↕</span>
                       <span class="text-blue-600" *ngIf="sortColumn === 'status' && sortDirection === 'asc'">↑</span>
                       <span class="text-blue-600" *ngIf="sortColumn === 'status' && sortDirection === 'desc'">↓</span>
                     </div>
                   </th>
-                  <th class="px-3 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">Actions
+                  <th class="px-2 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-left">
+                    Actions
                   </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100 align-middle">
                 <!-- Data Row -->
-                <tr *ngFor="let product of filteredProducts" class="hover:bg-gray-50/50 transition-colors group border-b border-gray-100">
-                  <td class="px-3 py-3 w-9 text-center">
+                <tr *ngFor="let product of filteredProducts"
+                  class="hover:bg-gray-50/50 transition-colors group border-b border-gray-100">
+                  <td class="px-2 py-2 w-8 text-center">
                     <input type="checkbox" [(ngModel)]="product.selected" (change)="updateBulkButtonState()"
-                      class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                      class="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
                   </td>
-                  <td class="px-3 py-3 min-w-0">
+                  <td class="px-2 py-2.5 min-w-0">
                     <div class="flex items-center gap-2">
                       <div
-                        class="w-10 h-10 rounded-lg border border-gray-200 bg-white shrink-0 overflow-hidden flex items-center justify-center shadow-sm">
+                        class="w-8 h-8 rounded-lg border border-gray-200 bg-white shrink-0 overflow-hidden flex items-center justify-center shadow-sm">
                         <img *ngIf="getDefaultImage(product) as img; else noImg" [src]="getImageUrl(img.imageName)"
                           class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                         <ng-template #noImg>
-                          <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg class="w-3.5 h-3.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                               d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z">
                             </path>
@@ -322,48 +368,51 @@
                         <span
                           class="text-xs font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">{{
                           product.name }}</span>
-                        <span class="text-[9px] uppercase font-bold text-gray-400 tracking-wider truncate">{{ product.sku ||
-                            'N/A' }}</span>
+                        <span class="text-[9px] uppercase font-bold text-gray-400 tracking-wider truncate">{{
+                          product.sku ||
+                          'N/A' }}</span>
                       </div>
                     </div>
                   </td>
-                  <td class="px-3 py-3">
+                  <td class="px-2 py-2.5">
                     <div class="flex flex-col">
-                      <span class="text-xs font-bold text-gray-800 truncate">{{ getCategoryName(product.categoryId) }}</span>
+                      <span class="text-xs font-bold text-gray-800 truncate">{{ getCategoryName(product.categoryId)
+                        }}</span>
                       <span class="text-[10px] font-bold text-gray-400 tracking-wider uppercase truncate">{{
                         getBrandName(product.brandId) || 'N/A' }}</span>
                     </div>
                   </td>
-                  <td class="px-3 py-3">
+                  <td class="px-2 py-2.5">
                     <div class="flex flex-col">
-                      <span class="text-xs font-bold text-gray-800 truncate">{{ product.createdBy || 'System' }}</span>
-                      <span class="text-[10px] font-semibold text-gray-500 truncate">{{ product.createdAt |
+                      <span class="text-[11px] font-bold text-gray-800 truncate">{{ product.createdBy || 'System'
+                        }}</span>
+                      <span class="text-[9px] font-semibold text-gray-500 truncate">{{ product.createdAt |
                         date:'short' }}</span>
                     </div>
                   </td>
-                  <td class="px-3 py-3">
+                  <td class="px-2 py-2.5">
                     <span
                       [ngClass]="(product.status || '').toLowerCase() === 'approved' ? 'bg-green-50 text-green-700 ring-green-100' : 'bg-orange-50 text-orange-700 ring-orange-100'"
-                      class="px-2 py-1 text-[9px] font-bold uppercase tracking-wider rounded ring-1 ring-inset inline-flex items-center gap-1">
-                      <div class="w-1.5 h-1.5 rounded-full"
+                      class="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded ring-1 ring-inset inline-flex items-center gap-1">
+                      <div class="w-1 h-1 rounded-full"
                         [ngClass]="(product.status || '').toLowerCase() === 'approved' ? 'bg-green-500' : 'bg-orange-500'">
                       </div>
                       {{ (product.status || 'Pending').toUpperCase() }}
                     </span>
                   </td>
-                  <td class="px-3 py-3">
-                    <div class="flex items-center justify-end gap-1">
-                      <button (click)="approveProduct(product)" class="p-1 hover:scale-110 transition-transform"
-                        title="Approve">
-                        <span class="text-base">✅</span>
+                  <td class="px-2 py-2.5">
+                    <div class="flex items-center justify-start gap-1">
+                      <button (click)="approveProduct(product)"
+                        class="p-1 hover:bg-gray-100 rounded-lg transition-all active:scale-90" title="Approve">
+                        <span class="text-sm">✅</span>
                       </button>
                       <a [routerLink]="['/products/details', product.id]"
-                        class="p-1 hover:scale-110 transition-transform" title="View">
-                        <span class="text-base">👁️</span>
+                        class="p-1 hover:bg-gray-100 rounded-lg transition-all active:scale-90" title="View">
+                        <span class="text-sm">👁️</span>
                       </a>
-                      <button (click)="goToEditProduct(product.id)" class="p-1 hover:scale-110 transition-transform"
-                        title="Edit">
-                        <span class="text-base">✏️</span>
+                      <button (click)="goToEditProduct(product.id)"
+                        class="p-1 hover:bg-gray-100 rounded-lg transition-all active:scale-90" title="Edit">
+                        <span class="text-sm">✏️</span>
                       </button>
                     </div>
                   </td>
