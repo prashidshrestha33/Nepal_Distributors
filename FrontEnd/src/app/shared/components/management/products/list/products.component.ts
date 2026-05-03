@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { ApproveProductComponent } from '../approve/approve-product.component';
+import { ProductFormComponent } from '../form/product-form.component';
 import { PaginationComponent } from '../../Pagination/app-pagination.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule, FormGroup } from '@angular/forms';
@@ -8,8 +9,10 @@ import { RouterModule, Router } from '@angular/router';
 import { ProductService } from '../../../../services/management/management.service';
 import type { ImportStatusResponse, Product as ProductBase } from '../../../../services/management/management.service';
 import { Category, CategoryService, Users, StaticValueCatalog, StaticValueService, StaticValue } from '../../../../services/management/management.service';
+import { AuthService } from '../../../../services/auth.service';
 import { environment } from '../../../../../../environments/environment';
 import { ProductListPopupComponent } from '../../../CustomComponents/ProductList/product-list-popup.component';
+import { CategorySidebarComponent } from '../../categories/sidebar/category-sidebar.component';
 import { HttpEvent, HttpEventType, HttpClient } from '@angular/common/http';
 import { interval } from 'rxjs';
 import { switchMap, takeWhile } from 'rxjs/operators';
@@ -20,7 +23,7 @@ type Product = ProductBase & { selected?: boolean };
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ApproveProductComponent, PaginationComponent,ProductListPopupComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ApproveProductComponent, ProductFormComponent, PaginationComponent, ProductListPopupComponent, CategorySidebarComponent],
   templateUrl:'./products.component.html',
   styleUrls: ['./products.component.css']
 })
@@ -47,14 +50,16 @@ export class ProductsComponent implements OnInit {
   brandMap = new Map<number, string>();
   loadings: boolean = false;
   isPanelOpen: boolean = false;
+  mobileSidebarOpen: boolean = false;
 
   progress = 0;
   rowsInserted = 0;
   uploadMessage = '';
 
-  // Bulk selection flags
   allSelected = false;
   canBulkApprove = false;
+  showProductFormModal = false;
+  editProductId: number | null = null;
 
   // Pagination
   currentPage = 1;
@@ -65,8 +70,21 @@ export class ProductsComponent implements OnInit {
   Math = Math;
   snackbar: { show: boolean; message: string; type: 'success' | 'error' | 'warning' } = { show: false, message: '', type: 'success' };
   tempOrderItems: any[] = [];
+  selectedCategoryId: number | null = null;
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
+  activeStatusFilter: 'all' | 'active' | 'inactive' = 'all';
+  isMyProducts: boolean = false;
+  
+  stats = {
+    myProductsCount: 0,
+    waitingApprovalCount: 0,
+    globalCatalogCount: 0,
+    topBrands: [] as any[],
+    topManufacturers: [] as any[]
+  };
+  selectedBrandId: number | null = null;
+  selectedManufacturerId: number | null = null;
 
   constructor(
     private productService: ProductService,
@@ -74,11 +92,13 @@ export class ProductsComponent implements OnInit {
     private categoryService: CategoryService,
     private cdr: ChangeDetectorRef,
     private staticValueService: StaticValueService,
-      public ui: UiService,
-      private http: HttpClient
+    public ui: UiService,
+    private http: HttpClient,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
+    this.fetchStats();
     this.loadProducts();
     this.loadCategoryTree();
     this.loadBrandStaticValues();
@@ -103,11 +123,84 @@ export class ProductsComponent implements OnInit {
   }
 
   // ----------------------
+  
+  fetchStats() {
+    let companyId: number | null = null;
+    if (this.isMyProducts) {
+      try {
+        const claimsStr = localStorage.getItem('userClaims');
+        if (claimsStr) {
+          const claims = JSON.parse(claimsStr);
+          companyId = claims.company_id ? Number(claims.company_id) : null;
+        }
+      } catch (e) {}
+    }
+
+    this.productService.getDashboardStats(this.isMyProducts, companyId).subscribe({
+      next: (res: any) => {
+        const data = res.result || res;
+        this.stats = {
+          globalCatalogCount: data.globalCatalogCount || 0,
+          myProductsCount: data.myProductsCount || 0,
+          waitingApprovalCount: data.waitingApprovalCount || 0,
+          topBrands: data.topBrands || [],
+          topManufacturers: data.topManufacturers || []
+        };
+        this.cdr.detectChanges(); // Force immediate UI update for name/count changes
+      },
+      error: () => console.log('Failed to load dashboard stats')
+    });
+  }
+
+  // ----------------------
+  // Modal Handlers
+  // ----------------------
+  openAddProductModal() {
+    this.showProductFormModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeProductFormModal() {
+    this.showProductFormModal = false;
+    this.editProductId = null;
+    this.cdr.detectChanges();
+  }
+
+  onProductSaved() {
+    const msg = this.editProductId
+      ? 'Product updated successfully!'
+      : 'Product added successfully!';
+    this.showSnackbar(msg);
+    this.loadProducts();
+    this.fetchStats();
+    this.showProductFormModal = false;
+    this.editProductId = null;
+    this.cdr.detectChanges();
+  }
   // Load products & pagination
   // ----------------------
   loadProducts() {
     this.loading = true;
-    this.productService.getProducts(this.currentPage, this.pageSize).subscribe({
+    this.error = undefined; // clear previously established error string
+
+    let companyId: number | null = null;
+    if (this.isMyProducts) {
+      try {
+        const claimsStr = localStorage.getItem('userClaims');
+        if (claimsStr) {
+          const claims = JSON.parse(claimsStr);
+          companyId = claims.company_id ? Number(claims.company_id) : null;
+        }
+      } catch (e) {
+        console.error('Error parsing userClaims:', e);
+      }
+    }
+
+    let activeFlag: boolean | undefined = undefined;
+    if (this.activeStatusFilter === 'active') activeFlag = true;
+    else if (this.activeStatusFilter === 'inactive') activeFlag = false;
+
+    this.productService.getProducts(this.currentPage, this.pageSize, this.selectedCategoryId, this.isMyProducts, companyId, this.selectedBrandId, this.selectedManufacturerId, this.searchTerm, activeFlag).subscribe({
       next: (pagedData: any) => {
         if (pagedData && pagedData.data) {
           this.products = pagedData.data.map((p: Product) => ({
@@ -122,10 +215,12 @@ export class ProductsComponent implements OnInit {
           this.filteredProducts = [];
         }
         this.loading = false;
+        this.fetchStats(); // Update stats as well
         this.cdr.markForCheck();
       },
       error: err => {
         console.error('Error loading products:', err);
+        this.error = 'Failed to load products. Please try again.';
         this.loading = false;
         this.cdr.markForCheck();
       }
@@ -149,12 +244,45 @@ getBrandName(brandId?: number | null): string {
     this.loadProducts();
   }
 
+  onSidebarCategorySelect(id: number | null) {
+    this.selectedCategoryId = id;
+    this.selectedBrandId = null; 
+    this.selectedManufacturerId = null;
+    this.currentPage = 1;
+    this.loadProducts();
+  }
+
+  onSidebarBrandSelect(brandId: number) {
+    this.selectedBrandId = brandId;
+    this.selectedCategoryId = null; 
+    this.selectedManufacturerId = null;
+    this.currentPage = 1;
+    this.loadProducts();
+  }
+
+  onSidebarManufacturerSelect(mId: number) {
+    this.selectedManufacturerId = mId;
+    this.selectedCategoryId = null;
+    this.selectedBrandId = null;
+    this.currentPage = 1;
+    this.loadProducts();
+  }
+
+  toggleMyProducts(isMy: boolean) {
+    this.isMyProducts = isMy;
+    this.currentPage = 1;
+    this.selectedCategoryId = null;
+    this.loadProducts();
+    this.fetchStats(); // Refresh dashboard counts for the new mode
+  }
+
   // ----------------------
   // Category tree helpers
   // ----------------------
   loadCategoryTree() {
     this.categoryService.getTreeCategories().subscribe({
       next: (tree: Category[]) => {
+        console.log('Category Tree Loaded:', tree);
         this.treeCategories = tree;
         this.cascadingDropdowns[0] = tree;
         this.dropdownLabels[0] = 'Parent Category';
@@ -275,14 +403,17 @@ removeProduct(product: Product) {
   this.approveProduct(product);
 }
 
-onApproveSave(event: { status: string; reason?: string }) {
+onApproveSave(event: { status: string; reason?: string; email?: string }) {
   if (!this.approveProductData) return;
+
+  const email = event.email || '';
 
   // Prepare payload for approval or removal
   const payload = {
     id: this.approveProductData.id,
     action: event.status,
     remarks: event.reason || '',
+    email: email
   };
 
   this.productService.ApprovedProductById(this.approveProductData.id, payload).subscribe({
@@ -298,6 +429,7 @@ onApproveSave(event: { status: string; reason?: string }) {
 
       // Optionally, you can fetch the product list from the server again to ensure data is in sync
       this.refreshProductList();  // Re-fetch to ensure data is updated
+      this.fetchStats();          // Re-fetch global stats to ensure consistency
 
       // Close the modal after the operation is done
       this.showApproveModal = false;
@@ -315,23 +447,7 @@ onApproveSave(event: { status: string; reason?: string }) {
 
 // Method to refresh the product list (fetching from the server)
 refreshProductList() {
-  this.productService.getProducts(this.currentPage, this.pageSize).subscribe({
-    next: (pagedData: any) => {
-      if (pagedData && pagedData.data) {
-        this.products = pagedData.data.map((p: Product) => ({
-          ...p,
-          imageUrl: this.getImageUrl(p.imageName),
-        }));
-        this.filteredProducts = [...this.products];
-        this.totalCount = pagedData.totalCount ?? 0;
-        this.totalPages = Math.ceil(this.totalCount / this.pageSize);
-      }
-      this.cdr.markForCheck();
-    },
-    error: (err) => {
-      console.error('Error refreshing product list:', err);
-    },
-  });
+  this.loadProducts();
 }
 
 onApproveCancel() {
@@ -378,8 +494,23 @@ downloadTemplate() {
     const selectedProducts = this.filteredProducts.filter(p => p.selected);
     if (!selectedProducts.length) return;
 
+    // Experienced developer: Use AuthService to get synced claims from token
+    const claims = this.authService.getTokenClaims();
+    
+    // Support both standard 'email' and .NET identity 'emailaddress' claim keys
+    // In .NET JWT, email is often 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'
+    const email = claims?.email || 
+                  claims?.['email'] ||
+                  claims?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || 
+                  '';
+
     const requests = selectedProducts.map(p => {
-      const payload = { action: 'Approved', remarks: 'Bulk approved' };
+      // Use PascalCase to match .NET DTO properties exactly for better compatibility
+      const payload = { 
+        Action: 'Approved', 
+        Remarks: 'Bulk approved', 
+        Email: email 
+      };
       return this.productService.bulkApproveProduct(p.id, payload);
     });
 
@@ -393,6 +524,7 @@ downloadTemplate() {
         this.canBulkApprove = false;
         this.allSelected = false;
         this.loading = false;
+        this.fetchStats();
         this.showSnackbar(`${selectedProducts.length} products approved successfully!`, 'success');
       },
       error: err => {
@@ -417,9 +549,15 @@ getImageUrl(imageName?: string): string {
   }
 
   onSearch() {
-    this.filteredProducts = this.products.filter(p =>
-      p.name.toLowerCase().includes(this.searchTerm.toLowerCase())
-    );
+    this.currentPage = 1;
+    this.loadProducts();
+  }
+
+  resetFilters() {
+    this.searchTerm = '';
+    this.activeStatusFilter = 'all';
+    this.currentPage = 1;
+    this.loadProducts();
   }
 
   editProduct(product: Product) {
@@ -435,7 +573,27 @@ getImageUrl(imageName?: string): string {
 }
 
   goToEditProduct(id: number) {
-    this.router.navigate(['/management/products/edit', id]);
+    this.editProductId = id;
+    this.showProductFormModal = true;
+    this.cdr.detectChanges();
+  }
+
+  deleteProduct(product: Product) {
+    if (!product.id) return;
+    
+    if (confirm(`Are you sure you want to delete "${product.name}"?`)) {
+      this.productService.deleteProduct(product.id).subscribe({
+        next: () => {
+          this.showSnackbar('Product deleted successfully', 'success');
+          this.loadProducts();
+          this.fetchStats();
+        },
+        error: (err) => {
+          console.error('Delete error:', err);
+          this.showSnackbar('Error deleting product. It might be linked to orders.', 'error');
+        }
+      });
+    }
   }
   openProductListPopup(product: Product) {
   this.ui.openProductList(
@@ -472,6 +630,10 @@ getImageUrl(imageName?: string): string {
         case 'rate':
           valA = a.rate || 0;
           valB = b.rate || 0;
+          break;
+        case 'addedBy':
+          valA = (a.createdBy || '').toLowerCase();
+          valB = (b.createdBy || '').toLowerCase();
           break;
         case 'status':
           valA = (a.status || 'Pending').toLowerCase();

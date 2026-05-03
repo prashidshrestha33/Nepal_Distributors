@@ -1,4 +1,4 @@
-﻿using Marketpalce.Repository.Repositories.ComponyRepo;
+using Marketpalce.Repository.Repositories.ComponyRepo;
 using Marketplace.Api.Models;
 using Marketplace.Api.Services.Company;
 using Marketplace.Api.Services.EmailService;
@@ -187,6 +187,7 @@ namespace Marketplace.Api.Controllers
                     Name = model.Company.Name?.Trim() ?? string.Empty,
                     ContactPerson = model.Company.CompamyPerson,
                     RegistrationDocument = model.Company.RegistrationDocument,
+                    CompanyType = model.Company.CompanyType,
                     MobilePhone = model.Company.MobilePhone,
                     LandlinePhone = model.Company.LandLinePhone,
                     Location = model.Company.Address,

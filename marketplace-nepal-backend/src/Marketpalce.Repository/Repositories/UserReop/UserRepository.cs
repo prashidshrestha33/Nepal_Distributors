@@ -286,7 +286,8 @@ WHERE
 
                 if (approveRows > 0)
                 {
-                    await UserLogRepository.LogUserActionAsync(_db, userId, "approveUser", details, approvedBy, transaction);
+                    // Action is on a user, so productId and companyId are null. UserId is stored in details.
+                    await UserLogRepository.LogUserActionAsync(_db, null, null, "approveUser", $"User ID: {userId}. {details}", approvedBy, transaction);
                     return true;
                 }
 

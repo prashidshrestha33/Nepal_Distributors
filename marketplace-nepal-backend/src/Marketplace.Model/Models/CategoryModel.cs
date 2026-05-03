@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -16,6 +16,7 @@ namespace Marketplace.Model.Models
         public string? Slug { get; set; }
         public long? ParentId { get; set; }
         public IFormFile? Image { get; set; }
+        public bool ActiveFlag { get; set; } = true;
     }
     public class MoveCategoryDto
     {
@@ -30,6 +31,7 @@ namespace Marketplace.Model.Models
         public long? ParentId { get; set; }
         public short Depth { get; set; }
         public string? Image { get; set; }
+        public bool ActiveFlag { get; set; }
         public List<CategoryDto> Children { get; set; } = new List<CategoryDto>();
     }
 }

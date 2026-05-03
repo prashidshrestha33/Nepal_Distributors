@@ -5,12 +5,13 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CategoryService } from '../../../../services/management/management.service';
 import type { Category } from '../../../../services/management/management.service';
 import { CategoryMoveModalComponent } from '../move/category-move-modal.component';
+import { CategoryFormComponent } from '../form/category-form.component';
 import { environment } from '../../../../../../environments/environment';
 
 @Component({
   selector: 'app-categories',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, CategoryMoveModalComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, CategoryMoveModalComponent, CategoryFormComponent],
   templateUrl: './categories.component.html',
   styleUrl: './categories.component.css'
 })
@@ -21,13 +22,19 @@ export class CategoriesComponent implements OnInit {
   expandedCategoryIds = new Set<number>();
   searchTerm = '';
   loading = false;
+  error: string | null = null;
   showMoveModal = false;
   selectedCategoryForMove: Category | null = null;
   moveFormLoading = false;
   moveError: string | null = null;
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
+  statusFilter: 'all' | 'active' | 'inactive' = 'all';
   snackbar: { show: boolean; message: string; type: 'success' | 'error' | 'warning' } = { show: false, message: '', type: 'success' };
+
+  // Modal properties for add/edit category
+  showCategoryFormModal = false;
+  editCategoryId: number | null = null;
 
   // Pagination properties
   pageSize: number = 10;
@@ -65,23 +72,21 @@ export class CategoriesComponent implements OnInit {
   }
 
   load() {
-  this.loading = true;
-  this.service.getAllCategories().subscribe({
-    next: (data: Category[]) => {
-      this.itemsTree = data;
-      this.items = this.flattenVisibleCategoryTree(this.itemsTree);
-
-      this.filteredItems = this.items;
-      this.currentPage = 1;
-      this.updatePaginatedItems();
-      this.loading = false;
-    },
-    error: (err: any) => {
-      this.loading = false;
-      console.error('Failed to load categories', err);
-    }
-  });
-}
+    this.loading = true;
+    this.error = null;
+    this.service.getAllCategories().subscribe({
+      next: (data: Category[]) => {
+        this.itemsTree = data;
+        this.applyFilters();
+        this.loading = false;
+      },
+      error: (err: any) => {
+        this.loading = false;
+        this.error = 'Failed to load categories. Please try again.';
+        console.error('Failed to load categories', err);
+      }
+    });
+  }
 
   toggleExpand(categoryId: number, event: Event) {
     event.stopPropagation();
@@ -90,7 +95,6 @@ export class CategoriesComponent implements OnInit {
     } else {
       this.expandedCategoryIds.add(categoryId);
     }
-    this.items = this.flattenVisibleCategoryTree(this.itemsTree);
     this.applyFilters();
   }
 
@@ -100,12 +104,21 @@ export class CategoriesComponent implements OnInit {
   flattenVisibleCategoryTree(categories: Category[], depth: number = 0): any[] {
     let result: any[] = [];
     
-    // Sort at current level if name sorting is active
+    // Sort at current level if sorting is active
     let sortedCats = [...categories];
     if (this.sortColumn === 'name') {
       sortedCats.sort((a, b) => {
         const valA = a.name?.toLowerCase() || '';
         const valB = b.name?.toLowerCase() || '';
+        if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
+        if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    } else if (this.sortColumn === 'status') {
+      sortedCats.sort((a, b) => {
+        // Map Active (true) to 1 and Inactive (false) to 0 for consistent comparison
+        const valA = a.activeFlag ? 1 : 0;
+        const valB = b.activeFlag ? 1 : 0;
         if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
         if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
         return 0;
@@ -126,6 +139,21 @@ export class CategoriesComponent implements OnInit {
     return result;
   }
 
+  /**
+   * Flatten the entire tree regardless of expansion state (used for filtering)
+   */
+  flattenEntireTree(categories: Category[], depth: number = 0): any[] {
+    let result: any[] = [];
+    for (const cat of categories) {
+      const hasChildren = !!(cat.children && cat.children.length > 0);
+      result.push({ ...cat, depth, hasChildren });
+      if (hasChildren) {
+        result.push(...this.flattenEntireTree(cat.children!, depth + 1));
+      }
+    }
+    return result;
+  }
+
   onSearch() {
     this.currentPage = 1; // Reset to page 1 when searching
     this.applyFilters();
@@ -135,7 +163,15 @@ export class CategoriesComponent implements OnInit {
    * Apply search filter and pagination
    */
   applyFilters() {
-    let filtered = this.items;
+    // If we are searching or filtering by status, we should look through ALL categories,
+    // not just the currently visible ones in the tree.
+    const isFiltering = this.searchTerm.trim() !== '' || this.statusFilter !== 'all';
+    
+    let source = isFiltering 
+      ? this.flattenEntireTree(this.itemsTree) 
+      : this.flattenVisibleCategoryTree(this.itemsTree);
+
+    let filtered = source;
 
     // Filter by search term
     if (this.searchTerm.trim()) {
@@ -145,9 +181,22 @@ export class CategoriesComponent implements OnInit {
       );
     }
 
+    // Filter by status
+    if (this.statusFilter === 'active') {
+      filtered = filtered.filter(i => i.activeFlag === true);
+    } else if (this.statusFilter === 'inactive') {
+      filtered = filtered.filter(i => i.activeFlag === false);
+    }
+
     this.filteredItems = filtered;
     this.currentPage = 1; // Reset to page 1
     this.updatePaginatedItems();
+  }
+
+  resetFilters() {
+    this.searchTerm = '';
+    this.statusFilter = 'all';
+    this.applyFilters();
   }
   getImageUrl(imageName?: string): string {
     return imageName 
@@ -169,6 +218,13 @@ export class CategoriesComponent implements OnInit {
    */
   getTotalPages(): number {
     return Math.ceil(this.filteredItems.length / this.pageSize);
+  }
+
+  /**
+   * Get total pages as a property for template binding
+   */
+  get totalPages(): number {
+    return this.getTotalPages();
   }
 
   /**
@@ -233,32 +289,36 @@ export class CategoriesComponent implements OnInit {
     this.selectedCategoryForMove = category;
     this.showMoveModal = true;
     this.moveError = null;
+    this.moveFormLoading = false; // Always reset loading on open
   }
 
   closeMoveModal() {
     this.showMoveModal = false;
     this.selectedCategoryForMove = null;
     this.moveError = null;
+    this.moveFormLoading = false; // Always reset loading on close
   }
 
   onMoveSubmit(newParentId: number) {
     if (!this.selectedCategoryForMove?.id) return;
     
     const sourceName = this.selectedCategoryForMove.name;
-    const destName = newParentId === 0 ? 'Root' : this.getCategoryNameFromTree(this.itemsTree, newParentId) || 'New Parent';
+    const destName = newParentId === 0 ? 'Root (Main Category)' : this.getCategoryNameFromTree(this.itemsTree, newParentId) || 'New Parent';
 
     this.moveFormLoading = true;
     this.service.moveCategory(this.selectedCategoryForMove.id, newParentId).subscribe({
       next: () => {
+        this.moveFormLoading = false; // ✅ Reset before closing
         this.closeMoveModal();
         this.load();
-        this.showSnackbar(`Moved successfully ${sourceName} to ${destName}`, 'success');
+        this.showSnackbar(`"${sourceName}" moved to ${destName} successfully`, 'success');
       },
       error: (err: any) => {
         console.error('Error moving category:', err);
-        this.moveError = err?.error?.message || 'Failed to move category. Please try again.';
+        const backendMsg = err?.error?.error || err?.error?.message || err?.message;
+        this.moveError = backendMsg || 'Failed to move category. Please try again.';
         this.moveFormLoading = false;
-        this.showSnackbar('Failed to move category.', 'error');
+        this.showSnackbar(this.moveError || 'Failed to move category.', 'error');
       }
     });
   }
@@ -283,12 +343,41 @@ export class CategoriesComponent implements OnInit {
       this.sortDirection = 'asc';
     }
     
-    // Re-flatten to apply sort
-    this.items = this.flattenVisibleCategoryTree(this.itemsTree);
     this.applyFilters();
   }
 
   goToEdit(id: number) {
-    this.router.navigate(['/management/categories/edit', id]);
+    this.editCategoryId = id;
+    this.showCategoryFormModal = true;
+    this.cdr.markForCheck();
+  }
+
+  openAddCategoryModal() {
+    this.showCategoryFormModal = true;
+    this.editCategoryId = null;
+    this.cdr.markForCheck();
+  }
+
+  openEditCategoryModal(id: number) {
+    this.editCategoryId = id;
+    this.showCategoryFormModal = true;
+    this.cdr.markForCheck();
+  }
+
+  closeCategoryFormModal() {
+    this.showCategoryFormModal = false;
+    this.editCategoryId = null;
+    this.cdr.markForCheck();
+  }
+
+  onCategorySaved() {
+    const msg = this.editCategoryId
+      ? 'Category updated successfully!'
+      : 'Category created successfully!';
+    this.showSnackbar(msg, 'success');
+    this.load();
+    this.showCategoryFormModal = false;
+    this.editCategoryId = null;
+    this.cdr.markForCheck();
   }
 }

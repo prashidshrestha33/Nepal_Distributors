@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Security.Claims;
+using Dapper;
 namespace Marketplace.Api.Controllers
 {
     [ApiController]
@@ -39,10 +40,119 @@ namespace Marketplace.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Get([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> Get(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] int? categoryId = null,
+            [FromQuery] long? companyId = null,
+            [FromQuery] long? brandId = null,
+            [FromQuery] long? manufacturerId = null,
+            [FromQuery] string? keyword = null,
+            [FromQuery] bool? activeFlag = null,
+            [FromQuery] bool myProducts = false)
         {
-            var result = await repositorysitory.GetPaginatedAsync(page, pageSize);
+            string? userEmail = null;
+            if (myProducts)
+            {
+                userEmail = User.FindFirstValue(ClaimTypes.Email) 
+                           ?? User.FindFirstValue("email") 
+                           ?? User.FindFirstValue("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress");
+            }
+
+            var result = await repositorysitory.GetPaginatedAsync(page, pageSize, categoryId, companyId, brandId, manufacturerId, keyword, activeFlag, userEmail);
             return Ok(ApiResponse<Marketplace.Model.Models.PagedResult<ProductModel>>.Ok(result));
+        }
+
+        [HttpGet("stats")]
+        public async Task<IActionResult> GetDashboardStats([FromQuery] bool myProducts = false, [FromQuery] long? companyId = null)
+        {
+            try
+            {
+                // Resolve User Email if myProducts is true
+                string? userEmail = null;
+                if (myProducts)
+                {
+                    userEmail = User.FindFirstValue(ClaimTypes.Email) 
+                               ?? User.FindFirstValue("email") 
+                               ?? User.FindFirstValue("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress");
+                }
+
+                var param = new DynamicParameters();
+                param.Add("CompanyId", companyId);
+                param.Add("UserEmail", userEmail);
+
+                // Filter logic: 
+                // If myProducts is true, filter by created_by = @UserEmail
+                // Else if companyId is provided, filter by company_id = @CompanyId
+                string filter = " WHERE 1=1";
+                if (myProducts && !string.IsNullOrEmpty(userEmail))
+                {
+                    filter = " WHERE prod.created_by = @UserEmail";
+                }
+                else if (companyId.HasValue)
+                {
+                    filter = " WHERE prod.company_id = @CompanyId";
+                }
+
+                // Card 1: Total Count
+                var totalSql = $"SELECT COUNT(*) FROM products prod {filter}";
+                int totalCount = await _db.ExecuteScalarAsync<int>(totalSql, param);
+                
+                // Card 2: Approved
+                var approvedSql = $@"SELECT COUNT(*) FROM products prod {filter} 
+                                   AND (UPPER(prod.status) = 'APPROVED' OR prod.approve_fg = '1')";
+                int approvedCount = await _db.ExecuteScalarAsync<int>(approvedSql, param);
+
+                // Card 3: Pending
+                var pendingSql = $@"SELECT COUNT(*) FROM products prod {filter} 
+                                  AND (UPPER(prod.status) = 'PENDING' OR prod.status IS NULL OR prod.approve_fg = '0')";
+                int waitingCount = await _db.ExecuteScalarAsync<int>(pendingSql, param);
+
+                // Sidebar Joins Filter
+                string joinFilter = "";
+                if (myProducts && !string.IsNullOrEmpty(userEmail))
+                {
+                    joinFilter = " AND prod.created_by = @UserEmail";
+                }
+                else if (companyId.HasValue)
+                {
+                    joinFilter = " AND prod.company_id = @CompanyId";
+                }
+
+                var topBrands = await _db.QueryAsync<dynamic>($@"
+                    SELECT TOP 4 
+                        COALESCE(sv.static_value, 'Brand ' + CAST(prod.brand_id AS VARCHAR)) AS name, 
+                        prod.brand_id AS id, 
+                        COUNT(*) AS productCount
+                    FROM products prod
+                    LEFT JOIN static_value sv ON prod.brand_id = sv.static_id
+                    WHERE prod.brand_id > 0 {joinFilter}
+                    GROUP BY sv.static_value, prod.brand_id
+                    ORDER BY productCount DESC", param);
+
+                var topManufacturers = await _db.QueryAsync<dynamic>($@"
+                    SELECT TOP 4 
+                        COALESCE(m.name, 'Manuf. ' + CAST(prod.manufacturer_id AS VARCHAR)) AS name, 
+                        prod.manufacturer_id AS id, 
+                        COUNT(*) AS productCount
+                    FROM products prod
+                    LEFT JOIN manufacturers m ON prod.manufacturer_id = m.id
+                    WHERE prod.manufacturer_id > 0 {joinFilter}
+                    GROUP BY m.name, prod.manufacturer_id
+                    ORDER BY productCount DESC", param);
+
+                return Ok(new {
+                    globalCatalogCount = totalCount,
+                    myProductsCount = approvedCount,
+                    waitingApprovalCount = waitingCount,
+                    topBrands = topBrands,
+                    topManufacturers = topManufacturers
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message, details = ex.StackTrace });
+            }
         }
 
         [HttpGet("Categories")]
@@ -215,7 +325,8 @@ namespace Marketplace.Api.Controllers
                 Rate = dto.Rate,
                 CompanyId = companyId,
                 CreatedBy = userEmail,
-                Status = "Pending"
+                Status = "Pending",
+                ActiveFlag = dto.ActiveFlag
             };
 
             product.Id = await repositorysitory.CreateAsync(product);
@@ -278,6 +389,7 @@ namespace Marketplace.Api.Controllers
             product.BrandId = dto.BrandId;
             product.ManufacturerId = dto.ManufacturerId;
             product.Rate = dto.Rate;
+            product.ActiveFlag = dto.ActiveFlag;
             product.UpdatedAt = DateTime.UtcNow;
 
             await repositorysitory.UpdateAsync(product);
@@ -291,6 +403,17 @@ namespace Marketplace.Api.Controllers
                     // Delete the images from the database
                     await repositorysitory.DeleteProductImagesByIdsAsync(id, imageIdsToDelete);
                 }
+            }
+
+            // 🔹 Handle existing image default status
+            if (dto.DefaultExistingImageId.HasValue)
+            {
+                await repositorysitory.UpdateProductImageDefaultAsync(id, dto.DefaultExistingImageId.Value);
+            }
+            else if (dto.DefaultImageIndex.HasValue)
+            {
+                // We are setting a new image as default, so clear any existing defaults first
+                await repositorysitory.UpdateProductImageDefaultAsync(id, null);
             }
 
             // 🔹 Handle new image uploads if any
@@ -342,18 +465,24 @@ namespace Marketplace.Api.Controllers
     [FromBody] ProductDecisionRequest request)
         {
             var email =
-                User.FindFirstValue(ClaimTypes.Email)
-                ?? User.FindFirstValue("email");
+                request.Email
+                ?? User.FindFirstValue(ClaimTypes.Email)
+                ?? User.FindFirstValue("email")
+                ?? User.FindFirstValue("sub"); // Some tokens use sub for email/identity
 
             if (string.IsNullOrEmpty(email))
-                return Unauthorized();
+                return Unauthorized(new { error = "Administrator email is required" });
 
             var companyClaim =
                 User.FindFirstValue("company_id")
                 ?? User.FindFirstValue("CompanyId");
 
-            if (!int.TryParse(companyClaim, out int companyId))
-                return Unauthorized(new { error = "Invalid CompanyId claim" });
+            // Make companyId optional - fallback to 0 if not present (Super Admins might not have one)
+            int companyId = 0;
+            if (!string.IsNullOrEmpty(companyClaim))
+            {
+                int.TryParse(companyClaim, out companyId);
+            }
 
             if (_db.State != ConnectionState.Open)
                 _db.Open();
@@ -368,32 +497,33 @@ namespace Marketplace.Api.Controllers
                 {
                     await repositorysitory.ApproveProductAsync(
                         id,
+                        (product.CompanyId ?? companyId),
                         email,
+                        request.Remarks ?? "Approved",
                         tx
                     );
 
                     await repositorysitory.AddProductCreditAsync(
-                        companyId,
+                        (product.CompanyId ?? companyId),
                         product.Id,
                         request.Remarks ?? "Approved",
+                        email,
                         tx
                     );
+
+                    // Removed InsertProductNoteAsync call - auditing now handled by ApproveProductAsync via user_logs table
                 }
                 else if (request.Action == "Rejected")
                 {
                     await repositorysitory.RejectProductAsync(
                         id,
-                        email,
-                        tx
-                    );
-
-                    await repositorysitory.InsertRejectNoteAsync(
-                        companyId,
-                        product.Id,
+                        (product.CompanyId ?? companyId),
                         email,
                         request.Remarks ?? "Rejected",
                         tx
                     );
+
+                    // Removed InsertProductNoteAsync call - auditing now handled by RejectProductAsync via user_logs table
                 }
                 else
                 {

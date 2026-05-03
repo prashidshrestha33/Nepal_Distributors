@@ -19,6 +19,7 @@ export interface Category {
   children?: Category[];
   createdAt?: string;
   updatedAt?: string;
+  activeFlag?: boolean;
 }
 export interface ProductImage {
   id: number;
@@ -45,6 +46,7 @@ export interface Product {
   isFeatured?: boolean;
   seoTitle: string;
   seoDescription: string;
+  activeFlag?: boolean;
   attributes?: string;
   createdBy: string;
   imageFile?: File | string;
@@ -55,6 +57,9 @@ export interface Product {
   imageUrl?: string;
   imageName?: string;
   images?: ProductImage[];
+  companyId?: number;
+  companyName?: string;
+  createdByName?: string;
 }
 export interface ProductResponse {
   data: Product[];
@@ -161,17 +166,74 @@ export class CategoryService {
       { requiresAuth: true }
     ).pipe(
       map((response: any) => {
-        return response?. result?.categories || response?.categories || [];
+        const raw = response?.result?.categories || response?.result || response?.categories || (Array.isArray(response) ? response : []);
+        if (!Array.isArray(raw)) return [];
+
+        // Check if the backend already returned a nested tree
+        const isAlreadyNested = raw.some(c => c.children && Array.isArray(c.children) && c.children.length > 0);
+
+        if (isAlreadyNested) {
+          return this.normalizeCategories(raw);
+        }
+
+        // Otherwise, build the tree from a flat list
+        return this.buildTree(raw);
       })
     );
   }
+
+  private normalizeCategories(cats: any[]): Category[] {
+    return cats.map((c: any) => ({
+      id: Number(c.id ?? c.Id ?? c.ID),
+      name: c.name ?? c.Name,
+      slug: c.slug ?? c.Slug,
+      parentId: (c.parentId != null && c.parentId !== '') ? Number(c.parentId ?? c.ParentId ?? c.parent_id) : null,
+      depth: c.depth ?? c.Depth ?? 0,
+      image: c.image ?? c.Image,
+      activeFlag: c.activeFlag ?? c.ActiveFlag ?? true,
+      children: c.children && Array.isArray(c.children) ? this.normalizeCategories(c.children) : []
+    })) as Category[];
+  }
+
+  private buildTree(flatList: any[]): Category[] {
+    const normalized = this.normalizeCategories(flatList);
+    const map = new Map<number, Category>();
+    const roots: Category[] = [];
+
+    normalized.forEach(c => map.set(c.id, c));
+
+    normalized.forEach(c => {
+      if (c.parentId && c.parentId !== 0) {
+        const parent = map.get(Number(c.parentId));
+        if (parent) {
+          if (!parent.children) parent.children = [];
+          parent.children.push(c);
+        } else {
+          roots.push(c); // Orphan
+        }
+      } else {
+        roots.push(c);
+      }
+    });
+
+    return roots;
+  }
 getAllCategories(): Observable<Category[]> {
-  return this.apiGateway.get<Category>(
+  return this.apiGateway.get<any>(
     '/api/Product/Categories',
     { requiresAuth: true }
   ).pipe(
-    map((response: any) => response?.result || [])
-  );
+      map((response: any) => {
+        const raw = response?.result || response?.data || (Array.isArray(response) ? response : []);
+        if (!Array.isArray(raw)) return [];
+        
+        // Check if already nested
+        if (raw.some(c => c.children && c.children.length > 0)) {
+          return this.normalizeCategories(raw);
+        }
+        return this.buildTree(raw);
+      })
+    );
 }
 
   getCategories(): Observable<Category[]> {
@@ -188,11 +250,11 @@ createCategory(formData: FormData): Observable<Category> {
   );
 }
 
-  moveCategory(categoryId: number, newParentId:  number): Observable<void> {
+  moveCategory(categoryId: number, newParentId: number | null): Observable<void> {
     return this.apiGateway.post<void>(
       '/api/Product/move',
-      { categoryId, newParentId },
-      { requiresAuth:  true }
+      { categoryId, newParentId: newParentId === 0 ? null : newParentId },
+      { requiresAuth: true }
     );
   }
 
@@ -227,12 +289,17 @@ createCategory(formData: FormData): Observable<Category> {
 export class ProductService {
   constructor(private apiGateway: ApiGatewayService) {}
 
-  getProducts(page: number = 1, pageSize: number = 20): Observable<ProductResponse> {
-    const params = this.apiGateway.buildParams({ page, pageSize });
+  getProducts(page: number = 1, pageSize: number = 20, categoryId?: number | null, myProducts: boolean = false, companyId?: number | null, brandId?: number | null, manufacturerId?: number | null, keyword?: string, activeFlag?: boolean): Observable<ProductResponse> {
+    const params = this.apiGateway.buildParams({ page, pageSize, categoryId, myProducts, companyId, brandId, manufacturerId, keyword, activeFlag });
     return this.apiGateway.getWithResult<ProductResponse>(
       '/api/Product',
       { requiresAuth: true, params }
     );
+  }
+
+  getDashboardStats(myProducts: boolean = false, companyId?: number | null): Observable<any> {
+    const params = this.apiGateway.buildParams({ myProducts, companyId });
+    return this.apiGateway.getWithResult<any>('/api/Product/stats', { requiresAuth: true, params });
   }
   
 SearchProducts(keyword:string,page: number = 1, pageSize: number = 20): Observable<ProductResponse> {
@@ -303,6 +370,7 @@ updateProduct(id: number, product: Product, images?: { file?: File, isDefault: b
   formData.append('SeoDescription', product.seoDescription ?? '');
   formData.append('Attributes', product.attributes ?? '');
   formData.append('CreatedBy', product.createdBy ?? '');
+  formData.append('ActiveFlag', product.activeFlag ? 'true' : 'false');
 
   // ------------------- Handle Image Deletions -------------------
   if (deletedImageIds.length > 0) {
@@ -311,23 +379,26 @@ updateProduct(id: number, product: Product, images?: { file?: File, isDefault: b
 
   // ------------------- Handle Image Uploads -------------------
   if (images && images.length > 0) {
-    let defaultIndex = 0;
+    let newFileIndex = 0;
 
-    images.forEach((img, index) => {
+    images.forEach((img) => {
       if (img.file) {
         formData.append('ImageFiles', img.file); // append new image files
-      }
-
-      if (img.isDefault) {
-        defaultIndex = index; // set default image index
-      }
-
-      if (img.id) {
-        formData.append('ExistingImageIds', img.id.toString()); // append existing image IDs
+        
+        if (img.isDefault) {
+          formData.append('DefaultImageIndex', newFileIndex.toString()); // set default image index for new files
+        }
+        newFileIndex++;
+      } else {
+        if (img.id) {
+          formData.append('ExistingImageIds', img.id.toString()); // append existing image IDs
+          
+          if (img.isDefault) {
+            formData.append('DefaultExistingImageId', img.id.toString()); // set default for existing file
+          }
+        }
       }
     });
-
-    formData.append('DefaultImageIndex', defaultIndex.toString()); // append default image index
   }
   formData.forEach((value, key) => {
   });
@@ -346,7 +417,7 @@ updateProduct(id: number, product: Product, images?: { file?: File, isDefault: b
     );
   }
 
-  bulkApproveProduct(productId: number, payload: { action: string; remarks?: string }): Observable<any> {
+  bulkApproveProduct(productId: number, payload: { Action: string; Remarks?: string; Email?: string }): Observable<any> {
   return this.apiGateway.post(`/api/Product/ApproveProduct/${productId}`, payload, {
     requiresAuth: true
   });

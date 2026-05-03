@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CompanyService } from '../../../../services/management/company.service';
-import type { company, Category,ApproveCompanyRequest,StaticValue } from '../../../../services/management/company.service';
+import type { company, Category, ApproveCompanyRequest, StaticValue } from '../../../../services/management/company.service';
 import { environment } from '../../../../../../environments/environment';
 import { LightboxModule, Lightbox } from 'ngx-lightbox';
 import { SafeHtmlPipe } from '../../../../pipe/safe-html.pipe';
@@ -37,7 +37,12 @@ export class CompanyComponent implements OnInit {
   showApproveModal2 = false;
   selectedCompanyId: number | null = null;
   successModal2: boolean = false;
-successMessage2: string = '';
+  successMessage2: string = '';
+
+  // ===================== PAGINATION =====================
+  currentPage: number = 1;
+  itemsPerPage: number = 10;
+  totalPages: number = 1;
 
   companylst: company = {
     id: undefined,
@@ -58,11 +63,11 @@ successMessage2: string = '';
     approveTs: ''
   };
 
-  constructor(private ui: UiService,private CompanyService: CompanyService, private lightbox: Lightbox,
-    
+  constructor(private ui: UiService, private CompanyService: CompanyService, private lightbox: Lightbox,
+
     private route: ActivatedRoute,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.loadCompanys();
@@ -71,38 +76,40 @@ successMessage2: string = '';
   }
 
   // ===================== LOAD CATEGORIES =====================
-loadCategories() {
-  this.loading = true;
-  this.CompanyService.getCategories().subscribe({
-    next: (res: any) => { // API wrapper
-      this.categories = res || [];
+  loadCategories() {
+    this.loading = true;
+    this.CompanyService.getCategories().subscribe({
+      next: (res: any) => { // API wrapper
+        this.categories = res || [];
 
-      // Flatten for ng-select
-      this.nestedCategories = this.flattenCategories(this.categories);
+        // Flatten for ng-select
+        this.nestedCategories = this.flattenCategories(this.categories);
+        debugger;
+        console.log(this.nestedCategories);
 
-      this.loading = false;
-    },
-    error: (err) => {
-      console.error('Failed to load categories:', err);
-      this.error = 'Failed to load categories. Please try again.';
-      this.loading = false;
-    }
-  });
-}
-
-
-flattenCategories(categories: Category[], depth = 0): Category[] {
-  const result: Category[] = [];
-
-  for (const cat of categories) {
-    result.push({ ...cat, depth });
-    if (cat.children && cat.children.length > 0) {
-      result.push(...this.flattenCategories(cat.children, depth + 1));
-    }
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load Companies:', err);
+        this.error = 'Failed to load Companies. Please try again.';
+        this.loading = false;
+      }
+    });
   }
 
-  return result;
-}
+
+  flattenCategories(categories: Category[], depth = 0): Category[] {
+    const result: Category[] = [];
+
+    for (const cat of categories) {
+      result.push({ ...cat, depth });
+      if (cat.children && cat.children.length > 0) {
+        result.push(...this.flattenCategories(cat.children, depth + 1));
+      }
+    }
+
+    return result;
+  }
 
   // ===================== CATEGORY SELECTION =====================
   toggleSelection(categoryId: number) {
@@ -124,10 +131,10 @@ flattenCategories(categories: Category[], depth = 0): Category[] {
     return !!fileUrl && /\.pdf$/i.test(fileUrl);
   }
   getImageUrl(imageName?: string): string {
-  return imageName 
-    ? `${environment.apiBaseUrl}/api/CompanyFile?fileName=${encodeURIComponent(imageName)}`
-    : 'assets/images/no-image.png';
-}
+    return imageName
+      ? `${environment.apiBaseUrl}/api/CompanyFile?fileName=${encodeURIComponent(imageName)}`
+      : 'assets/images/no-image.png';
+  }
 
   openImage(fileName?: string): void {
     if (!fileName) return;
@@ -136,49 +143,49 @@ flattenCategories(categories: Category[], depth = 0): Category[] {
   }
 
   // ===================== COMPANY MODAL =====================
-openApproveModal(id: number) {
+  openApproveModal(id: number) {
 
-  this.selectedCategoryIds = [];
-  this.rejectReason = '';
-  this.isreject = false;
+    this.selectedCategoryIds = [];
+    this.rejectReason = '';
+    this.isreject = false;
 
-  this.CompanyService.getCompanyById(id).subscribe({
-    next: (data: company) => {
-      this.companylst = data;
-      this.selectedCompanyId = id;
-      this.showApproveModal = true;
+    this.CompanyService.getCompanyById(id).subscribe({
+      next: (data: company) => {
+        this.companylst = data;
+        this.selectedCompanyId = id;
+        this.showApproveModal = true;
       },
       error: (err) => {
         console.error('Failed to load Company:', err);
         this.error = 'Failed to load Company. Please try again.';
-    }
-  });
-}
-    openRegisterUser(id: number) {
-      
-    this.ui.openRegisterLink(id);
-      //   this.showApproveModal2 = true;
-      //  // this.openCompanyProfile(id);
-      //   this.selectedCompanyId=id;
+      }
+    });
   }
-   
-  getStaticValuesrole(){
-      this.CompanyService.getStaticValuesrole().subscribe({
-       next: (res: any) => { // API wrapper
-      this.StaticValue = res || [];
+  openRegisterUser(id: number) {
+
+    this.ui.openRegisterLink(id);
+    //   this.showApproveModal2 = true;
+    //  // this.openCompanyProfile(id);
+    //   this.selectedCompanyId=id;
+  }
+
+  getStaticValuesrole() {
+    this.CompanyService.getStaticValuesrole().subscribe({
+      next: (res: any) => { // API wrapper
+        this.StaticValue = res || [];
       },
       error: (err) => {
       }
     });
-}
-openApprovestep1Modal(fg: string){
-        this.isreject=fg=="a"?false:true;
-        this.showApproveModal = false;
-        this.showApproveModal1 = true;
-}
+  }
+  openApprovestep1Modal(fg: string) {
+    this.isreject = fg == "a" ? false : true;
+    this.showApproveModal = false;
+    this.showApproveModal1 = true;
+  }
   closeApproveModal() {
     this.showApproveModal = false;
-        this.showApproveModal1 = false;
+    this.showApproveModal1 = false;
     this.selectedCompanyId = null;
   }
   closeApproveModal2() {
@@ -190,14 +197,14 @@ openApprovestep1Modal(fg: string){
     if (!this.selectedCompanyId) return;
 
 
-   const approveCompanyRequest: ApproveCompanyRequest = {
-    companyId: this.selectedCompanyId,
-    assignCategory: this.isreject
-      ? ''
-      : this.selectedCategoryIds.join(','), 
-    rejectComment: this.isreject ? this.rejectReason : "",
-    approveFg: this.isreject?'N':'Y'
-  };
+    const approveCompanyRequest: ApproveCompanyRequest = {
+      companyId: this.selectedCompanyId,
+      assignCategory: this.isreject
+        ? ''
+        : this.selectedCategoryIds.join(','),
+      rejectComment: this.isreject ? this.rejectReason : "",
+      approveFg: this.isreject ? 'N' : 'Y'
+    };
     this.CompanyService.ApproveCompany(approveCompanyRequest).subscribe({
       next: () => {
         this.closeApproveModal();
@@ -213,15 +220,19 @@ openApprovestep1Modal(fg: string){
   // ===================== LOAD & SEARCH =====================
   loadCompanys() {
     this.loading = true;
+    this.error = null;
     this.CompanyService.getCompanys().subscribe({
       next: (data: company[]) => {
         this.company = data;
         this.filteredCompany = data;
+        this.applySort();
+        this.currentPage = 1;
+        this.updatePagination();
         this.loading = false;
       },
       error: (err) => {
-        console.error('Failed to load Companys:', err);
-        this.error = 'Failed to load Companys. Please try again.';
+        console.error('Failed to load companies:', err);
+        this.error = 'Failed to load companies. Please try again.';
         this.loading = false;
       }
     });
@@ -234,6 +245,63 @@ openApprovestep1Modal(fg: string){
       (c.email?.toLowerCase().includes(term) ?? false) ||
       (c.mobilePhone?.toLowerCase().includes(term) ?? false)
     );
+    this.applySort();
+    this.currentPage = 1;
+    this.updatePagination();
+  }
+
+  // ===================== SORTING =====================
+  sortColumn: string = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
+
+  onSort(column: string) {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+    this.applySort();
+  }
+
+  applySort() {
+    if (!this.sortColumn) return;
+
+    this.filteredCompany.sort((a, b) => {
+      let valA: any = '';
+      let valB: any = '';
+
+      switch (this.sortColumn) {
+        case 'name':
+          valA = (a.name || '').toLowerCase();
+          valB = (b.name || '').toLowerCase();
+          break;
+        case 'companyType':
+          valA = (a.companyType || '').toLowerCase();
+          valB = (b.companyType || '').toLowerCase();
+          break;
+        case 'status':
+          valA = (a.status || 'Pending').toLowerCase();
+          valB = (b.status || 'Pending').toLowerCase();
+          break;
+      }
+
+      if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+
+  // ===================== PAGINATION =====================
+  updatePagination() {
+    this.totalPages = Math.ceil(this.filteredCompany.length / this.itemsPerPage);
+    if (this.totalPages === 0) this.totalPages = 1;
+  }
+
+  onPageChange(page: number) {
+    if (page < 1 || page > this.totalPages) return;
+    this.currentPage = page;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   // ===================== GOOGLE MAP =====================
@@ -257,11 +325,11 @@ openApprovestep1Modal(fg: string){
       }
     });
   }
-    openCompanyProfile(companyId: number): void {
+  openCompanyProfile(companyId: number): void {
     this.ui.openCompanyProfile(companyId);
   }
- openUsersList(companyId: number): void {
-  // Navigate to the user list page for the given company
-  this.router.navigate(['/users'], { queryParams: { companyId } });
-}
+  openUsersList(companyId: number): void {
+    // Navigate to the user list page for the given company
+    this.router.navigate(['/users'], { queryParams: { companyId } });
+  }
 }

@@ -31,6 +31,7 @@ namespace Marketplace.Models
     {
         public string Action { get; set; }  // "Approve" or "Reject"
         public string? Remarks { get; set; }
+        public string? Email { get; set; }
     }
 
     public class NewRegisterRequest

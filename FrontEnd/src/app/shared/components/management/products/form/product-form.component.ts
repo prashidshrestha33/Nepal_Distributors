@@ -4,7 +4,9 @@ import {
   ChangeDetectorRef,
   ViewChild,
   ElementRef,
-  Input
+  Input,
+  Output,
+  EventEmitter
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
@@ -44,8 +46,12 @@ import { CatagoryDynamicComponent } from '../../../CustomComponents/CatagoryDyna
 })
 export class ProductFormComponent implements OnInit {
 
-  @Input() editMode: boolean = false;
   @Input() productId?: number;
+  @Input() isModal: boolean = false;
+  editMode: boolean = false;
+
+  @Output() closeModal = new EventEmitter<void>();
+  @Output() productSaved = new EventEmitter<void>();
 
   @ViewChild('fileInput', { static: false })
   fileInput!: ElementRef<HTMLInputElement>;
@@ -97,6 +103,8 @@ export class ProductFormComponent implements OnInit {
 
   deletedImageIds: number[] = [];
 
+  isAdmin: boolean = false;
+
 
   constructor(
     private fb: FormBuilder,
@@ -114,9 +122,16 @@ export class ProductFormComponent implements OnInit {
       categoryId: ['', Validators.required],
       brandId: ['', Validators.required],
       manufacturerId: ['', Validators.required],
-      rate: [0, [Validators.required, Validators.min(0)]],
-      hsCode: ['']
+      rate: [0, [Validators.required, Validators.min(1)]],
+      hsCode: [''],
+      activeFlag: [true]
     });
+
+    this.checkUserRole();
+    if (!this.isAdmin) {
+      this.form.get('rate')?.clearValidators();
+      this.form.get('rate')?.updateValueAndValidity();
+    }
 
   }
 
@@ -129,16 +144,18 @@ export class ProductFormComponent implements OnInit {
 
     this.route.paramMap.subscribe(params => {
 
-      const id = params.get('id');
-
-      this.productId = id ? +id : undefined;
-      this.editMode = !!this.productId;
-
-
-      /* -------- SNACKBAR FROM NAVIGATION -------- */
-
       const nav = this.router.getCurrentNavigation();
       const snackbar = nav?.extras?.state?.['snackbar'];
+
+      const routeId = params.get('id');
+
+      // Only use route params if not passed as Input (for modal use)
+      if (!this.productId && routeId) {
+        this.productId = +routeId;
+        this.editMode = true;
+      }
+
+      this.editMode = !!this.productId;
 
       if (snackbar) {
         this.snackbar = {
@@ -321,6 +338,19 @@ export class ProductFormComponent implements OnInit {
 
   }
 
+  checkUserRole() {
+    const claimsStr = sessionStorage.getItem('userClaims');
+    if (claimsStr) {
+      try {
+        const claims = JSON.parse(claimsStr);
+        const roleKey = 'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
+        const role = claims[roleKey];
+        this.isAdmin = role === 'sadmin';
+      } catch (e) {
+        console.error('Error parsing user claims', e);
+      }
+    }
+  }
 
   /* =========================================================
      LOAD PRODUCT FOR EDIT
@@ -337,7 +367,10 @@ export class ProductFormComponent implements OnInit {
         const product: Product =
           (res as any)?.result ?? res;
 
-        this.form.patchValue(product);
+        this.form.patchValue({
+          ...product,
+          activeFlag: product.activeFlag ?? true
+        });
 
 
         /* -------- BRAND -------- */
@@ -492,12 +525,8 @@ export class ProductFormComponent implements OnInit {
   ========================================================= */
 
   onCategoryChosen(categoryId: number) {
-
-    debugger;
-
     this.selectedCategoryId = categoryId;
     this.form.get('categoryId')?.setValue(categoryId);
-
   }
 
 
@@ -592,11 +621,12 @@ export class ProductFormComponent implements OnInit {
 
     const product: Product = {
       ...this.form.getRawValue(),
-      isFeatured: true
+      isFeatured: true,
+      activeFlag: this.form.get('activeFlag')?.value ?? true
     };
 
     this.loading = true;
-    debugger;
+
 
     const imagesToSend =
       this.productImages.map(i => ({
@@ -631,6 +661,12 @@ export class ProductFormComponent implements OnInit {
             ? 'Product updated successfully!'
             : 'Product added successfully!';
 
+
+        if (this.isModal) {
+          this.productSaved.emit();
+          this.closeModal.emit();
+          return;
+        }
 
         this.router.navigate(
           ['/management/products'],
@@ -685,9 +721,6 @@ export class ProductFormComponent implements OnInit {
     message: string,
     success: boolean = true
   ) {
-
-    debugger;
-
     this.snackbar = {
       show: true,
       message,
@@ -697,14 +730,15 @@ export class ProductFormComponent implements OnInit {
     setTimeout(() => {
       this.snackbar.show = false;
     }, 5000);
-
   }
 
 
   goBack() {
-
-    this.router.navigate(['/management/products']);
-
+    if (this.isModal) {
+      this.closeModal.emit();
+    } else {
+      this.router.navigate(['/management/products']);
+    }
   }
 
 }

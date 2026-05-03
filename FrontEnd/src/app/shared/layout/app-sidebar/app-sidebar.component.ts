@@ -45,7 +45,7 @@ export class AppSidebarComponent {
       icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/891/891462.png" alt="product">`
     },
     {
-      name: "Product Category",
+      name: "Category",
       path: "/management/categories",
       icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/2910/2910766.png" alt="category">`
     },

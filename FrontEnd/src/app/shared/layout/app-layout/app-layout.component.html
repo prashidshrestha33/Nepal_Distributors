@@ -4,72 +4,50 @@
     <app-sidebar></app-sidebar>
     <app-backdrop></app-backdrop>
   </div>
-  <app-otp-popup
-  *ngIf="showOtp$ | async"
-  (close)="ui.closeOtp()">
-</app-otp-popup>
+  <app-otp-popup *ngIf="showOtp$ | async" (close)="ui.closeOtp()">
+  </app-otp-popup>
 
-<!-- Image Viewer -->
-<app-image-viewer
-  *ngIf="(showImage$ | async) as img"
-  [imageUrl]="img.url"
-  (close)="ui.closeImage()">
-</app-image-viewer>
-  <app-status-popup
-  *ngIf="showStatus$ | async as status"
-  [state]="status"
-  (close)="ui.closeStatus()">
-</app-status-popup>
-<app-company-profile-popup
-  *ngIf="ui.showCompanyProfile$ | async as companyId"
-  [companyId]="companyId"
-  (close)="ui.closeCompanyProfile()"
-></app-company-profile-popup>
-<app-user-profile-popup
-  *ngIf="showUserProfile$ | async as userId"
-  [userId]="userId"
-  (close)="closeUserProfile()">
-</app-user-profile-popup>
-<app-RegisterUserlink-popup
-  *ngIf="showRegisterLink$ | async as companyId"
-  [companyId]="companyId"
-  (close)="closeRegisterLink()">
-</app-RegisterUserlink-popup>
-<app-notification-settings-popup
-  *ngIf="showNotificationSettings$ | async as companyId"
-  [companyId]="companyId"
-  (close)="closeNotificationSettings()">
-</app-notification-settings-popup>
+  <!-- Image Viewer -->
+  <app-image-viewer *ngIf="(showImage$ | async) as img" [imageUrl]="img.url" (close)="ui.closeImage()">
+  </app-image-viewer>
+  <app-status-popup *ngIf="showStatus$ | async as status" [state]="status" (close)="ui.closeStatus()">
+  </app-status-popup>
+  <app-company-profile-popup *ngIf="ui.showCompanyProfile$ | async as companyId" [companyId]="companyId"
+    (close)="ui.closeCompanyProfile()"></app-company-profile-popup>
+  <app-user-profile-popup *ngIf="showUserProfile$ | async as userId" [userId]="userId" (close)="closeUserProfile()">
+  </app-user-profile-popup>
+  <app-RegisterUserlink-popup *ngIf="showRegisterLink$ | async as companyId" [companyId]="companyId"
+    (close)="closeRegisterLink()">
+  </app-RegisterUserlink-popup>
+  <app-notification-settings-popup *ngIf="showNotificationSettings$ | async as companyId" [companyId]="companyId"
+    (close)="closeNotificationSettings()">
+  </app-notification-settings-popup>
   <!-- Main Content Area -->
-  <div
-      class="flex-1 flex flex-col transition-all duration-300 ease-in-out"
-      [ngClass]="{
-        'xl:ml-[290px]': (isExpanded$ | async) || (isHovered$ | async),
-        'xl:ml-[90px]': !(isExpanded$ | async) && !(isHovered$ | async),
+  <div class="flex-1 flex flex-col transition-all duration-300 ease-in-out" [ngClass]="{
+        'xl:ml-[250px]': (isExpanded$ | async) || (isHovered$ | async),
+        'xl:ml-[70px]': !(isExpanded$ | async) && !(isHovered$ | async),
         'ml-0': (isMobileOpen$ | async)
-      }"
-  >
+      }">
     <!-- Fixed Header -->
-    <div class="fixed top-0 right-0 left-0 z-20 transition-all duration-300 ease-in-out"
-      [ngClass]="{
-        'xl:left-[290px]': (isExpanded$ | async) || (isHovered$ | async),
-        'xl:left-[90px]': !(isExpanded$ | async) && !(isHovered$ | async),
+    <div class="fixed top-0 right-0 left-0 z-20 transition-all duration-300 ease-in-out" [ngClass]="{
+        'xl:left-[250px]': (isExpanded$ | async) || (isHovered$ | async),
+        'xl:left-[70px]': !(isExpanded$ | async) && !(isHovered$ | async),
         'left-0': (isMobileOpen$ | async)
       }">
-      <app-header/>
+      <app-header />
     </div>
-    
+
     <!-- Scrollable Body Content -->
     <div class="flex-1 mt-[40px] mb-[11px] overflow-auto">
-      <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+      <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-2">
         <div class="breadcrumb">
 
-    <app-breadcrumb></app-breadcrumb>
+          <app-breadcrumb></app-breadcrumb>
 
-  <span class="text-lg font-semibold text-gray-800">
-    {{ pageTrail }}
-  </span>
-</div>
+          <span class="text-lg font-semibold text-gray-800">
+            {{ pageTrail }}
+          </span>
+        </div>
         <router-outlet></router-outlet>
       </div>
     </div>

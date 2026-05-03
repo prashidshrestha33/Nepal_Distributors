@@ -58,6 +58,10 @@ export interface Category {
   children?: Category[];
 }
 
+export interface CompanyType {
+  id: number;
+  name: string;
+}
 /* ===================== SERVICE ===================== */
 
 @Injectable({
@@ -71,7 +75,7 @@ export class CompanyService {
     private http: HttpClient,
     private authService: AuthService,
     private apiGateway: ApiGatewayService
-  ) {}
+  ) { }
 
   /* ===================== LIST ===================== */
   getNotificationSettings(companyId: number): Observable<any> {
@@ -110,23 +114,23 @@ export class CompanyService {
           return [];
         }
 
-          return companies.map((Company: any) => ({
-              id: Company.id,
-              name: Company.name || '',
-              email: Company.email || '',
-              mobilePhone: Company.mobilePhone || Company.MobilePhone || '',
-              contactPerson: Company.contactPerson || Company.ContactPerson || '',
-              landlinePhone: Company.landlinePhone || Company.LandlinePhone || '',
-              registrationDocument: Company.registrationDocument || Company.RegistrationDocument || '',
-              companyType: Company.companyType || Company.CompanyType || '',
-              status: Company.status || Company.Status || 'inactive',
-              userType: Company.userType || Company.UserType || '',
-              credits: Number(Company.credits ?? 0),
-              location: Company.location || Company.Location || '',
-              googleMapLocation: Company.googleMapLocation || Company.GoogleMapLocation || '',
-              createdAt: Company.createdAt || Company.created_at,
-              approveFg: Company.approveFg || Company.ApproveFg,
-              approveTs: Company.approveTs || Company.ApproveTs, 
+        return companies.map((Company: any) => ({
+          id: Company.id,
+          name: Company.name || '',
+          email: Company.email || '',
+          mobilePhone: Company.mobilePhone || Company.MobilePhone || '',
+          contactPerson: Company.contactPerson || Company.ContactPerson || '',
+          landlinePhone: Company.landlinePhone || Company.LandlinePhone || '',
+          registrationDocument: Company.registrationDocument || Company.RegistrationDocument || '',
+          companyType: Company.companyType || Company.CompanyType || '',
+          status: Company.status || Company.Status || 'inactive',
+          userType: Company.userType || Company.UserType || '',
+          credits: Number(Company.credits ?? 0),
+          location: Company.location || Company.Location || '',
+          googleMapLocation: Company.googleMapLocation || Company.GoogleMapLocation || '',
+          createdAt: Company.createdAt || Company.created_at,
+          approveFg: Company.approveFg || Company.ApproveFg,
+          approveTs: Company.approveTs || Company.ApproveTs,
         })) as company[];
       })
     );
@@ -145,21 +149,21 @@ export class CompanyService {
   getById(id: number): Observable<company> {
     return this.getCompanyById(id);
   }
-uploadDocument(
-  file: File, 
-  companyId: number
-): Observable<{ success: boolean; fileName: string }> {
+  uploadDocument(
+    file: File,
+    companyId: number
+  ): Observable<{ success: boolean; fileName: string }> {
 
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('companyId', companyId.toString());
-  formData.append('fieldName', "test"); // <-- send fieldName to backend
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('companyId', companyId.toString());
+    formData.append('fieldName', "test"); // <-- send fieldName to backend
 
-  return this.http.post<{ success: boolean; fileName: string }>(
-    `${this.apiUrl}/upload-document`,
-    formData
-  );
-}
+    return this.http.post<{ success: boolean; fileName: string }>(
+      `${this.apiUrl}/upload-document`,
+      formData
+    );
+  }
 
   // Optional: Update other fields
   updateField(request: { companyId: number; fieldName: string; fieldValue: any }): Observable<boolean> {
@@ -175,12 +179,12 @@ uploadDocument(
   /* ===================== UPDATE ===================== */
 
   updateCompany(companyId: number, data: FormData) {
-   return this.apiGateway.post<FormData>(
-    `${environment.apiBaseUrl}/api/Companies/update`,
-    data,
-    { requiresAuth: true } // pass auth if needed
-  );
-}
+    return this.apiGateway.post<FormData>(
+      `${environment.apiBaseUrl}/api/Companies/update`,
+      data,
+      { requiresAuth: true } // pass auth if needed
+    );
+  }
 
 
   /* ===================== DELETE ===================== */
@@ -213,12 +217,59 @@ uploadDocument(
   }
 
   getCategories(): Observable<Category[]> {
-    return this.apiGateway.getWithResult<Category[]>(
-      `${environment.apiBaseUrl}/api/Product/Category`
+    return this.apiGateway.get<any>(
+      `${environment.apiBaseUrl}/api/Product/Categories`,
+      { requiresAuth: true }
+    ).pipe(
+      map((response: any) => {
+        const raw = response?.result || response?.data || (Array.isArray(response) ? response : []);
+        if (!Array.isArray(raw)) return [];
+
+        // Check if already nested
+        if (raw.some(c => c.children && c.children.length > 0)) {
+          return this.normalizeCategories(raw);
+        }
+        return this.buildTree(raw);
+      })
     );
   }
 
-  getCategoriesparent(parentid:number): Observable<Category[]> {
+  private normalizeCategories(cats: any[]): Category[] {
+    return cats.map((c: any) => ({
+      id: Number(c.id ?? c.Id ?? c.ID),
+      name: c.name ?? c.Name,
+      slug: c.slug ?? c.Slug,
+      parentId: (c.parentId != null && c.parentId !== '') ? Number(c.parentId ?? c.ParentId ?? c.parent_id) : null,
+      depth: c.depth ?? c.Depth ?? 0,
+      activeFlag: c.activeFlag ?? c.ActiveFlag ?? true,
+      children: c.children && Array.isArray(c.children) ? this.normalizeCategories(c.children) : []
+    })) as Category[];
+  }
+
+  private buildTree(flatList: any[]): Category[] {
+    const normalized = this.normalizeCategories(flatList);
+    const map = new Map<number, Category>();
+    const roots: Category[] = [];
+
+    normalized.forEach(c => map.set(c.id, c));
+
+    normalized.forEach(c => {
+      if (c.parentId && c.parentId !== 0) {
+        const parent = map.get(Number(c.parentId));
+        if (parent) {
+          if (!parent.children) parent.children = [];
+          parent.children.push(c);
+        } else {
+          roots.push(c);
+        }
+      } else {
+        roots.push(c);
+      }
+    });
+    return roots;
+  }
+
+  getCategoriesparent(parentid: number): Observable<Category[]> {
     return this.apiGateway.getWithResult<Category[]>(
       `${environment.apiBaseUrl}/api/Product/GetAllCategorybyparentid?parentId=${encodeURIComponent(parentid)}`
     );
@@ -237,6 +288,13 @@ uploadDocument(
     return this.apiGateway.get<any[]>(
       `/api/Companies/send-registration-link?email=${encodeURIComponent(email)}&company_id=${encodeURIComponent(company_id)}&role=${encodeURIComponent(role)}`,
       { requiresAuth: true }
+    );
+  }
+
+  getCompanyTypes(): Observable<CompanyType[]> {
+    //return this.http.get<CompanyType[]>(`${this.apiUrl}/types`);
+    return this.apiGateway.getWithResult<CompanyType[]>(
+      `${environment.apiBaseUrl}/api/public/companyType`
     );
   }
 }

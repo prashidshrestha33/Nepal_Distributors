@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -20,6 +20,11 @@ import { CatagoryDynamicComponent } from '../../../../components/CustomComponent
   styleUrls: ['./category-form.component.css']
 })
 export class CategoryFormComponent implements OnInit {
+  @Input() isModal: boolean = false;
+  @Input() categoryId: number | undefined;
+  @Output() closeModal = new EventEmitter<void>();
+  @Output() categorySaved = new EventEmitter<void>();
+
   form: FormGroup;
   loading = false;
   error: string | null = null;
@@ -36,7 +41,6 @@ export class CategoryFormComponent implements OnInit {
   isDragging = false;
   maxVisibleLevels = 5; // feel free to increase
   isEditMode = false;
-  categoryId!: number;
   initialParentId: number | null = null;
   snackbar: { show: boolean; message: string; type: 'success' | 'error' | 'warning' } = { show: false, message: '', type: 'success' };
 
@@ -54,27 +58,37 @@ export class CategoryFormComponent implements OnInit {
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
       slug: ['', Validators.required],
       parent_id: [null],
-      image: [null]
+      image: [null],
+      activeFlag: [true]
     });
   }
 
   ngOnInit() {
-  const id = this.route.snapshot.paramMap.get('id');
-  if (id) {
-    console.log('Editing category ID:', id); // ✅ you can log it
-    this.isEditMode = true;
-    this.categoryId = +id;
-    this.loadCategoryById(); // load data for editing
+    // Check if editing (either from modal input or route param)
+    let id: string | number | null = null;
+    
+    if (this.isModal && this.categoryId) {
+      // Modal mode: use Input categoryId
+      id = this.categoryId;
+    } else if (!this.isModal) {
+      // Page mode: use route parameter
+      id = this.route.snapshot.paramMap.get('id');
+    }
+    
+    if (id) {
+      console.log('Editing category ID:', id);
+      this.isEditMode = true;
+      this.loadCategoryById();
+    }
+    
     this.setupNameToSlugListener();
   }
-  this.setupNameToSlugListener();
-}
 
 // ✅ LOAD CATEGORY FOR EDIT
   private loadCategoryById(): void {
     this.loading = true;
 
-    this.categoryService.getCategoryById(this.categoryId).subscribe({
+    this.categoryService.getCategoryById(this.categoryId!).subscribe({
       next: (res: any) => {
         // The endpoint returns the category directly (no ApiResponse wrapper)
         const data = res?.result ?? res;
@@ -82,7 +96,8 @@ export class CategoryFormComponent implements OnInit {
         this.form.patchValue({
           name: data.name,
           slug: data.slug,
-          parent_id: data.parentId
+          parent_id: data.parentId,
+          activeFlag: data.activeFlag ?? true
         });
         this.initialParentId = data.parentId;
 
@@ -139,6 +154,17 @@ export class CategoryFormComponent implements OnInit {
   onCategoryChosen(categoryId: any): void {
     if (typeof categoryId === 'number' && categoryId > 0) {
       this.form.get('parent_id')?.setValue(categoryId);
+
+      // 🔹 Check parent status: if parent is inactive, child should be inactive default
+      this.categoryService.getCategoryById(categoryId).subscribe({
+        next: (res: any) => {
+          const parent = res?.result ?? res;
+          if (parent && parent.activeFlag === false) {
+            this.form.get('activeFlag')?.setValue(false);
+            this.showSnackbar('Parent category is inactive. This category will also be set to inactive.', 'warning');
+          }
+        }
+      });
     } else {
       this.form.get('parent_id')?.setValue(null);
       this.parentSlugBase = '';
@@ -331,45 +357,58 @@ onSubmit(): void {
   if (this.selectedImage) {
     formData.append('Image', this.selectedImage);
   }
+  formData.append('ActiveFlag', this.form.value.activeFlag ? 'true' : 'false');
 
   if (this.isEditMode) {
-    this.categoryService.updateCategory(this.categoryId, formData).subscribe({
-      next: () => {
-        this.router.navigate(['/management/categories'], { 
-          state: { snackbar: { message: 'Category updated successfully!', success: true } } 
-        });
-      },
-      error: (err) => {
-        console.error('Error', err);
-        this.showSnackbar('Failed to update category. Please try again.', 'error');
-      }
-    });
-  } else {
-    this.categoryService.createCategory(formData).subscribe({
-      next: () => {
-        this.router.navigate(['/management/categories'], { 
-          state: { snackbar: { message: 'Category created successfully!', success: true } } 
-        });
-      },
-      error: (err) => {
-        console.error('Error', err);
-        this.showSnackbar('Failed to create category. Please try again.', 'error');
-      }
-    });
+      this.categoryService.updateCategory(this.categoryId!, formData).subscribe({
+        next: () => {
+          if (this.isModal) {
+            this.categorySaved.emit();
+          } else {
+            this.router.navigate(['/management/categories'], { 
+              state: { snackbar: { message: 'Category updated successfully!', success: true } } 
+            });
+          }
+        },
+        error: (err) => {
+          console.error('Error', err);
+          this.showSnackbar('Failed to update category. Please try again.', 'error');
+        }
+      });
+    } else {
+      this.categoryService.createCategory(formData).subscribe({
+        next: () => {
+          if (this.isModal) {
+            this.categorySaved.emit();
+          } else {
+            this.router.navigate(['/management/categories'], { 
+              state: { snackbar: { message: 'Category created successfully!', success: true } } 
+            });
+          }
+        },
+        error: (err) => {
+          console.error('Error', err);
+          this.showSnackbar('Failed to create category. Please try again.', 'error');
+        }
+      });
+    }
   }
-}
 
-showSnackbar(message: string, type: 'success' | 'error' | 'warning' = 'success', duration: number = 5000) {
-  this.snackbar = { show: true, message, type };
-  setTimeout(() => {
-    this.snackbar.show = false;
+  showSnackbar(message: string, type: 'success' | 'error' | 'warning' = 'success', duration: number = 5000) {
+    this.snackbar = { show: true, message, type };
+    setTimeout(() => {
+      this.snackbar.show = false;
+      this.cdr.detectChanges();
+    }, duration);
     this.cdr.detectChanges();
-  }, duration);
-  this.cdr.detectChanges();
-}
+  }
 
   goBack(): void {
-    this.router.navigate(['/management/categories']);
+    if (this.isModal) {
+      this.closeModal.emit();
+    } else {
+      this.router.navigate(['/management/categories']);
+    }
   }
 
   isFieldInvalid(field: string): boolean {
@@ -379,7 +418,7 @@ showSnackbar(message: string, type: 'success' | 'error' | 'warning' = 'success',
 
   get currentParentName(): string {
     const lastSelectedId = [...this.selectedParents].reverse().find(id => id !== null);
-    return lastSelectedId ? this.findCategoryById(lastSelectedId)?.name || '' : '';
+    return lastSelectedId && lastSelectedId !== null ? this.findCategoryById(lastSelectedId)?.name || '' : '';
   }
 
   // private loadCategories(): void {
