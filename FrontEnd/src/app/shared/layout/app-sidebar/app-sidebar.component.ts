@@ -64,6 +64,14 @@ export class AppSidebarComponent {
         { name: "Sign Up", path: "/register-company", pro: false },
       ],
       icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="auth">`
+    },
+    {
+      name: "Feedback",
+      subItems: [
+        { name: "Inbox", path: "/management/feedback/inbox", pro: false },
+        { name: "Submit Feedback", path: "/management/feedback/submit", pro: false },
+      ],
+      icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/1041/1041916.png" alt="feedback">`
     }
   ];
 

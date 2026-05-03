@@ -97,6 +97,9 @@ export interface StaticValue {
   staticValueKey: string;
   staticData?: string;
   displayOrder:  string;
+  catalogTitle?: string;
+  keyTitle?: string;
+  dataTitle?: string;
 }
 
 export interface StaticValueCatalog {
@@ -105,6 +108,9 @@ export interface StaticValueCatalog {
   catalogName: string;
   catalogType:  string;
   catalogDescription: string;
+  catalogTitle?: string;
+  keyTitle?: string;
+  dataTitle?: string;
 }
 
 export interface Brand {

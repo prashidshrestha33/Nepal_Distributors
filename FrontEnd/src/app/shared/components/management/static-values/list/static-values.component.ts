@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { StaticValueService } from '../../../../services/management/management.service';
 import type { StaticValue } from '../../../../services/management/management.service';
+import { BreadcrumbService } from '../../../../services/breadcrumb.service';
 
 @Component({
   selector:  'app-static-values',
@@ -19,11 +20,15 @@ export class StaticValuesComponent implements OnInit {
   catalogId: number | null = null;
   loading = false;
   error: string | null = null;
+  catalogTitle = 'Static Values';
+  keyTitle = 'Key';
+  dataTitle = 'Value';
 
   constructor(
     private service: StaticValueService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private breadcrumbService: BreadcrumbService
   ) {}
 
   ngOnInit(): void {
@@ -52,6 +57,19 @@ export class StaticValuesComponent implements OnInit {
         this.items = data;
         this.filteredItems = data;
         this.loading = false;
+        
+        // Also fetch the catalog to get the titles
+        this.service.getStaticValuesCatagory().subscribe(catalogs => {
+          const currentCatalog = catalogs.find(c => c.catalogId === this.catalogId);
+          if (currentCatalog) {
+            this.catalogTitle = currentCatalog.catalogTitle || currentCatalog.catalogName || 'Static Values';
+            this.keyTitle = currentCatalog.keyTitle || 'Key';
+            this.dataTitle = currentCatalog.dataTitle || 'Value';
+            
+            // Update breadcrumb
+            this.breadcrumbService.updateLastBreadcrumbLabel(this.catalogTitle);
+          }
+        });
       },
       error:  (err) => {
         this.loading = false;

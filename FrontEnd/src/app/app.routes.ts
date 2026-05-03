@@ -46,6 +46,11 @@ import { StaticValueFormComponent } from './shared/components/management/static-
 import { register } from 'swiper/element';
 import { ProductDetailsComponent } from './shared/components/management/products/details/product-details.component';
 
+// Feedback Components
+import { FeedbackSubmitComponent } from './shared/components/management/feedback/submit/feedback-submit.component';
+import { FeedbackInboxComponent } from './shared/components/management/feedback/inbox/feedback-inbox.component';
+import { FeedbackDetailsComponent } from './shared/components/management/feedback/details/feedback-details.component';
+
 export const routes: Routes = [
   // Public auth pages
   
@@ -206,6 +211,21 @@ export const routes: Routes = [
             path: 'static-values/add',
             component: StaticValueFormComponent,
             title: 'Add Static Value'
+          },
+          {
+            path: 'feedback/submit',
+            component: FeedbackSubmitComponent,
+            title: 'Submit Feedback'
+          },
+          {
+            path: 'feedback/inbox',
+            component: FeedbackInboxComponent,
+            title: 'Feedback Inbox'
+          },
+          {
+            path: 'feedback/details/:id',
+            component: FeedbackDetailsComponent,
+            title: 'Feedback Details'
           }
         ]
       },

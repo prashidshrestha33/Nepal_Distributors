@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute,Router } from '@angular/router';
 import { StaticValueService,StaticValue } from '../../../../services/management/management.service';
+import { BreadcrumbService } from '../../../../services/breadcrumb.service';
 
 @Component({
   selector: 'app-static-value-form',
@@ -18,12 +19,17 @@ export class StaticValueFormComponent implements OnInit {
   error: string | null = null;
   catalogId: number | null = null;
   staticId: number | null = null;
+  
+  catalogTitle = 'Static Value';
+  keyTitle = 'Key';
+  dataTitle = 'Value';
 
   constructor(
     private fb: FormBuilder,
     private staticValueService: StaticValueService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private breadcrumbService: BreadcrumbService
   ) {
     this.form = this.fb.group({
       catalogId: [''],
@@ -47,6 +53,22 @@ export class StaticValueFormComponent implements OnInit {
         this.catalogId = +id;
       }
       else  this.router.navigate(['/management/static-values-catalog']); 
+      
+      // Load catalog info for titles
+      if (this.catalogId) {
+        this.staticValueService.getStaticValuesCatagory().subscribe(catalogs => {
+          const currentCatalog = catalogs.find(c => c.catalogId === this.catalogId);
+          if (currentCatalog) {
+            this.catalogTitle = currentCatalog.catalogTitle || currentCatalog.catalogName || 'Static Value';
+            this.keyTitle = currentCatalog.keyTitle || 'Key';
+            this.dataTitle = currentCatalog.dataTitle || 'Value';
+            
+            // Update breadcrumb
+            const action = this.staticId ? 'Edit' : 'Add';
+            this.breadcrumbService.updateLastBreadcrumbLabel(`${action} ${this.catalogTitle}`);
+          }
+        });
+      }
     });
      this.form.patchValue({
         catalogId: this.catalogId,

@@ -5,6 +5,7 @@ using Marketpalce.Repository.Repositories.OrderRepo;
 using Marketpalce.Repository.Repositories.ProductRepo;
 using Marketpalce.Repository.Repositories.StaticValueReop;
 using Marketpalce.Repository.Repositories.UserReop;
+using Marketpalce.Repository.Repositories.FeedbackRepo;
 using Marketplace.Api.Services.Company;
 using Marketplace.Api.Services.EmailService;
 using Marketplace.Api.Services.FacebookToken;
@@ -13,6 +14,7 @@ using Marketplace.Api.Services.GoogleTokenVerifier;
 using Marketplace.Api.Services.Hassing;
 using Marketplace.Api.Services.Helper;
 using Marketplace.Api.Services.Order;
+using Marketplace.Api.Services.FeedbackService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -43,6 +45,7 @@ builder.Services.AddScoped<IStaticValueRepository, StaticValueRepository>();
 builder.Services.AddScoped<ICompanyRepository, CompanyRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICompanyTypeRepository, CompanyTypeRepository>();
+builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
 
 // --- Services ---
 builder.Services.AddScoped<IJwtService, JwtService>();
@@ -54,6 +57,7 @@ builder.Services.AddScoped<ICompanyTypeService, CompanyTypeService>();
 builder.Services.AddTransient<IEmailService, EmailService>();
 builder.Services.AddTransient<IOrderService, OrderService>();
 builder.Services.AddTransient<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 
 // --- HttpClient for Facebook Graph API ---
 builder.Services.AddHttpClient("facebook", client =>

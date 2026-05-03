@@ -1,6 +1,5 @@
 <div class="space-y-6">
-  <div class="flex justify-between items-center">
-    <h1 class="text-2xl font-bold text-gray-800">Static Values</h1>
+  <div class="flex justify-end items-center">
     <a href="/static-values/add?catalogId={{catalogId}}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg">Add Value</a>
   </div>
   <div class="bg-white rounded-lg shadow p-4">
@@ -11,8 +10,8 @@
     <table class="w-full">
       <thead class="bg-gray-100 border-b">
         <tr>
-          <th class="px-6 py-3 text-left text-sm font-semibold">Key</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold">Value</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold">{{ keyTitle }}</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold">{{ dataTitle }}</th>
           <th class="px-6 py-3 text-left text-sm font-semibold">Display order</th>
           <th class="px-6 py-3 text-center text-sm font-semibold">Actions</th>
         </tr>
