@@ -17,7 +17,7 @@ export class ProductListPopupComponent implements OnInit {
   @Input() productListStyle: 'table' | 'list' | 'scroll' = 'table';
   @Input() keyWord: string = '';
   @Input() displayMode: 'popup' | 'flat' = 'popup';
-  @Input() preSelectedItems: any[] = []; 
+  @Input() preSelectedItems: any[] = [];
 
   @Output() close = new EventEmitter<void>();
   @Output() productSelected = new EventEmitter<any[]>(); // Emits an Array of Order Items
@@ -35,10 +35,9 @@ export class ProductListPopupComponent implements OnInit {
     status: ''
   };
 
-  constructor(private productService: ProductService) {}
+  constructor(private productService: ProductService) { }
 
   ngOnInit(): void {
-    debugger;
     // 1. Populate Memory Map with pre-selected items passed from Parent
     if (this.preSelectedItems && this.preSelectedItems.length > 0) {
       this.preSelectedItems.forEach(item => {
@@ -64,9 +63,9 @@ export class ProductListPopupComponent implements OnInit {
         this.products = result.map((p: Product) => ({
           ...p,
           imageUrl: this.getImageUrl((p as any).defaultImage),
-          
+
           // 2. Automatically check the box if it exists in our Memory Map!
-          selected: this.selectedItemsMap.has(p.id) 
+          selected: this.selectedItemsMap.has(p.id)
         }));
 
         this.applyFilters();
@@ -106,7 +105,7 @@ export class ProductListPopupComponent implements OnInit {
         total_amount: product.price || 0,
         remarks: ''
       };
-      
+
       // Save to map
       this.selectedItemsMap.set(product.id, orderItemFormat);
     } else {
@@ -134,7 +133,7 @@ export class ProductListPopupComponent implements OnInit {
   // HELPERS
   // ===============================
   getImageUrl(imageName?: string): string {
-    return imageName 
+    return imageName
       ? `${environment.apiBaseUrl}/api/CompanyFile?fileName=${encodeURIComponent(imageName)}`
       : 'assets/images/no-image.png';
   }
