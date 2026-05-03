@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Marketplace.Model.Models;
 using System;
 using System.Collections.Generic;
@@ -127,7 +127,7 @@ namespace Marketpalce.Repository.Repositories.StaticValueReop
         // List all
         public async Task<IEnumerable<StaticValue>> ListAllAsync(string cid)
         {
-            const string sql = "SELECT static_id as StaticId, static_value AS StaticValueKey, static_data AS StaticData,display_order as DisplayOrder FROM dbo.static_value where Catalog_id=@cid order by display_order";
+            const string sql = "SELECT s.static_id as StaticId, s.static_value AS StaticValueKey, s.static_data AS StaticData, s.display_order as DisplayOrder, c.CatalogTitle, c.KeyTitle, c.DataTitle FROM dbo.static_value s LEFT JOIN dbo.static_value_cataglog c ON s.Catalog_id = c.Catalog_id where s.Catalog_id=@cid order by s.display_order";
 
             return await _db.QueryAsync<StaticValue>(sql, new { cid = cid });
         }
@@ -145,7 +145,7 @@ namespace Marketpalce.Repository.Repositories.StaticValueReop
         // Read single
         public async Task<StaticValueCatalog?> GetCatalogAsync(long id)
         {
-            const string sql = "SELECT Catalog_id as CatalogId, Catalog_Name as CatalogName,Catalog_Type as CatalogType,Catalog_Description as CatalogDescription FROM dbo.static_value_cataglog WHERE Catalog_id = @Catalog_id";
+            const string sql = "SELECT Catalog_id as CatalogId, Catalog_Name as CatalogName, Catalog_Type as CatalogType, Catalog_Description as CatalogDescription, CatalogTitle, KeyTitle, DataTitle FROM dbo.static_value_cataglog WHERE Catalog_id = @Catalog_id";
             return await _db.QuerySingleOrDefaultAsync<StaticValueCatalog>(sql, new { Catalog_id = id });
         }
 
@@ -174,7 +174,7 @@ namespace Marketpalce.Repository.Repositories.StaticValueReop
         // List all
         public async Task<IEnumerable<StaticValueCatalog>> ListAllCatalogAsync()
         {
-            const string sql = "SELECT  Catalog_id as CatalogId, Catalog_Name as CatalogName,Catalog_Type as CatalogType,Catalog_Description as CatalogDescription FROM dbo.static_value_cataglog";
+            const string sql = "SELECT Catalog_id as CatalogId, Catalog_Name as CatalogName, Catalog_Type as CatalogType, Catalog_Description as CatalogDescription, CatalogTitle, KeyTitle, DataTitle FROM dbo.static_value_cataglog";
             return await _db.QueryAsync<StaticValueCatalog>(sql);
         }
 

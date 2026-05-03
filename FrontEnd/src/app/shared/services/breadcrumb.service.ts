@@ -101,6 +101,15 @@ export class BreadcrumbService {
     return lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);
   }
 
+  // Updates the label of the last breadcrumb
+  updateLastBreadcrumbLabel(newLabel: string) {
+    const current = this.breadcrumbs.getValue();
+    if (current.length > 0) {
+      current[current.length - 1].label = newLabel;
+      this.setBreadcrumbs(current);
+    }
+  }
+
   private setBreadcrumbs(breadcrumbs: Breadcrumb[]) {
     this.breadcrumbs.next(breadcrumbs);
     // 💾 Save to Cache!
