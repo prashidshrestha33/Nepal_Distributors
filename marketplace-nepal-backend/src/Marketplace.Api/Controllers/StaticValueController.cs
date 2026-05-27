@@ -1,4 +1,4 @@
-﻿using Marketpalce.Repository.Repositories.StaticValueReop;
+using Marketpalce.Repository.Repositories.StaticValueReop;
 using Marketplace.Api.Models;
 using Marketplace.Api.Services.Helper;
 using Marketplace.Model.Models;
