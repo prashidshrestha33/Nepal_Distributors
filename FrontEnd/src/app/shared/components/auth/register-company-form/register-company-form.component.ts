@@ -16,19 +16,19 @@ function phoneNumberValidator(control: AbstractControl): ValidationErrors | null
   if (!control.value) {
     return null; // Allow empty (required validator handles it)
   }
-  
+
   const phoneNumber = control.value.toString().trim();
-  
+
   // Check if it contains only digits
   if (!/^\d+$/.test(phoneNumber)) {
     return { invalidPhoneFormat: true };
   }
-  
+
   // Check length between 7 and 10
   if (phoneNumber.length < 7 || phoneNumber.length > 10) {
     return { phoneLengthInvalid: true };
   }
-  
+
   return null;
 }
 
@@ -59,9 +59,9 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
   private marker: any = null;
   private mapInitialized = false;
   private selectedLatLng: { lat: number; lng: number } | null = null;
-   searchQuery: string = '';
+  searchQuery: string = '';
   loadingCompanyTypes: boolean = false;
-  
+
   // Registration flow state
   isComingFromSignup = false;
   filteredTypes: any[] = [];
@@ -90,17 +90,17 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-      const Messagelg = localStorage.getItem('Messagelg');
-    
-    if (Messagelg && Messagelg!="") {
-        this.lgmessage=Messagelg;
+    const Messagelg = localStorage.getItem('Messagelg');
+
+    if (Messagelg && Messagelg != "") {
+      this.lgmessage = Messagelg;
     }
     // Fetch company types from API
     this.loadCompanyTypes();
 
     // Check if coming from signup form
     this.isComingFromSignup = this.registrationFlowService.isComingFromSignup();
-    
+
     if (this.isComingFromSignup) {
       // Coming from signup - load and pre-fill saved data
       const preFillData = this.registrationFlowService.getFormData();
@@ -123,16 +123,16 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
       this.filePreview = null;
       this.createdCompanyId = null;
       this.error = null;
-      
-      
+
+
       // Clear localStorage
       localStorage.removeItem('companyFormData');
       localStorage.removeItem('registrationFlowData');
       localStorage.removeItem('signupFormData');
-      
+
       // Clear FormDataService
       this.formDataService.clearCompanyData();
-      
+
       // Clear RegistrationFlowService
       this.registrationFlowService.clearFormData();
     }
@@ -148,20 +148,20 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
       next: (response: any) => {
         console.log('Company Types API Response:', response);
         this.companyTypes = [];
-        
+
         // Helper function to extract CatalogType/name from an item
         const extractName = (item: any): string => {
           return item?.catalogType || item?.catalogName || item?.name || item?.displayName || item?.title || '';
         };
-        
+
         // Handle different response structures
         try {
-         
-           this.companyTypes = response.result || [];
+
+          this.companyTypes = response.result || [];
         } catch (e) {
           console.error('Error processing response:', e);
         }
-        
+
         console.log('Processed company types:', this.companyTypes);
         this.loadingCompanyTypes = false;
       },
@@ -219,10 +219,10 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
     this.selectedLatLng = { lat: +lat.toFixed(6), lng: +lng.toFixed(6) };
     this.marker.setLatLng([lat, lng]);
     this.map.setView([lat, lng], 13);
-    
+
     // Ensure the map updates properly
-    setTimeout(() => { 
-      try { this.map.invalidateSize(); } catch (e) {} 
+    setTimeout(() => {
+      try { this.map.invalidateSize(); } catch (e) { }
     }, 50);
   }
 
@@ -317,8 +317,8 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
     });
 
     // After everything, invalidate to render correctly (multiple delays to ensure proper rendering)
-    setTimeout(() => { try { this.map.invalidateSize(); } catch (e) {} }, 100);
-    setTimeout(() => { try { this.map.invalidateSize(); } catch (e) {} }, 200);
+    setTimeout(() => { try { this.map.invalidateSize(); } catch (e) { } }, 100);
+    setTimeout(() => { try { this.map.invalidateSize(); } catch (e) { } }, 200);
     this.mapInitialized = true;
   }
 
@@ -375,7 +375,6 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
       this.fileName = file.name;
-      debugger;
       // Set file value to form control (registrationDocument)
       this.form.get('registrationDocument')?.setValue(file);
 
@@ -428,7 +427,7 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
     this.form.get('companyType')?.setValue(type.staticValueKey);  // Update form control
     this.companyType = type;  // Store the selected value
   }
-    onDragOver(event: DragEvent) { event.preventDefault(); }
+  onDragOver(event: DragEvent) { event.preventDefault(); }
   onDragLeave(event: DragEvent) { event.preventDefault(); }
   onDrop(event: DragEvent) {
     event.preventDefault();
@@ -447,7 +446,7 @@ export class RegisterCompanyFormComponent implements OnInit, OnDestroy {
       event.stopPropagation();
     }
   }
-    onProductImageChange(event: any) {
+  onProductImageChange(event: any) {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) { alert('Only image files are allowed'); return; }

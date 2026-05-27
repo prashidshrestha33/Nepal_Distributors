@@ -84,7 +84,6 @@ export class CompanyComponent implements OnInit {
 
         // Flatten for ng-select
         this.nestedCategories = this.flattenCategories(this.categories);
-        debugger;
         console.log(this.nestedCategories);
 
         this.loading = false;
