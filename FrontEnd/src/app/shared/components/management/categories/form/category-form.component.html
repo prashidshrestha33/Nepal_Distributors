@@ -65,7 +65,7 @@
 
         <div class="flex items-center gap-5">
           <!-- Active Toggle (Only Edit Mode) -->
-          <div *ngIf="isEditMode" [formGroup]="form" class="flex items-center gap-3">
+          <div *ngIf="isEditMode && isAdmin" [formGroup]="form" class="flex items-center gap-3">
             <span class="text-[11px] font-black text-gray-400 tracking-[0.15em] uppercase">Active</span>
             <label class="relative inline-flex items-center cursor-pointer group">
               <input type="checkbox" formControlName="activeFlag" class="sr-only peer">

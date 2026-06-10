@@ -619,6 +619,12 @@ export class ProductFormComponent implements OnInit {
       return;
     }
 
+    // Only allow sadmin to update existing products
+    if (this.editMode && !this.isAdmin) {
+      this.showSnackbar('Only administrators can update products', 'error');
+      return;
+    }
+
     const product: Product = {
       ...this.form.getRawValue(),
       isFeatured: true,

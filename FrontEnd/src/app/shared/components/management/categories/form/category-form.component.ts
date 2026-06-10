@@ -31,7 +31,6 @@ export class CategoryFormComponent implements OnInit {
 
   allCategories: Category[] = [];
   flatCategories: Category[] = [];
-
   levelCategories: Category[][] = [];
   selectedParents: (number | null)[] = [null];
 
@@ -46,12 +45,14 @@ export class CategoryFormComponent implements OnInit {
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
+  isAdmin: boolean = false;
+
   constructor(
     private fb: FormBuilder,
     private categoryService: CategoryService,
     private companyService: CompanyService,
     private router: Router,
-    private route: ActivatedRoute,   // ✅ FIXED
+    private route: ActivatedRoute,
     private cdr: ChangeDetectorRef
   ) {
     this.form = this.fb.group({
@@ -61,27 +62,41 @@ export class CategoryFormComponent implements OnInit {
       image: [null],
       activeFlag: [true]
     });
+
+    this.checkUserRole();
   }
 
   ngOnInit() {
+    this.checkUserRole();
     // Check if editing (either from modal input or route param)
     let id: string | number | null = null;
-    
+
     if (this.isModal && this.categoryId) {
-      // Modal mode: use Input categoryId
       id = this.categoryId;
     } else if (!this.isModal) {
-      // Page mode: use route parameter
       id = this.route.snapshot.paramMap.get('id');
     }
-    
+
     if (id) {
       console.log('Editing category ID:', id);
       this.isEditMode = true;
       this.loadCategoryById();
     }
-    
     this.setupNameToSlugListener();
+  }
+
+  checkUserRole() {
+    const claimsStr = sessionStorage.getItem('userClaims');
+    if (claimsStr) {
+      try {
+        const claims = JSON.parse(claimsStr);
+        const roleKey = 'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
+        const role = claims[roleKey];
+        this.isAdmin = role === 'sadmin';
+      } catch (e) {
+        console.error('Error parsing user claims', e);
+      }
+    }
   }
 
 // ✅ LOAD CATEGORY FOR EDIT
