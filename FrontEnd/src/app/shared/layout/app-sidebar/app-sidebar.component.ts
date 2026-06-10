@@ -23,38 +23,7 @@ interface NavItem {
 })
 export class AppSidebarComponent {
 
-  navItems: NavItem[] = [
-    {
-      name: "Dashboard",
-      path: "/",
-      icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/1828/1828859.png" alt="dashboard">`
-    },
-    {
-      name: "Users",
-      path: "/management/users",
-      icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" alt="users">`
-    },
-    {
-      name: "Company",
-      path: "/management/company",
-      icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/1946/1946356.png" alt="company">`
-    },
-    {
-      name: "Product",
-      path: "/management/products",
-      icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/891/891462.png" alt="product">`
-    },
-    {
-      name: "Category",
-      path: "/management/categories",
-      icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/2910/2910766.png" alt="category">`
-    },
-    {
-      name: "Setting",
-      path: "/management/static-values",
-      icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/3524/3524635.png" alt="setting">`
-    }
-  ];
+  navItems: NavItem[] = [];
 
   othersItems: NavItem[] = [
     {
@@ -103,6 +72,9 @@ export class AppSidebarComponent {
 
     this.setActiveMenuFromRoute(this.router.url);
 
+    // Build role-based dynamic navigation
+    this.buildNavigation();
+
     // Add Brand and Manufacture dynamically with online icons
     try {
       const catalogs: StaticValueCatalog[] = await firstValueFrom(this.staticValueService.getStaticValuesCatagory());
@@ -120,6 +92,13 @@ export class AppSidebarComponent {
             path: '/management/static-values',
             queryParams: { catalogId: catalog.catalogId },
             icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" alt="manufacture">`
+          });
+        } else if (catalog.catalogName === 'PremierBrands') {
+          this.navItems.push({
+            name: 'Premier Brands',
+            path: '/management/static-values',
+            queryParams: { catalogId: catalog.catalogId },
+            icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/3176/3176364.png" alt="premier brands">`
           });
         }
       });
@@ -139,12 +118,115 @@ export class AppSidebarComponent {
     );
   }
 
+  buildNavigation() {
+    const baseItems: NavItem[] = [
+      {
+        name: "Dashboard",
+        path: "/",
+        icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/1828/1828859.png" alt="dashboard">`
+      },
+      {
+        name: "Users",
+        path: "/management/users",
+        icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" alt="users">`
+      },
+      {
+        name: "Company",
+        path: "/management/company",
+        icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/1946/1946356.png" alt="company">`
+      },
+      {
+        name: "Product",
+        path: "/management/products",
+        icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/891/891462.png" alt="product">`
+      },
+      {
+        name: "Category",
+        path: "/management/categories",
+        icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/2910/2910766.png" alt="category">`
+      },
+      {
+        name: "Setting",
+        path: "/management/static-values",
+        icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/3524/3524635.png" alt="setting">`
+      },
+      {
+        name: "Homepage Settings",
+        path: "/management/homepage-static-values-catalog",
+        icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" alt="homepage settings">`
+      }
+    ];
+
+    // Orders item is visible for everyone
+   
+
+    const isRetailer = this.isRetailerUser();
+
+    //if (isRetailer) {
+      baseItems.push({
+        name: "Add Order",
+        path: "/management/orders/add",
+        icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="add order">`
+      });
+      baseItems.push({
+        name: "Track Order",
+        path: "/management/orders/track",
+        icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/1670/1670293.png" alt="track order">`
+      });
+    //} else {
+      baseItems.push({
+        name: "Sales Board",
+        path: "/management/SalesBoard",
+        icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/4285/4285667.png" alt="sales board">`
+      });
+
+      baseItems.push({
+        name: "Orders",
+        path: "/management/orders",
+        icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/1254/1254111.png" alt="orders">`
+      });
+
+      baseItems.push({
+        name: "Quotations",
+        path: "/management/quotations",
+        icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/1650/1650354.png" alt="quotations">`
+      });
+
+      baseItems.push({
+        name: "Pending Orders",
+        path: "/management/orders/pending",
+        icon: `<img class="w-6 h-6 inline-block" src="https://cdn-icons-png.flaticon.com/512/2910/2910791.png" alt="pending orders">`
+      });
+    //}
+
+    this.navItems = baseItems;
+  }
+
+  private isRetailerUser(): boolean {
+    try {
+      const claimsStr = localStorage.getItem('userClaims') || sessionStorage.getItem('userClaims');
+      if (!claimsStr) return false;
+      const claims = JSON.parse(claimsStr);
+      const roleClaim = claims['role'] || 
+                        claims['roles'] || 
+                        claims['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+      if (!roleClaim) return false;
+      const rolesArray = Array.isArray(roleClaim) ? roleClaim : [roleClaim];
+      return rolesArray.some((r: string) => r.toLowerCase() === 'retailer' || r.toLowerCase().startsWith('retailer_'));
+    } catch (e) {
+      console.error('Error checking retailer role:', e);
+      return false;
+    }
+  }
+
   ngOnDestroy() {
     this.subscription.unsubscribe();
   }
 
   isActive(path?: string): boolean {
-    return path ? this.router.url === path : false;
+    if (!path) return false;
+    if (path === '/') return this.router.url === '/';
+    return this.router.url === path || this.router.url.startsWith(path + '/') || this.router.url.startsWith(path + '?');
   }
 
   toggleSubmenu(name: string): void {

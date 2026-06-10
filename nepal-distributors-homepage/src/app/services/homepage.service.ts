@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 export interface HeroBanner {
   imageUrl: string;
@@ -45,6 +46,7 @@ export interface ProductData {
   rate: number;
   companyName: string | null;
   defaultImage: string | null;
+  isFeatured?: boolean;
   
   // PascalCase fallbacks for database properties
   Id?: number;
@@ -56,11 +58,18 @@ export interface ProductData {
   Rate?: number;
   CompanyName?: string | null;
   DefaultImage?: string | null;
+  IsFeatured?: boolean;
 }
 
 export interface BrandData {
   name: string;
   logo: string | null;
+}
+
+export interface PremierBrandData {
+  name: string;
+  logo: string | null;
+  displayOrder: number;
 }
 
 export interface HomepageResponse {
@@ -71,6 +80,11 @@ export interface HomepageResponse {
   products: ProductData[];
   brands: BrandData[];
   contactInfo: { [key: string]: string };
+  advertisements?: any[];
+  privacyPolicy?: any[];
+  termsAndConditions?: any[];
+  testimonials?: any[];
+  premierBrands?: PremierBrandData[];
 }
 
 @Injectable({
@@ -79,10 +93,7 @@ export interface HomepageResponse {
 export class HomepageService {
   private http = inject(HttpClient);
   
-  // Dynamically switch base URL between local development and production origin
-  private baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:49857/api'
-    : '/api';
+  private baseUrl = environment.apiUrl;
 
   getHomepageData(): Observable<HomepageResponse> {
     return this.http.get<{ success: boolean; result: HomepageResponse }>(`${this.baseUrl}/homepage`).pipe(

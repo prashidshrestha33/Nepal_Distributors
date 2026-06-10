@@ -1,4 +1,4 @@
-﻿using Marketplace.Model.Models;
+using Marketplace.Model.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,7 +23,9 @@ namespace Marketpalce.Repository.Repositories.OrderRepo
         Task<dynamic> RejectQuoteAsync(long quoteId);
         Task<IEnumerable<SellerConfirmedOrderDto>> GetSellerConfirmedOrdersAsync(long sellerCompanyId);
         Task<bool> UpdateOrderStatusTrackAsync(long orderId, string status);
-
+        Task<IEnumerable<FcmRecipientDto>> GetFcmRecipientsForOrderCategoriesAsync(long orderId);
+        Task<long> InsertNotificationLogAsync(long userId, long? companyId, string type, string payload, string isRead);
+        Task UpdateNotificationLogStatusAsync(long notificationId, string isRead);
     }
 
 }

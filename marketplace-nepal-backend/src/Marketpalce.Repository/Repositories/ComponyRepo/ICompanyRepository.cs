@@ -1,4 +1,4 @@
-﻿using Marketplace.Model.Models;
+using Marketplace.Model.Models;
 using Marketplace.Models;
 using System.Collections.Generic;
 using System.Data;
@@ -23,5 +23,6 @@ namespace Marketpalce.Repository.Repositories.ComponyRepo
         Task<bool> UpdateAsync(UpdateCompanyFieldRequest request);
 
         Task<long> UpdateCompanyAsync(Company company);
+        Task ClearCompanyCategoriesAsync(long companyId);
     }
 }

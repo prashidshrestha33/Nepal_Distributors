@@ -1,18 +1,20 @@
 <!-- Premium Glassmorphic Navbar -->
 <header class="navbar-wrapper">
   <div class="container navbar-container">
-    <div class="logo-area">
+    <div class="logo-area" (click)="showSearchPage.set(false); scrollToSection('hero')">
       <div class="logo-gold-dot"></div>
       <span class="logo-text">NEPAL <span class="accent-text">DISTRIBUTORS</span></span>
     </div>
 
     <nav class="nav-links">
-      <a (click)="scrollToSection('hero')" class="nav-link">Home</a>
-      <a (click)="scrollToSection('services')" class="nav-link">Why Choose Us</a>
-      <a (click)="scrollToSection('categories')" class="nav-link">Categories</a>
-      <a (click)="scrollToSection('products')" class="nav-link">Products</a>
-      <a (click)="scrollToSection('about')" class="nav-link">About</a>
-      <a (click)="scrollToSection('contact')" class="nav-link">Contact</a>
+      <a (click)="showSearchPage.set(false); scrollToSection('hero')" class="nav-link">Home</a>
+      <a (click)="showSearchPage.set(false); scrollToSection('services')" class="nav-link">Why Choose Us</a>
+      <a (click)="showSearchPage.set(false); scrollToSection('categories')" class="nav-link">Categories</a>
+      <a (click)="showSearchPage.set(false); scrollToSection('products')" class="nav-link">Products</a>
+      <a (click)="showSearchPage.set(false); scrollToSection('premier-brands')" class="nav-link">Our Brands</a>
+      <a (click)="showSearchPage.set(false); scrollToSection('brand-partners')" class="nav-link">Brand Partners</a>
+      <a (click)="showSearchPage.set(false); scrollToSection('about')" class="nav-link">About</a>
+      <a (click)="showSearchPage.set(false); scrollToSection('contact')" class="nav-link">Contact</a>
     </nav>
 
     <button (click)="goToAdminPortal()" class="btn btn-primary nav-btn">
@@ -26,345 +28,730 @@
 </header>
 
 <main>
-  <!-- Hero Section with Dynamic Sliding Banner -->
-  <section id="hero" class="hero-section">
-    @if (loading()) {
-    <div class="hero-skeleton">
-      <div class="skeleton skeleton-title"></div>
-      <div class="skeleton skeleton-text"></div>
-      <div class="skeleton skeleton-btn"></div>
-    </div>
-    } @else {
-    @if (homepageData()?.heroBanners && homepageData()!.heroBanners.length > 0) {
-    <div class="carousel-container">
-      @for (banner of homepageData()!.heroBanners; track banner.displayOrder; let idx = $index) {
-      <div class="carousel-slide" [class.active]="activeBannerIndex() === idx"
-        [style.backgroundImage]="'linear-gradient(rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.8)), url(' + banner.imageUrl + ')'">
-        <div class="container hero-content">
-          <div class="hero-badge">Verified B2B Marketplace</div>
-          <h1 class="hero-title">{{ banner.caption }}</h1>
-          <p class="hero-subtitle">The largest digital directory connecting wholesalers, importers, and retailers in
-            Nepal with zero commission fees.</p>
-          <div class="hero-actions">
-            <button (click)="scrollToSection('products')" class="btn btn-gold">Explore Wholesale Products</button>
-            <button (click)="scrollToSection('contact')" class="btn btn-outline-white">Become a Supplier</button>
-          </div>
-        </div>
+  @if (!showSearchPage()) {
+    <!-- Hero Section with Dynamic Sliding Banner -->
+    <section id="hero" class="hero-section">
+      @if (loading()) {
+      <div class="hero-skeleton">
+        <div class="skeleton skeleton-title"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-btn"></div>
       </div>
-      }
-
-      <!-- Carousel Dots -->
-      <div class="carousel-dots">
+      } @else {
+      @if (homepageData()?.heroBanners && homepageData()!.heroBanners.length > 0) {
+      <div class="carousel-container">
         @for (banner of homepageData()!.heroBanners; track banner.displayOrder; let idx = $index) {
-        <span class="carousel-dot" [class.active]="activeBannerIndex() === idx" (click)="selectBanner(idx)"></span>
+        <div class="carousel-slide" [class.active]="activeBannerIndex() === idx"
+          [style.backgroundImage]="'linear-gradient(rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.8)), url(' + getImageUrl(banner.imageUrl) + ')'">
+          <div class="container hero-content">
+            <div class="hero-badge">Verified B2B Marketplace</div>
+            <h1 class="hero-title">{{ banner.caption }}</h1>
+            <p class="hero-subtitle">The largest digital directory connecting wholesalers, importers, and retailers in
+              Nepal with zero commission fees.</p>
+            <!-- Product Search Bar (NDP-30) -->
+            <div class="hero-search-container">
+              <div class="search-input-wrapper">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="search-icon" viewBox="0 0 16 16">
+                  <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                </svg>
+                <input type="text" #searchInput (input)="searchQuery.set(searchInput.value)" (keyup.enter)="showSearchPage.set(true)" placeholder="Search products, wholesale suppliers, or categories..." class="search-input">
+              </div>
+              <button (click)="showSearchPage.set(true)" class="btn btn-gold search-btn">Search</button>
+            </div>
+            <div class="hero-actions">
+              <button (click)="scrollToSection('products')" class="btn btn-gold">Explore Wholesale Products</button>
+              <button (click)="scrollToSection('contact')" class="btn btn-outline-white">Become a Supplier</button>
+            </div>
+          </div>
+        </div>
         }
-      </div>
-    </div>
-    }
-    }
-  </section>
 
-  <!-- Business Stats Bar -->
-  <section class="stats-bar-section">
-    <div class="container stats-grid">
-      @for (stat of stats; track stat.label) {
-      <div class="stat-card">
-        <div class="stat-value">{{ stat.value }}</div>
-        <div class="stat-label">{{ stat.label }}</div>
+        <!-- Carousel Dots -->
+        <div class="carousel-dots">
+          @for (banner of homepageData()!.heroBanners; track banner.displayOrder; let idx = $index) {
+          <span class="carousel-dot" [class.active]="activeBannerIndex() === idx" (click)="selectBanner(idx)"></span>
+          }
+        </div>
       </div>
       }
-    </div>
-  </section>
+      }
+    </section>
 
-  <!-- Why Choose Us (Services) Section -->
-  <section id="services" class="services-section">
-    <div class="container">
-      <div class="section-header">
-        <span class="section-tag">Value Proposition</span>
-        <h2 class="section-title">Designed for Smart Trading</h2>
-        <p class="section-desc">We eliminate the middleman, offering a transparent, lead-driven directory to facilitate
-          massive wholesale operations across the country.</p>
-      </div>
-
-      <div class="services-grid">
-        @if (loading()) {
-        @for (i of [1, 2, 3]; track i) {
-        <div class="skeleton-card">
-          <div class="skeleton skeleton-icon"></div>
-          <div class="skeleton skeleton-heading"></div>
-          <div class="skeleton skeleton-paragraph"></div>
+    <!-- Business Stats Bar -->
+    <section class="stats-bar-section">
+      <div class="container stats-grid">
+        @for (stat of stats; track stat.label) {
+        <div class="stat-card">
+          <div class="stat-value">{{ stat.value }}</div>
+          <div class="stat-label">{{ stat.label }}</div>
         </div>
         }
-        } @else {
-        @for (service of homepageData()?.services; track service.displayOrder) {
-        <div class="service-card">
-          <div class="service-icon-box">
-            <!-- Golden Icon Graphics -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
-              class="bi bi-shield-check" viewBox="0 0 16 16">
-              <path
-                d="M5.338 1.59a61.44 61.44 0 0 0-2.837.856.481.481 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.725 10.725 0 0 0 2.287 2.233c.346.244.652.244 1 0a10.725 10.725 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.775 11.775 0 0 1-2.517 2.453 1.978 1.978 0 0 1-2.664 0 11.777 11.777 0 0 1-2.517-2.453C1.303 10.125.022 6.807.618 2.329a1.54 1.54 0 0 1 1.043-1.262c.658-.214 1.777-.57 2.887-.87z" />
-              <path
-                d="M10.854 5.854a.5.5 0 0 0-.708-.708L7.5 7.793 6.354 6.646a.5.5 0 1 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0l3-3z" />
-            </svg>
+      </div>
+    </section>
+
+    <!-- Why Choose Us (Services) Section -->
+    <section id="services" class="services-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Value Proposition</span>
+          <h2 class="section-title">Designed for Smart Trading</h2>
+          <p class="section-desc">We eliminate the middleman, offering a transparent, lead-driven directory to facilitate
+            massive wholesale operations across the country.</p>
+        </div>
+
+        <div class="services-grid">
+          @if (loading()) {
+          @for (i of [1, 2, 3]; track i) {
+          <div class="skeleton-card">
+            <div class="skeleton skeleton-icon"></div>
+            <div class="skeleton skeleton-heading"></div>
+            <div class="skeleton skeleton-paragraph"></div>
           </div>
-          <h3 class="service-card-title">{{ service.title }}</h3>
-          <p class="service-card-text">{{ service.description }}</p>
-        </div>
-        }
-        }
-      </div>
-    </div>
-  </section>
-
-  <!-- Categories Section -->
-  <section id="categories" class="categories-section">
-    <div class="container">
-      <div class="section-header">
-        <span class="section-tag">Market Sectors</span>
-        <h2 class="section-title">Explore Industries</h2>
-        <p class="section-desc">Navigate wholesale markets by categories. Discover validated suppliers specializing in
-          specific commercial sectors.</p>
-      </div>
-
-      <div class="categories-grid">
-        @if (loading()) {
-        @for (i of [1, 2, 3, 4]; track i) {
-        <div class="skeleton-category-card"></div>
-        }
-        } @else {
-        @for (category of homepageData()?.categories; track (category.id || category.Id)) {
-        <div class="category-card">
-          <div class="category-image-container">
-            @if (getCategoryImage(category) && !isCategoryImageFailed(category.id || category.Id)) {
-            <img [src]="getCategoryImage(category)" [alt]="category.name || category.Name" class="category-img" (error)="handleCategoryImageError(category.id || category.Id)">
-            } @else {
-            <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=600" [alt]="category.name || category.Name" class="category-img">
-            }
-            <div class="category-overlay"></div>
-          </div>
-          <div class="category-info">
-            <h3 class="category-name">{{ category.name || category.Name }}</h3>
-            <span class="category-link">
-              <span>Browse Products</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path fill-rule="evenodd"
-                  d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z" />
-              </svg>
-            </span>
-          </div>
-        </div>
-        }
-        }
-      </div>
-    </div>
-  </section>
-
-  <!-- Featured Products Section -->
-  <section id="products" class="products-section">
-    <div class="container">
-      <div class="section-header">
-        <span class="section-tag">Featured Products</span>
-        <h2 class="section-title">Latest Wholesale Offers</h2>
-        <p class="section-desc">Premium supplies uploaded by certified local companies. Get immediate access to volume
-          bulk pricing.</p>
-      </div>
-
-      <div class="products-grid">
-        @if (loading()) {
-        @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
-        <div class="skeleton-product-card">
-          <div class="skeleton skeleton-media"></div>
-          <div class="skeleton skeleton-badge"></div>
-          <div class="skeleton skeleton-h"></div>
-          <div class="skeleton skeleton-h2"></div>
-          <div class="skeleton skeleton-p"></div>
-        </div>
-        }
-        } @else {
-        @for (product of homepageData()?.products; track (product.id || product.Id)) {
-        <div class="product-card">
-          <!-- Default Image or Breathtaking SVG Abstract Placeholder -->
-          <div class="product-media-container">
-            @if (getProductImage(product) && !isProductImageFailed(product.id || product.Id)) {
-            <img [src]="getProductImage(product)" [alt]="product.name || product.Name" class="product-img" (error)="handleProductImageError(product.id || product.Id)">
-            } @else {
-            <div class="product-image-placeholder">
-              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
+          }
+          } @else {
+          @for (service of homepageData()?.services; track service.displayOrder) {
+          <div class="service-card">
+            <div class="service-icon-box">
+              <!-- Golden Icon Graphics -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                class="bi bi-shield-check" viewBox="0 0 16 16">
                 <path
-                  d="M10.067.87a2.89 2.89 0 0 0-4.134 0l-.33.33-.33-.33a2.89 2.89 0 0 0-4.134 0l-.33.33a2.89 2.89 0 0 0 0 4.134l.33.33-.33.33a2.89 2.89 0 0 0 0 4.134l.33.33-.33.33a2.89 2.89 0 0 0 0 4.134l.33.33a2.89 2.89 0 0 0 4.134 0l.33-.33.33.33a2.89 2.89 0 0 0 4.134 0l.33-.33a2.89 2.89 0 0 0 0-4.134l-.33-.33.33-.33a2.89 2.89 0 0 0 0-4.134l-.33-.33.33-.33a2.89 2.89 0 0 0 0-4.134l-.33-.33zm-4.7 9.59a.5.5 0 0 1 .7 0l2 2a.5.5 0 0 1-.7.7l-2-2a.5.5 0 0 1 0-.7zm4.7-4.7a.5.5 0 0 1 .7 0l2 2a.5.5 0 0 1-.7.7l-2-2a.5.5 0 0 1 0-.7z" />
+                  d="M5.338 1.59a61.44 61.44 0 0 0-2.837.856.481.481 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.725 10.725 0 0 0 2.287 2.233c.346.244.652.244 1 0a10.725 10.725 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.775 11.775 0 0 1-2.517 2.453 1.978 1.978 0 0 1-2.664 0 11.777 11.777 0 0 1-2.517-2.453C1.303 10.125.022 6.807.618 2.329a1.54 1.54 0 0 1 1.043-1.262c.658-.214 1.777-.57 2.887-.87z" />
+                <path
+                  d="M10.854 5.854a.5.5 0 0 0-.708-.708L7.5 7.793 6.354 6.646a.5.5 0 1 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0l3-3z" />
               </svg>
-              <span>Nepal Distributors</span>
             </div>
-            }
-            <div class="product-sku-badge">{{ (product.sku || product.Sku) || 'WHOLESALE' }}</div>
+            <h3 class="service-card-title">{{ service.title }}</h3>
+            <p class="service-card-text">{{ service.description }}</p>
           </div>
+          }
+          }
+        </div>
+      </div>
+    </section>
 
-          <div class="product-body">
-            <span class="product-company">{{ (product.companyName || product.CompanyName) || 'Verified Supplier' }}</span>
-            <h3 class="product-name" [title]="product.name || product.Name">{{ product.name || product.Name }}</h3>
-            <p class="product-short-desc">{{ (product.shortDescription || product.ShortDescription) || 'Contact supplier for customized specifications and volume limits.' }}</p>
+    <!-- Categories Section -->
+    <section id="categories" class="categories-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Market Sectors</span>
+          <h2 class="section-title">Popular Categories</h2>
+          <p class="section-desc">Navigate wholesale markets by categories. Discover validated suppliers specializing in
+            specific commercial sectors.</p>
+        </div>
 
-            <div class="product-footer">
-              <div class="product-price">
-                <span class="price-label">EST. RATE</span>
-                <span class="price-value">NPR {{ (product.rate || product.Rate) | number:'1.2-2' }}</span>
+        <div class="categories-grid">
+          @if (loading()) {
+          @for (i of [1, 2, 3, 4]; track i) {
+          <div class="skeleton-category-card"></div>
+          }
+          } @else {
+          @for (category of homepageData()?.categories; track (category.id || category.Id)) {
+          <div class="category-card" (click)="selectedCategory.set((category.id || category.Id)!); showSearchPage.set(true)" style="cursor: pointer;">
+            <div class="category-image-container">
+              @if (getCategoryImage(category) && !isCategoryImageFailed(category.id || category.Id)) {
+              <img [src]="getCategoryImage(category)" [alt]="category.name || category.Name" class="category-img" (error)="handleCategoryImageError(category.id || category.Id)">
+              } @else {
+              <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=600" [alt]="category.name || category.Name" class="category-img">
+              }
+              <div class="category-overlay"></div>
+            </div>
+            <div class="category-info">
+              <h3 class="category-name">{{ category.name || category.Name }}</h3>
+              <span class="category-link">
+                <span>Browse Products</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd"
+                    d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z" />
+                </svg>
+              </span>
+            </div>
+          </div>
+          }
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Trending Products Section (NDP-87) -->
+    <section id="trending-products" class="products-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Hot Deals</span>
+          <h2 class="section-title">Trending Products</h2>
+          <p class="section-desc">Most viewed wholesale supplies uploaded by certified local distributors.</p>
+        </div>
+
+        <div class="products-grid">
+          @if (loading()) {
+            @for (i of [1, 2, 3, 4]; track i) {
+              <div class="skeleton-product-card">
+                <div class="skeleton skeleton-media"></div>
+                <div class="skeleton skeleton-badge"></div>
+                <div class="skeleton skeleton-h"></div>
+                <div class="skeleton skeleton-h2"></div>
+                <div class="skeleton skeleton-p"></div>
               </div>
-              <button (click)="scrollToSection('contact')" class="btn-inquire">
-                Inquire Bulk
-              </button>
+            }
+          } @else {
+            @for (product of trendingProducts(); track (product.id || product.Id)) {
+              <div class="product-card">
+                <!-- Default Image or Placeholder -->
+                <div class="product-media-container">
+                  @if (getProductImage(product) && !isProductImageFailed(product.id || product.Id)) {
+                    <img [src]="getProductImage(product)" [alt]="product.name || product.Name" class="product-img" (error)="handleProductImageError(product.id || product.Id)">
+                  } @else {
+                    <div class="product-image-placeholder">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M10.067.87a2.89 2.89 0 0 0-4.134 0l-.33.33-.33-.33a2.89 2.89 0 0 0-4.134 0l-.33.33a2.89 2.89 0 0 0 0 4.134l.33.33-.33.33a2.89 2.89 0 0 0 0 4.134l.33.33-.33.33a2.89 2.89 0 0 0 0 4.134l.33.33a2.89 2.89 0 0 0 4.134 0l.33-.33.33.33a2.89 2.89 0 0 0 4.134 0l.33-.33a2.89 2.89 0 0 0 0-4.134l-.33-.33.33-.33a2.89 2.89 0 0 0 0-4.134l-.33-.33.33-.33a2.89 2.89 0 0 0 0-4.134l-.33-.33zm-4.7 9.59a.5.5 0 0 1 .7 0l2 2a.5.5 0 0 1-.7.7l-2-2a.5.5 0 0 1 0-.7zm4.7-4.7a.5.5 0 0 1 .7 0l2 2a.5.5 0 0 1-.7.7l-2-2a.5.5 0 0 1 0-.7z" />
+                      </svg>
+                      <span>Nepal Distributors</span>
+                    </div>
+                  }
+                  <div class="product-sku-badge trend-badge">TRENDING</div>
+                </div>
+
+                <div class="product-body">
+                  <span class="product-company">{{ (product.companyName || product.CompanyName) || 'Verified Supplier' }}</span>
+                  <h3 class="product-name" [title]="product.name || product.Name">{{ product.name || product.Name }}</h3>
+                  <p class="product-short-desc">{{ (product.shortDescription || product.ShortDescription) || 'Contact supplier for customized specifications and volume limits.' }}</p>
+
+                  <div class="product-footer">
+                    <div class="product-price">
+                      <span class="price-label">EST. RATE</span>
+                      <span class="price-value">NPR {{ (product.rate || product.Rate) | number:'1.2-2' }}</span>
+                    </div>
+                    <button (click)="scrollToSection('contact')" class="btn-inquire">Inquire Bulk</button>
+                  </div>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Advertised Products Section (NDP-98) -->
+    <section id="advertised-products" class="advertised-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag tag-gold">Premium Listings</span>
+          <h2 class="section-title">Sponsored Products</h2>
+          <p class="section-desc">Top promoted offerings from verified importers with guaranteed stock.</p>
+        </div>
+
+        <div class="advertised-grid">
+          @if (loading()) {
+            @for (i of [1, 2, 3]; track i) {
+              <div class="skeleton-product-card ad-card-skeleton"></div>
+            }
+          } @else {
+            @for (product of advertisedProducts(); track (product.id || product.Id)) {
+              <div class="product-card ad-product-card">
+                <div class="ad-badge-top">SPONSORED</div>
+                <div class="product-media-container">
+                  @if (getProductImage(product) && !isProductImageFailed(product.id || product.Id)) {
+                    <img [src]="getProductImage(product)" [alt]="product.name || product.Name" class="product-img" (error)="handleProductImageError(product.id || product.Id)">
+                  } @else {
+                    <div class="product-image-placeholder">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M10.067.87a2.89 2.89 0 0 0-4.134 0l-.33.33-.33-.33a2.89 2.89 0 0 0-4.134 0l-.33.33a2.89 2.89 0 0 0 0 4.134l.33.33-.33.33a2.89 2.89 0 0 0 0 4.134l.33.33-.33.33a2.89 2.89 0 0 0 0 4.134l.33.33a2.89 2.89 0 0 0 4.134 0l.33-.33.33.33a2.89 2.89 0 0 0 4.134 0l.33-.33a2.89 2.89 0 0 0 0-4.134l-.33-.33.33-.33a2.89 2.89 0 0 0 0-4.134l-.33-.33.33-.33a2.89 2.89 0 0 0 0-4.134l-.33-.33zm-4.7 9.59a.5.5 0 0 1 .7 0l2 2a.5.5 0 0 1-.7.7l-2-2a.5.5 0 0 1 0-.7zm4.7-4.7a.5.5 0 0 1 .7 0l2 2a.5.5 0 0 1-.7.7l-2-2a.5.5 0 0 1 0-.7z" />
+                      </svg>
+                      <span>Nepal Distributors</span>
+                    </div>
+                  }
+                </div>
+
+                <div class="product-body">
+                  <span class="product-company">{{ (product.companyName || product.CompanyName) || 'Verified Supplier' }}</span>
+                  <h3 class="product-name" [title]="product.name || product.Name">{{ product.name || product.Name }}</h3>
+                  <p class="product-short-desc">{{ (product.shortDescription || product.ShortDescription) || 'Contact supplier for customized specifications and volume limits.' }}</p>
+
+                  <div class="product-footer">
+                    <div class="product-price">
+                      <span class="price-label">EST. RATE</span>
+                      <span class="price-value">NPR {{ (product.rate || product.Rate) | number:'1.2-2' }}</span>
+                    </div>
+                    <button (click)="scrollToSection('contact')" class="btn-inquire ad-btn">Inquire Bulk</button>
+                  </div>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- New Products & Side Advertising Section (NDP-88 & NDP-97) -->
+    <section id="products" class="products-section new-products-section">
+      <div class="container catalog-split-layout">
+        
+        <!-- Side Advertising Section (NDP-97) -->
+        <aside class="catalog-side-ad">
+          @if (homepageData()?.advertisements && homepageData()!.advertisements!.length > 0) {
+            @for (ad of homepageData()!.advertisements; track ad.displayOrder) {
+              <div class="ad-card-wrapper" [style.backgroundImage]="ad.imageUrl ? 'linear-gradient(rgba(15, 23, 42, 0.65), rgba(15, 23, 42, 0.9)), url(' + getImageUrl(ad.imageUrl) + ')' : ''" style="background-size: cover; background-position: center; min-height: 250px; margin-bottom: 20px;">
+                <div class="ad-card-header">
+                  <span class="ad-tag">FEATURED SUPPLIER</span>
+                  <div class="ad-logo-dot"></div>
+                </div>
+                <div class="ad-card-body">
+                  <h3>{{ ad.title }}</h3>
+                  <p>Premium B2B supplier listing on Nepal Distributors. Inquire for bulk quotations and price catalogs.</p>
+                  <button (click)="scrollToSection('contact')" class="btn btn-gold w-full btn-sm">Get Catalog Quote</button>
+                </div>
+              </div>
+            }
+          } @else {
+            <div class="ad-card-wrapper">
+              <div class="ad-card-header">
+                <span class="ad-tag">FEATURED SUPPLIER</span>
+                <div class="ad-logo-dot"></div>
+              </div>
+              <div class="ad-card-body">
+                <h3>Kathmandu Wholesale Traders</h3>
+                <p>Direct importer of premium textiles and wholesale garment accessories. Connect for bulk orders & custom logistics across Nepal.</p>
+                <div class="ad-highlight-features">
+                  <div class="ad-feat-item">✓ 100% Cotton Quality</div>
+                  <div class="ad-feat-item">✓ Doorstep Delivery</div>
+                  <div class="ad-feat-item">✓ Net-30 Payment Terms</div>
+                </div>
+                <button (click)="scrollToSection('contact')" class="btn btn-gold w-full btn-sm">Get Catalog Quote</button>
+              </div>
+            </div>
+          }
+        </aside>
+
+        <!-- New Products List (NDP-88) -->
+        <div class="catalog-main-content">
+          <div class="section-header align-left">
+            <span class="section-tag">New Arrivals</span>
+            <h2 class="section-title">New Products</h2>
+            <p class="section-desc">Latest wholesale arrivals from verified businesses. Act fast for introductory pricing.</p>
+          </div>
+
+          <div class="products-grid grid-3-cols">
+            @if (loading()) {
+              @for (i of [1, 2, 3]; track i) {
+                <div class="skeleton-product-card"></div>
+              }
+            } @else {
+              @for (product of newProducts(); track (product.id || product.Id)) {
+                <div class="product-card">
+                  <div class="product-media-container">
+                    @if (getProductImage(product) && !isProductImageFailed(product.id || product.Id)) {
+                      <img [src]="getProductImage(product)" [alt]="product.name || product.Name" class="product-img" (error)="handleProductImageError(product.id || product.Id)">
+                    } @else {
+                      <div class="product-image-placeholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
+                          <path d="M10.067.87a2.89 2.89 0 0 0-4.134 0l-.33.33-.33-.33a2.89 2.89 0 0 0-4.134 0l-.33.33a2.89 2.89 0 0 0 0 4.134l.33.33-.33.33a2.89 2.89 0 0 0 0 4.134l.33.33-.33.33a2.89 2.89 0 0 0 0 4.134l.33.33a2.89 2.89 0 0 0 4.134 0l.33-.33.33.33a2.89 2.89 0 0 0 4.134 0l.33-.33a2.89 2.89 0 0 0 0-4.134l-.33-.33.33-.33a2.89 2.89 0 0 0 0-4.134l-.33-.33.33-.33a2.89 2.89 0 0 0 0-4.134l-.33-.33zm-4.7 9.59a.5.5 0 0 1 .7 0l2 2a.5.5 0 0 1-.7.7l-2-2a.5.5 0 0 1 0-.7zm4.7-4.7a.5.5 0 0 1 .7 0l2 2a.5.5 0 0 1-.7.7l-2-2a.5.5 0 0 1 0-.7z" />
+                        </svg>
+                        <span>Nepal Distributors</span>
+                      </div>
+                    }
+                    <div class="product-sku-badge new-badge">NEW</div>
+                  </div>
+
+                  <div class="product-body">
+                    <span class="product-company">{{ (product.companyName || product.CompanyName) || 'Verified Supplier' }}</span>
+                    <h3 class="product-name" [title]="product.name || product.Name">{{ product.name || product.Name }}</h3>
+                    <p class="product-short-desc">{{ (product.shortDescription || product.ShortDescription) || 'Contact supplier for customized specifications and volume limits.' }}</p>
+
+                    <div class="product-footer">
+                    <div class="product-price">
+                      <span class="price-label">EST. RATE</span>
+                      <span class="price-value">NPR {{ (product.rate || product.Rate) | number:'1.2-2' }}</span>
+                    </div>
+                    <button (click)="scrollToSection('contact')" class="btn-inquire">Inquire Bulk</button>
+                  </div>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+    <!-- Dedicated Advertisements & Campaigns Section -->
+    <section id="homepage-advertisements" class="homepage-ads-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag tag-gold">Strategic Partners</span>
+          <h2 class="section-title">Featured Ad Banners</h2>
+          <p class="section-desc">Explore exclusive campaigns and seasonal catalogs from top wholesalers across Nepal.</p>
+        </div>
+
+        <div class="homepage-ads-grid">
+          @if (loading()) {
+            @for (i of [1, 2]; track i) {
+              <div class="skeleton-ad-card skeleton-card"></div>
+            }
+          } @else {
+            @for (ad of homepageData()?.advertisements; track ad.displayOrder) {
+              <div class="homepage-ad-banner-card animate-hover" [style.backgroundImage]="ad.imageUrl ? 'linear-gradient(rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.75)), url(' + getImageUrl(ad.imageUrl) + ')' : ''">
+                <div class="ad-banner-overlay"></div>
+                <div class="ad-banner-content">
+                  <span class="ad-banner-badge">SPONSORED CAMPAIGN</span>
+                  <h3 class="ad-banner-title">{{ ad.title }}</h3>
+                  <p class="ad-banner-text">Direct wholesale prices with certified logistics support. Inquire today for custom product lineups.</p>
+                  <button (click)="scrollToSection('contact')" class="btn btn-gold btn-sm ad-banner-btn">Send Inquiry &rarr;</button>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- About Us Section -->
+    <section id="about" class="about-section">
+      <div class="container about-grid">
+        <div class="about-image-wrapper">
+          <img
+            [src]="getImageUrl(homepageData()?.aboutUs?.imageUrl || '') || 'https://images.unsplash.com/photo-1573164713988-8695df143605?q=80&w=1200'"
+            alt="About Us Team" class="about-img">
+          <div class="about-image-decorator"></div>
+        </div>
+
+        <div class="about-info-box">
+          <span class="section-tag tag-white">Our Identity</span>
+          <h2 class="about-title">Pioneering Commercial Growth in Nepal</h2>
+          <p class="about-paragraph">{{ homepageData()?.aboutUs?.description }}</p>
+
+          <div class="about-highlights">
+            <div class="highlight-item">
+              <span class="highlight-num">100%</span>
+              <span class="highlight-txt">Transparent Operations</span>
+            </div>
+            <div class="highlight-item">
+              <span class="highlight-num">Direct</span>
+              <span class="highlight-txt">Supplier Negotiation</span>
             </div>
           </div>
         </div>
-        }
-        }
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- About Us Section -->
-  <section id="about" class="about-section">
-    <div class="container about-grid">
-      <div class="about-image-wrapper">
-        <img
-          [src]="homepageData()?.aboutUs?.imageUrl || 'https://images.unsplash.com/photo-1573164713988-8695df143605?q=80&w=1200'"
-          alt="About Us Team" class="about-img">
-        <div class="about-image-decorator"></div>
-      </div>
+    <!-- Testimonials Section (What Our Clients Say) -->
+    <section id="testimonials" class="testimonials-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Client Feedback</span>
+          <h2 class="section-title">What Our Clients Say</h2>
+          <p class="section-desc">Hear from importers, wholesalers, and retail buyers who have expanded their market reach using our B2B directory.</p>
+        </div>
 
-      <div class="about-info-box">
-        <span class="section-tag tag-white">Our Identity</span>
-        <h2 class="about-title">Pioneering Commercial Growth in Nepal</h2>
-        <p class="about-paragraph">{{ homepageData()?.aboutUs?.description }}</p>
-
-        <div class="about-highlights">
-          <div class="highlight-item">
-            <span class="highlight-num">100%</span>
-            <span class="highlight-txt">Transparent Operations</span>
-          </div>
-          <div class="highlight-item">
-            <span class="highlight-num">Direct</span>
-            <span class="highlight-txt">Supplier Negotiation</span>
-          </div>
+        <div class="testimonials-grid">
+          @if (loading()) {
+            @for (i of [1, 2]; track i) {
+              <div class="skeleton-testimonial-card skeleton-card">
+                <div class="skeleton skeleton-avatar"></div>
+                <div class="skeleton skeleton-heading"></div>
+                <div class="skeleton skeleton-paragraph"></div>
+              </div>
+            }
+          } @else {
+            @for (t of homepageData()?.testimonials; track t.displayOrder) {
+              <div class="testimonial-card animate-hover">
+                <div class="testimonial-quote-icon">“</div>
+                <p class="testimonial-text">{{ t.testimonial }}</p>
+                <div class="testimonial-divider"></div>
+                <div class="testimonial-author">
+                  <div class="author-avatar">{{ t.clientName?.substring(0, 1) }}</div>
+                  <div class="author-info">
+                    <h4 class="author-name">{{ t.clientName }}</h4>
+                    <span class="author-role">Verified B2B Partner</span>
+                  </div>
+                </div>
+              </div>
+            }
+          }
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Brand Partners Logo List -->
-  <section class="brands-section">
-    <div class="container">
-      <h3 class="brands-section-title">Trusted By Premier Brands</h3>
-      <div class="brands-logo-container">
-        @if (homepageData()?.brands && homepageData()!.brands.length > 0) {
-        @for (brand of homepageData()!.brands; track brand.name) {
-        <div class="brand-logo-card">
-          <span class="brand-name-text">{{ brand.name }}</span>
+    <!-- Trusted By Premier Brands Section (Dedicated) -->
+    <section id="premier-brands" class="premier-brands-section">
+      <div class="premier-brands-inner">
+        <div class="section-header premier-brands-header">
+          <span class="section-tag tag-gold">Our Partners</span>
+          <h2 class="section-title">Trusted By Premier Brands</h2>
+          <p class="section-desc">Leading manufacturers and importers across Nepal choose our platform to connect with qualified wholesale buyers.</p>
         </div>
-        }
+
+        @if (loading()) {
+          <div class="brands-marquee-wrapper">
+            <div class="brands-marquee-track">
+              @for (i of [1,2,3,4,5,6]; track i) {
+                <div class="brand-pill skeleton-brand-pill"><div class="skeleton" style="width: 80px; height: 14px; border-radius: 4px;"></div></div>
+              }
+            </div>
+          </div>
         } @else {
-        <!-- Fallback mock brands if catalog Brand is empty -->
-        @for (mock of ['Zara', 'Dell', 'Tiny Wisdom', 'Electronics', 'Textile', 'Wholesaler']; track mock) {
-        <div class="brand-logo-card">
-          <span class="brand-name-text">{{ mock }}</span>
+          @if ((homepageData()?.premierBrands && homepageData()!.premierBrands!.length > 0)) {
+            <div class="brands-marquee-wrapper">
+              <!-- Duplicated track for seamless infinite loop -->
+              <div class="brands-marquee-track">
+                @for (brand of homepageData()!.premierBrands; track brand.displayOrder) {
+                  <div class="brand-pill">
+                    @if (brand.logo) {
+                      <img [src]="getImageUrl(brand.logo)" [alt]="brand.name" class="brand-pill-logo">
+                    } @else {
+                      <span class="brand-pill-name">{{ brand.name }}</span>
+                    }
+                  </div>
+                }
+                <!-- Duplicate for loop effect -->
+                @for (brand of homepageData()!.premierBrands; track brand.displayOrder) {
+                  <div class="brand-pill">
+                    @if (brand.logo) {
+                      <img [src]="getImageUrl(brand.logo)" [alt]="brand.name" class="brand-pill-logo">
+                    } @else {
+                      <span class="brand-pill-name">{{ brand.name }}</span>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          } @else {
+            <!-- Fallback static brands if PremierBrands catalog is empty -->
+            <div class="brands-marquee-wrapper">
+              <div class="brands-marquee-track">
+                @for (mock of ['Samsung Nepal', 'Unilever', 'Dabur Nepal', 'CG Corp Global', 'Surya Nepal', 'Himalayan Snax', 'Goldstar', 'Bhatbhateni']; track mock) {
+                  <div class="brand-pill"><span class="brand-pill-name">{{ mock }}</span></div>
+                }
+                @for (mock of ['Samsung Nepal', 'Unilever', 'Dabur Nepal', 'CG Corp Global', 'Surya Nepal', 'Himalayan Snax', 'Goldstar', 'Bhatbhateni']; track mock) {
+                  <div class="brand-pill"><span class="brand-pill-name">{{ mock }}</span></div>
+                }
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </section>
+
+    <!-- ===================================================== -->
+    <!-- BRAND PARTNERS SECTION — logo grid from Brand catalog  -->
+    <!-- =====================================================
+    @if (homepageData()?.brands && homepageData()!.brands.length > 0) {
+    <section id="brand-partners" class="brand-partners-section">
+      <div class="container">
+        <div class="section-header brand-partners-header">
+          <span class="section-tag tag-blue">Our Brand Partners</span>
+          <h2 class="section-title">Brands We Work With</h2>
+          <p class="section-desc">Connecting you with Nepal's most trusted and recognised product brands.</p>
         </div>
+
+        @if (loading()) {
+          <div class="brand-partners-grid">
+            @for (i of [1,2,3,4,5,6,7,8]; track i) {
+              <div class="brand-card skeleton-brand-card">
+                <div class="skeleton" style="width:64px;height:64px;border-radius:50%;margin:0 auto 12px;"></div>
+                <div class="skeleton" style="width:80px;height:12px;border-radius:4px;margin:0 auto;"></div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="brand-partners-grid">
+            @for (brand of homepageData()!.brands; track brand.name) {
+              <div class="brand-card">
+                @if (brand.logo) {
+                  <div class="brand-card-logo-wrap">
+                    <img [src]="getImageUrl(brand.logo)" [alt]="brand.name" class="brand-card-logo"
+                         (error)="$any($event.target).style.display='none'">
+                  </div>
+                } @else {
+                  <div class="brand-card-avatar">
+                    {{ brand.name?.substring(0,2)?.toUpperCase() }}
+                  </div>
+                }
+                <span class="brand-card-name">{{ brand.name }}</span>
+              </div>
+            }
+          </div>
         }
-        }
+      </div>
+    </section>
+    }
+ -->
+    <!-- Contact & Footer Section -->
+    <section id="contact" class="contact-section">
+      <div class="container contact-grid">
+        <!-- Contact Info Details -->
+        <div class="contact-details-panel">
+          <h2 class="contact-panel-title">Let's Establish a Wholesale Channel</h2>
+          <p class="contact-panel-desc">Have questions about listings, directory verifications, or commercial
+            advertisements? Get in touch with our team directly.</p>
+
+          <div class="contact-info-list">
+            <!-- Address -->
+            <div class="contact-info-item">
+              <div class="contact-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z" />
+                </svg>
+              </div>
+              <div>
+                <div class="info-label">Address</div>
+                <div class="info-val">{{ homepageData()?.contactInfo?.['address'] || 'Kathmandu, Nepal' }}</div>
+              </div>
+            </div>
+
+            <!-- Phone -->
+            <div class="contact-info-item">
+              <div class="contact-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                  <path
+                    d="M3.654 1.328a.678.678 0 0 0-.57-.383L2.162.794a.57.57 0 0 0-.546.254L.19 3.018a1.3 1.3 0 0 0-.012 1.246c.861 1.77 2.537 3.587 4.307 5.092 1.862 1.566 3.863 2.778 5.43 3.61c.365.195.746.29 1.13.29.562 0 1.1-.244 1.406-.605l1.567-2.382a.57.57 0 0 0-.063-.66l-1.61-1.624a.672.672 0 0 0-.585-.183l-1.509.309a.507.507 0 0 1-.45-.139L7.487 6.067a.502.502 0 0 1-.13-.447l.305-1.497a.672.672 0 0 0-.183-.587L5.867 1.916a.673.673 0 0 0-.57-.183L3.654 1.328z" />
+                </svg>
+              </div>
+              <div>
+                <div class="info-label">Phone Support</div>
+                <div class="info-val">{{ homepageData()?.contactInfo?.['phone'] || '+977 1-4455667' }}</div>
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div class="contact-info-item">
+              <div class="contact-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                  <path
+                    d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555zM0 4.697v7.104l5.803-3.558L0 4.697zm.192 8.159 5.97-3.66 1.414.868a1 1 0 0 0 1.248 0l1.414-.868 5.97 3.66A2 2 0 0 1 14 14H2a2 2 0 0 1-1.808-1.144zM16 11.801V4.697l-5.803 3.546L16 11.801z" />
+                </svg>
+              </div>
+              <div>
+                <div class="info-label">Email Channels</div>
+                <div class="info-val">{{ homepageData()?.contactInfo?.['email'] || 'info@nepaldistributors.com' }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Inquiry Form Card -->
+        <div class="contact-form-card">
+          <h3 class="form-title">Send a Direct Inquiry</h3>
+
+          <form class="inquiry-form" (submit)="$event.preventDefault(); submitInquiry()">
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input type="text" placeholder="John Doe" required class="form-input">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input type="email" placeholder="john@company.com" required class="form-input">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Phone Number</label>
+              <input type="text" placeholder="+977 9851234567" required class="form-input">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Message / Inquiry Details</label>
+              <textarea rows="4" placeholder="Mention product name, volume requirement, and shipping destination..."
+                required class="form-textarea"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-gold w-full">Submit Inquiry Request</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  } @else {
+    <!-- Search results view -->
+    <div class="search-page-container container">
+      <!-- Back button and title -->
+      <div class="search-header-bar">
+        <button (click)="showSearchPage.set(false)" class="btn-back">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+          </svg>
+          Back to Homepage
+        </button>
+        <div class="search-title-area">
+          <h2>Product Search results for: <span class="search-term-highlight">"{{ searchQuery() }}"</span></h2>
+          <p class="search-result-count">{{ filteredProducts().length }} products found</p>
+        </div>
+      </div>
+
+      <div class="search-grid-layout">
+        <!-- Sidebar: Categories list with filter state -->
+        <aside class="search-sidebar">
+          <h3>Market Sectors</h3>
+          <div class="category-filters-list">
+            <button 
+              class="cat-filter-btn" 
+              [class.active]="selectedCategory() === null"
+              (click)="selectedCategory.set(null)">
+              All Categories
+            </button>
+            @for (cat of homepageData()?.categories; track (cat.id || cat.Id)) {
+              <button 
+                class="cat-filter-btn"
+                [class.active]="selectedCategory() === (cat.id || cat.Id)"
+                (click)="selectedCategory.set((cat.id || cat.Id)!)">
+                {{ cat.name || cat.Name }}
+              </button>
+            }
+          </div>
+        </aside>
+
+        <!-- Main results grid -->
+        <div class="search-results-main">
+          @if (filteredProducts().length === 0) {
+            <div class="no-results-card">
+              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16" class="no-results-icon">
+                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+              </svg>
+              <h3>No matching wholesale products found</h3>
+              <p>Try refining your search keyword or selecting a different category from the sidebar.</p>
+              <button (click)="searchQuery.set(''); selectedCategory.set(null)" class="btn btn-gold">Clear Filters</button>
+            </div>
+          } @else {
+            <div class="products-grid grid-3-cols">
+              @for (product of filteredProducts(); track (product.id || product.Id)) {
+                <div class="product-card">
+                  <div class="product-media-container">
+                    @if (getProductImage(product) && !isProductImageFailed(product.id || product.Id)) {
+                      <img [src]="getProductImage(product)" [alt]="product.name || product.Name" class="product-img" (error)="handleProductImageError(product.id || product.Id)">
+                    } @else {
+                      <div class="product-image-placeholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
+                          <path d="M10.067.87a2.89 2.89 0 0 0-4.134 0l-.33.33-.33-.33a2.89 2.89 0 0 0-4.134 0l-.33.33a2.89 2.89 0 0 0 0 4.134l.33.33-.33.33a2.89 2.89 0 0 0 0 4.134l.33.33-.33.33a2.89 2.89 0 0 0 0 4.134l.33.33a2.89 2.89 0 0 0 4.134 0l.33-.33.33.33a2.89 2.89 0 0 0 4.134 0l.33-.33a2.89 2.89 0 0 0 0-4.134l-.33-.33.33-.33a2.89 2.89 0 0 0 0-4.134l-.33-.33.33-.33a2.89 2.89 0 0 0 0-4.134l-.33-.33zm-4.7 9.59a.5.5 0 0 1 .7 0l2 2a.5.5 0 0 1-.7.7l-2-2a.5.5 0 0 1 0-.7zm4.7-4.7a.5.5 0 0 1 .7 0l2 2a.5.5 0 0 1-.7.7l-2-2a.5.5 0 0 1 0-.7z" />
+                        </svg>
+                        <span>Nepal Distributors</span>
+                      </div>
+                    }
+                  </div>
+                  <div class="product-body">
+                    <span class="product-company">{{ (product.companyName || product.CompanyName) || 'Verified Supplier' }}</span>
+                    <h3 class="product-name" [title]="product.name || product.Name">{{ product.name || product.Name }}</h3>
+                    <p class="product-short-desc">{{ (product.shortDescription || product.ShortDescription) || 'Contact supplier for customized specifications and volume limits.' }}</p>
+                    <div class="product-footer">
+                      <div class="product-price">
+                        <span class="price-label">EST. RATE</span>
+                        <span class="price-value">NPR {{ (product.rate || product.Rate) | number:'1.2-2' }}</span>
+                      </div>
+                      <button (click)="showSearchPage.set(false); scrollToSection('contact')" class="btn-inquire">Inquire Bulk</button>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
       </div>
     </div>
-  </section>
-
-  <!-- Contact & Footer Section -->
-  <section id="contact" class="contact-section">
-    <div class="container contact-grid">
-      <!-- Contact Info Details -->
-      <div class="contact-details-panel">
-        <h2 class="contact-panel-title">Let's Establish a Wholesale Channel</h2>
-        <p class="contact-panel-desc">Have questions about listings, directory verifications, or commercial
-          advertisements? Get in touch with our team directly.</p>
-
-        <div class="contact-info-list">
-          <!-- Address -->
-          <div class="contact-info-item">
-            <div class="contact-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z" />
-              </svg>
-            </div>
-            <div>
-              <div class="info-label">Address</div>
-              <div class="info-val">{{ homepageData()?.contactInfo?.['address'] || 'Kathmandu, Nepal' }}</div>
-            </div>
-          </div>
-
-          <!-- Phone -->
-          <div class="contact-info-item">
-            <div class="contact-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-                <path
-                  d="M3.654 1.328a.678.678 0 0 0-.57-.383L2.162.794a.57.57 0 0 0-.546.254L.19 3.018a1.3 1.3 0 0 0-.012 1.246c.861 1.77 2.537 3.587 4.307 5.092 1.862 1.566 3.863 2.778 5.43 3.61c.365.195.746.29 1.13.29.562 0 1.1-.244 1.406-.605l1.567-2.382a.57.57 0 0 0-.063-.66l-1.61-1.624a.672.672 0 0 0-.585-.183l-1.509.309a.507.507 0 0 1-.45-.139L7.487 6.067a.502.502 0 0 1-.13-.447l.305-1.497a.672.672 0 0 0-.183-.587L5.867 1.916a.673.673 0 0 0-.57-.183L3.654 1.328z" />
-              </svg>
-            </div>
-            <div>
-              <div class="info-label">Phone Support</div>
-              <div class="info-val">{{ homepageData()?.contactInfo?.['phone'] || '+977 1-4455667' }}</div>
-            </div>
-          </div>
-
-          <!-- Email -->
-          <div class="contact-info-item">
-            <div class="contact-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-                <path
-                  d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555zM0 4.697v7.104l5.803-3.558L0 4.697zm.192 8.159 5.97-3.66 1.414.868a1 1 0 0 0 1.248 0l1.414-.868 5.97 3.66A2 2 0 0 1 14 14H2a2 2 0 0 1-1.808-1.144zM16 11.801V4.697l-5.803 3.546L16 11.801z" />
-              </svg>
-            </div>
-            <div>
-              <div class="info-label">Email Channels</div>
-              <div class="info-val">{{ homepageData()?.contactInfo?.['email'] || 'info@nepaldistributors.com' }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Quick Inquiry Form Card -->
-      <div class="contact-form-card">
-        <h3 class="form-title">Send a Direct Inquiry</h3>
-
-        <form class="inquiry-form" (submit)="$event.preventDefault(); submitInquiry()">
-          <div class="form-group">
-            <label class="form-label">Full Name</label>
-            <input type="text" placeholder="John Doe" required class="form-input">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Email Address</label>
-            <input type="email" placeholder="john@company.com" required class="form-input">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Phone Number</label>
-            <input type="text" placeholder="+977 9851234567" required class="form-input">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Message / Inquiry Details</label>
-            <textarea rows="4" placeholder="Mention product name, volume requirement, and shipping destination..."
-              required class="form-textarea"></textarea>
-          </div>
-
-          <button type="submit" class="btn btn-gold w-full">Submit Inquiry Request</button>
-        </form>
-      </div>
-    </div>
-  </section>
+  }
 </main>
 
 <!-- Breathtaking Footer -->
 <footer class="footer-wrapper">
   <div class="container footer-content-grid">
     <div class="footer-brand-section">
-      <div class="logo-area">
+      <div class="logo-area" (click)="showSearchPage.set(false); scrollToSection('hero')">
         <div class="logo-gold-dot"></div>
         <span class="logo-text">NEPAL <span class="accent-text">DISTRIBUTORS</span></span>
       </div>
@@ -375,19 +762,20 @@
     <div class="footer-links-column">
       <h4 class="footer-links-title">Quick Navigation</h4>
       <div class="footer-links-list">
-        <a (click)="scrollToSection('hero')">Home</a>
-        <a (click)="scrollToSection('services')">Why Choose Us</a>
-        <a (click)="scrollToSection('categories')">Industry Sectors</a>
-        <a (click)="scrollToSection('products')">Latest Products</a>
+        <a (click)="showSearchPage.set(false); scrollToSection('hero')">Home</a>
+        <a (click)="showSearchPage.set(false); scrollToSection('services')">Why Choose Us</a>
+        <a (click)="showSearchPage.set(false); scrollToSection('categories')">Industry Sectors</a>
+        <a (click)="showSearchPage.set(false); scrollToSection('products')">Latest Products</a>
       </div>
     </div>
 
     <div class="footer-links-column">
-      <h4 class="footer-links-title">Support Channel</h4>
+      <h4 class="footer-links-title">Support & Legal</h4>
       <div class="footer-links-list">
         <a href="mailto:info@nepaldistributors.com">Directory Verification</a>
-        <a (click)="scrollToSection('contact')">Business Advertising</a>
-        <a (click)="goToAdminPortal()">Supplier Dashboard</a>
+        <a (click)="showSearchPage.set(false); scrollToSection('contact')">Business Advertising</a>
+        <a (click)="showTermsModal.set(true)" style="cursor: pointer;">Terms & Conditions</a>
+        <a (click)="showPrivacyModal.set(true)" style="cursor: pointer;">Privacy Policy</a>
       </div>
     </div>
   </div>
@@ -407,3 +795,75 @@
     </div>
   </div>
 </footer>
+
+<!-- Terms and Conditions Modal (NDP-91) -->
+@if (showTermsModal()) {
+<div class="modal-overlay" (click)="showTermsModal.set(false)">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Terms and Conditions</h3>
+      <button class="close-btn" (click)="showTermsModal.set(false)">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p><strong>Last Updated: June 2026</strong></p>
+      <p>Welcome to Nepal Distributors B2B Directory. By accessing or using our platform, you agree to comply with and be bound by the following terms:</p>
+      
+      @if (homepageData()?.termsAndConditions && homepageData()!.termsAndConditions!.length > 0) {
+        @for (term of homepageData()!.termsAndConditions; track term.displayOrder) {
+          <h4>{{ term.title }}</h4>
+          <p>{{ term.content }}</p>
+        }
+      } @else {
+        <!-- Fallback hardcoded content if not loaded -->
+        <h4>1. Directory Listings</h4>
+        <p>All distributors, wholesalers, and importers listed on this platform must provide accurate and verifiable business credentials. Nepal Distributors reserves the right to suspend any listing suspected of fraudulent activity.</p>
+        
+        <h4>2. Supplier and Buyer Negotiations</h4>
+        <p>Nepal Distributors is a lead-generation directory and B2B platform. We do not process payments or take commission on transactions. Any commercial negotiations, payments, or contracts signed between buyers and sellers are solely the responsibility of the respective parties.</p>
+        
+        <h4>3. Intellectual Property</h4>
+        <p>All content, branding, logos, and software code are the intellectual property of Nepal Distributors. You may not copy, reproduce, or scrape database entries without explicit written consent.</p>
+      }
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-gold" (click)="showTermsModal.set(false)">Close</button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- Privacy Policy Modal (NDP-92) -->
+@if (showPrivacyModal()) {
+<div class="modal-overlay" (click)="showPrivacyModal.set(false)">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Privacy Policy</h3>
+      <button class="close-btn" (click)="showPrivacyModal.set(false)">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p><strong>Last Updated: June 2026</strong></p>
+      <p>Nepal Distributors values your privacy. This policy outlines how we handle and protect your commercial data:</p>
+      
+      @if (homepageData()?.privacyPolicy && homepageData()!.privacyPolicy!.length > 0) {
+        @for (policy of homepageData()!.privacyPolicy; track policy.displayOrder) {
+          <h4>{{ policy.title }}</h4>
+          <p>{{ policy.content }}</p>
+        }
+      } @else {
+        <!-- Fallback hardcoded content if not loaded -->
+        <h4>1. Data Collection</h4>
+        <p>We collect business details such as company name, contact numbers, email address, physical address, and product catalogues to build your storefront profile in our directory.</p>
+        
+        <h4>2. Data Usage</h4>
+        <p>Your listing data is made public to allow retail buyers to contact you for bulk quotes. We do not sell or share private account configurations with third parties.</p>
+        
+        <h4>3. Security Measures</h4>
+        <p>We use standard encryption protocols (SSL/TLS) to secure user sessions and protect your stored credentials. However, please secure your own login information and avoid sharing passwords.</p>
+      }
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-gold" (click)="showPrivacyModal.set(false)">Close</button>
+    </div>
+  </div>
+</div>
+}

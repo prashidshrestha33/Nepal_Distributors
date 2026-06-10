@@ -19,9 +19,12 @@ namespace Marketplace.Models
         public DateTimeOffset UpdatedAt { get; set; }
         public DateTimeOffset? LastLoginAt { get; set; }
 
+        public string? CompanyType { get; set; }
+
         // Social provider ids (new)
         public string? GoogleId { get; set; }
         public string? FacebookId { get; set; }
         public string? ApproveFG { get; set; }
+        public string? FmcToken { get; set; }
     }
 }

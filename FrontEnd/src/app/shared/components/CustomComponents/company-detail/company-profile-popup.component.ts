@@ -15,14 +15,15 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { UiService } from '../../../../ui.service';
-import { CompanyService, company } from '../../../services/management/company.service';
+import { CompanyService, company, Category } from '../../../services/management/company.service';
 import { SafeHtmlPipe } from '../../../../shared/pipe/safe-html.pipe';
 import { environment } from '../../../../../environments/environment';
+import { NgSelectModule } from '@ng-select/ng-select';
 
 @Component({
   selector: 'app-company-profile-popup',
   standalone: true,
-  imports: [CommonModule, FormsModule, SafeHtmlPipe],
+  imports: [CommonModule, FormsModule, SafeHtmlPipe, NgSelectModule],
   templateUrl: './company-profile-popup.component.html',
   styleUrls: ['./company-profile-popup.component.css']
 })
@@ -46,6 +47,11 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
 
   companyTypes: any[] = [];
   selectedCompanyType: string | null = null;
+
+  categories: Category[] = [];
+  nestedCategories: Category[] = [];
+  selectedCategoryIds: number[] = [];
+  isAuthorizedToEditCategories = false;
 
 
   /* ---------------------- MAP ---------------------- */
@@ -71,6 +77,8 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
   /* ---------------------- LIFECYCLE ---------------------- */
 
   ngOnInit(): void {
+    this.checkUserRole();
+    this.loadCategories();
     if (this.companyId) {
       this.loadCompany();
       this.loadCompanyTypes();
@@ -96,6 +104,8 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
         this.company = { ...res };
         this.loading = false;
         this.selectedCompanyType = this.company.companyType || null;
+        this.selectedCategoryIds = this.company.assignedCategoryIds || [];
+        this.updateDisabledCategories();
         if (
           this.company.registrationDocument &&
           this.isImage(this.company.registrationDocument)
@@ -177,6 +187,10 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
         this.company.registrationDocument ?? ''
       );
       formData.append('CompanyDocument', this.selectedFile);
+    }
+
+    if (this.isAuthorizedToEditCategories) {
+      formData.append('Company.AssignCategory', this.selectedCategoryIds.join(','));
     }
 
     this.uploading = true;
@@ -397,6 +411,97 @@ export class CompanyProfilePopupComponent implements OnInit, OnDestroy {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  /* ---------------------- ROLE CHECK & CATEGORIES ---------------------- */
+
+  checkUserRole(): void {
+    const claimsStr = localStorage.getItem('userClaims') || sessionStorage.getItem('userClaims');
+    if (claimsStr) {
+      try {
+        const claims = JSON.parse(claimsStr);
+        const roleKey = 'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
+        const roleVal = claims[roleKey] || claims['role'];
+        let roles: string[] = [];
+        if (Array.isArray(roleVal)) {
+          roles = roleVal;
+        } else if (typeof roleVal === 'string') {
+          roles = [roleVal];
+        }
+        
+        this.isAuthorizedToEditCategories = roles.some(r => {
+          const rLower = r.toLowerCase();
+          return rLower === 'sadmin' || rLower === 'cadmin' || rLower.startsWith('cadmin_');
+        });
+      } catch (e) {
+        console.error('Error parsing user claims', e);
+      }
+    }
+  }
+
+  loadCategories(): void {
+    this.companyService.getCategories().subscribe({
+      next: (res: any) => {
+        this.categories = res || [];
+        this.nestedCategories = this.flattenCategories(this.categories);
+        this.updateDisabledCategories();
+      },
+      error: (err) => {
+        console.error('Failed to load categories:', err);
+      }
+    });
+  }
+
+  flattenCategories(categories: Category[], depth = 0): Category[] {
+    const result: Category[] = [];
+    for (const cat of categories) {
+      result.push({ ...cat, depth });
+      if (cat.children && cat.children.length > 0) {
+        result.push(...this.flattenCategories(cat.children, depth + 1));
+      }
+    }
+    return result;
+  }
+
+  onCategoryChange(): void {
+    const newSelected = [...this.selectedCategoryIds];
+    for (const id of this.selectedCategoryIds) {
+      this.removeDescendants(id, newSelected);
+    }
+    this.selectedCategoryIds = newSelected;
+    this.updateDisabledCategories();
+  }
+
+  removeDescendants(parentId: number, selectedList: number[]): void {
+    const children = this.nestedCategories.filter(c => c.parentId === parentId);
+    for (const child of children) {
+      const idx = selectedList.indexOf(child.id);
+      if (idx > -1) {
+        selectedList.splice(idx, 1);
+      }
+      this.removeDescendants(child.id, selectedList);
+    }
+  }
+
+  updateDisabledCategories(): void {
+    this.nestedCategories = this.nestedCategories.map(cat => {
+      let isDisabled = false;
+      let parentId = cat.parentId;
+      while (parentId) {
+        if (this.selectedCategoryIds.includes(parentId)) {
+          isDisabled = true;
+          break;
+        }
+        const parent = this.nestedCategories.find(c => c.id === parentId);
+        parentId = parent ? parent.parentId : null;
+      }
+      return { ...cat, disabled: isDisabled };
+    });
+  }
+
+  getCategoryName(id: number): string {
+    const cat = this.nestedCategories.find(c => c.id === id);
+    return cat ? cat.name : `Category ${id}`;
   }
 
   /* ---------------------- CLOSE POPUP ---------------------- */

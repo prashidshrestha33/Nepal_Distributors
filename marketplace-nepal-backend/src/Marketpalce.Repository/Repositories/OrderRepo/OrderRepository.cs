@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Marketplace.Model.Models;
 using System;
 using System.Collections.Generic;
@@ -238,6 +238,42 @@ namespace Marketpalce.Repository.Repositories.OrderRepo
 
             await _db.ExecuteAsync("dbo.sp_UpdateOrderStatus", p, commandType: CommandType.StoredProcedure);
             return true;
+        }
+
+        public async Task<IEnumerable<FcmRecipientDto>> GetFcmRecipientsForOrderCategoriesAsync(long orderId)
+        {
+            const string sql = @"
+                SELECT DISTINCT u.id AS UserId, u.company_id AS CompanyId, u.fmc_token AS FmcToken
+                FROM dbo.users u
+                JOIN dbo.companies_category_assigned a ON u.company_id = a.company_id
+                JOIN dbo.products p ON a.category_id = p.category_id
+                JOIN dbo.order_items oi ON p.id = oi.product_id
+                WHERE oi.order_id = @OrderId 
+                  AND a.push_notificaion = 'y'
+                  AND u.fmc_token IS NOT NULL 
+                  AND u.fmc_token <> ''";
+            
+            return await _db.QueryAsync<FcmRecipientDto>(sql, new { OrderId = orderId });
+        }
+
+        public async Task<long> InsertNotificationLogAsync(long userId, long? companyId, string type, string payload, string isRead)
+        {
+            const string sql = @"
+                INSERT INTO dbo.notifications (user_id, company_id, type, payload, is_read, created_at, otp_token)
+                OUTPUT INSERTED.id
+                VALUES (@UserId, @CompanyId, @Type, @Payload, @IsRead, SYSUTCDATETIME(), NULL)";
+            
+            return await _db.QuerySingleAsync<long>(sql, new { UserId = userId, CompanyId = companyId, Type = type, Payload = payload, IsRead = isRead });
+        }
+
+        public async Task UpdateNotificationLogStatusAsync(long notificationId, string isRead)
+        {
+            const string sql = @"
+                UPDATE dbo.notifications 
+                SET is_read = @IsRead 
+                WHERE id = @NotificationId";
+            
+            await _db.ExecuteAsync(sql, new { NotificationId = notificationId, IsRead = isRead });
         }
 
     }

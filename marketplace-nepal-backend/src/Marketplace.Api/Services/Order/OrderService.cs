@@ -1,10 +1,11 @@
-﻿using Dapper;
+using Dapper;
 using Marketpalce.Repository.Repositories.OrderRepo;
 using Marketplace.Api.Models;
 using Marketplace.Model.Models;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
+using Marketplace.Api.Services.FcmNotificationService;
 namespace Marketplace.Api.Services.Order
 {
     public interface IOrderService
@@ -29,10 +30,12 @@ namespace Marketplace.Api.Services.Order
     public class OrderService : IOrderService
     {
         private readonly IOrderRepository _repository;
+        private readonly IFcmNotificationService _fcmService;
 
-        public OrderService(IOrderRepository repository)
+        public OrderService(IOrderRepository repository, IFcmNotificationService fcmService)
         {
             _repository = repository;
+            _fcmService = fcmService;
         }
 
         public async Task<IEnumerable<OrderModel>> GetAllOrdersAsync(long? buyerId = null, long? sellerId = null, string status = null)
@@ -51,7 +54,69 @@ namespace Marketplace.Api.Services.Order
             if (request.GrandTotal < 0)
                 throw new System.ArgumentException("Grand Total cannot be negative.");
 
-            return await _repository.CreateOrderAsync(request);
+            var orderId = await _repository.CreateOrderAsync(request);
+
+            // Only notify if status is processing and notification bypass is not explicitly requested
+            if (request.Status == "processing" && request.PreventNotification != true)
+            {
+                await SendFcmNotificationsForOrderAsync(orderId, request.OrderNumber);
+            }
+
+            return orderId;
+        }
+
+        private async Task SendFcmNotificationsForOrderAsync(long orderId, string orderNumber)
+        {
+            try
+            {
+                var recipients = await _repository.GetFcmRecipientsForOrderCategoriesAsync(orderId);
+                string orderIdentifier = !string.IsNullOrEmpty(orderNumber) ? orderNumber : orderId.ToString();
+                
+                foreach (var recipient in recipients)
+                {
+                    long notificationId = 0;
+                    try
+                    {
+                        // 1. Insert notification with pending status 'p'
+                        notificationId = await _repository.InsertNotificationLogAsync(
+                            recipient.UserId,
+                            recipient.CompanyId,
+                            "pn",
+                            recipient.FmcToken,
+                            "p"
+                        );
+
+                        // 2. Send FCM notification
+                        await _fcmService.SendOrderNotificationAsync(
+                            recipient.FmcToken, 
+                            orderId.ToString(), 
+                            orderIdentifier
+                        );
+
+                        // 3. Update status to sent 's'
+                        await _repository.UpdateNotificationLogStatusAsync(notificationId, "s");
+                    }
+                    catch (System.Exception ex)
+                    {
+                        // 4. Update status to error 'e' if the log row was created
+                        if (notificationId > 0)
+                        {
+                            try
+                            {
+                                await _repository.UpdateNotificationLogStatusAsync(notificationId, "e");
+                            }
+                            catch { }
+                        }
+                        // Log or ignore individual token notification errors so creation doesn't fail
+                        System.Console.WriteLine($"Error sending push notification to token {recipient.FmcToken}: {ex.Message}");
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                // Ensure overall notification failure doesn't fail order creation
+                System.Console.WriteLine($"Error retrieving FCM tokens or sending notifications: {ex.Message}");
+            }
         }
 
         public async Task<long> UpdateOrderAsync(long orderId, OrderRequestDto request)
@@ -99,7 +164,26 @@ namespace Marketplace.Api.Services.Order
 
         public async Task<bool> UpdateOrderStatusTrackAsync(long orderId, string status)
         {
-            return await _repository.UpdateOrderStatusTrackAsync(orderId, status);
+            var success = await _repository.UpdateOrderStatusTrackAsync(orderId, status);
+
+            // If the status is updated to 'processing', manually release notifications to sellers
+            if (success && string.Equals(status, "processing", System.StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    var orderDetails = await _repository.GetOrderDetailsAsync(orderId);
+                    if (orderDetails?.Order != null)
+                    {
+                        await SendFcmNotificationsForOrderAsync(orderId, orderDetails.Order.OrderNumber);
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    System.Console.WriteLine($"Error sending notifications during manual release: {ex.Message}");
+                }
+            }
+
+            return success;
         }
 
 

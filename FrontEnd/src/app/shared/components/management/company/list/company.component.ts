@@ -84,6 +84,7 @@ export class CompanyComponent implements OnInit {
 
         // Flatten for ng-select
         this.nestedCategories = this.flattenCategories(this.categories);
+        this.updateDisabledCategories();
         console.log(this.nestedCategories);
 
         this.loading = false;
@@ -121,6 +122,42 @@ export class CompanyComponent implements OnInit {
     return this.selectedCategoryIds.includes(categoryId);
   }
 
+  onCategoryChange(): void {
+    const newSelected = [...this.selectedCategoryIds];
+    for (const id of this.selectedCategoryIds) {
+      this.removeDescendants(id, newSelected);
+    }
+    this.selectedCategoryIds = newSelected;
+    this.updateDisabledCategories();
+  }
+
+  removeDescendants(parentId: number, selectedList: number[]): void {
+    const children = this.nestedCategories.filter(c => c.parentId === parentId);
+    for (const child of children) {
+      const idx = selectedList.indexOf(child.id);
+      if (idx > -1) {
+        selectedList.splice(idx, 1);
+      }
+      this.removeDescendants(child.id, selectedList);
+    }
+  }
+
+  updateDisabledCategories(): void {
+    this.nestedCategories = this.nestedCategories.map(cat => {
+      let isDisabled = false;
+      let parentId = cat.parentId;
+      while (parentId) {
+        if (this.selectedCategoryIds.includes(parentId)) {
+          isDisabled = true;
+          break;
+        }
+        const parent = this.nestedCategories.find(c => c.id === parentId);
+        parentId = parent ? parent.parentId : null;
+      }
+      return { ...cat, disabled: isDisabled };
+    });
+  }
+
   // ===================== FILE HELPERS =====================
   isImage(fileUrl?: string): boolean {
     return !!fileUrl && /\.(jpeg|jpg|gif|png|bmp|webp)$/i.test(fileUrl);
@@ -145,6 +182,7 @@ export class CompanyComponent implements OnInit {
   openApproveModal(id: number) {
 
     this.selectedCategoryIds = [];
+    this.updateDisabledCategories();
     this.rejectReason = '';
     this.isreject = false;
 

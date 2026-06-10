@@ -115,10 +115,24 @@
           <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" fill="none"
             viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 12v-9m0 0l-3 3m3-3l3 3" />
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
           </svg>
           <span class="hidden sm:inline">CSV Import</span>
           <span class="sm:hidden">CSV</span>
+        </button>
+
+        <!-- Release Pending Orders Shortcut -->
+        <button (click)="openPendingOrdersModal()"
+          class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-yellow-200 bg-yellow-50 rounded-xl text-xs sm:text-sm font-semibold text-yellow-800 hover:bg-yellow-100 transition-colors shadow-sm relative">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-600" [class.animate-pulse]="pendingOrdersCount > 0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+          <span class="hidden sm:inline">Release Orders</span>
+          <span class="sm:hidden">Release</span>
+          <!-- Badge -->
+          <span *ngIf="pendingOrdersCount > 0" class="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white ring-2 ring-white">
+            {{ pendingOrdersCount }}
+          </span>
         </button>
         <button (click)="openAddProductModal()"
           class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-blue-600 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm shadow-blue-200 active:scale-95 group">
@@ -609,6 +623,85 @@
       <app-product-form [isModal]="true" [productId]="editProductId ?? undefined" (closeModal)="closeProductFormModal()"
         (productSaved)="onProductSaved()">
       </app-product-form>
+    </div>
+  </div>
+
+  <!-- Manual Order Release Modal Shortcut -->
+  <div *ngIf="showPendingOrdersModal"
+    class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[85vh] flex flex-col overflow-hidden relative animate-in fade-in zoom-in slide-in-from-bottom-4 duration-200"
+      (click)="$event.stopPropagation()">
+      <!-- Modal Header -->
+      <div class="px-6 py-5 border-b border-gray-150 flex items-center justify-between bg-gray-50/50">
+        <div>
+          <h3 class="text-lg font-bold text-gray-900">Unreleased Pending Orders</h3>
+          <p class="text-xs text-gray-500 mt-0.5">Approve and release these orders to notify sellers and request quotes.</p>
+        </div>
+        <button (click)="closePendingOrdersModal()"
+          class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-900 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Modal Content -->
+      <div class="flex-1 overflow-y-auto p-6 min-h-[300px]">
+        <!-- Loading -->
+        <div *ngIf="loadingPendingOrders" class="flex flex-col items-center justify-center py-12 space-y-3">
+          <svg class="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span class="text-sm font-semibold text-gray-600">Loading pending orders...</span>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!loadingPendingOrders && pendingOrders.length === 0" class="flex flex-col items-center justify-center py-16 space-y-2">
+          <svg class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          <span class="text-sm font-bold text-gray-900 mt-2">All orders are released</span>
+          <span class="text-xs text-gray-500">There are no pending orders requiring manual release.</span>
+        </div>
+
+        <!-- Table -->
+        <div *ngIf="!loadingPendingOrders && pendingOrders.length > 0" class="border border-gray-150 rounded-xl overflow-hidden shadow-sm">
+          <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-4 py-3 text-left font-semibold text-gray-500">Order #</th>
+                <th scope="col" class="px-4 py-3 text-left font-semibold text-gray-500">Amount</th>
+                <th scope="col" class="px-4 py-3 text-left font-semibold text-gray-500">Created At</th>
+                <th scope="col" class="px-4 py-3 text-right font-semibold text-gray-500">Action</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr *ngFor="let item of pendingOrders" class="hover:bg-gray-50/50">
+                <td class="px-4 py-3 font-semibold text-gray-900">{{ item.orderNumber }}</td>
+                <td class="px-4 py-3 text-gray-500">Rs {{ item.totalAmount | number:'1.2-2' }}</td>
+                <td class="px-4 py-3 text-gray-400 text-xs">{{ item.createdAt | date: 'MMM dd, yyyy - hh:mm a' }}</td>
+                <td class="px-4 py-3 text-right whitespace-nowrap font-medium">
+                  <button
+                    [disabled]="releasingOrderId === item.id"
+                    (click)="releasePendingOrder(item.id!)"
+                    class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 transition-all duration-150"
+                  >
+                    <span *ngIf="releasingOrderId !== item.id">Approve & Release</span>
+                    <span *ngIf="releasingOrderId === item.id" class="flex items-center space-x-1">
+                      <svg class="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Releasing...</span>
+                    </span>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>

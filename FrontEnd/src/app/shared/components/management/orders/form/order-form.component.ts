@@ -19,6 +19,9 @@ export class OrderFormComponent implements OnInit, AfterViewInit {
   loading = false;
   error: string | null = null;
   
+  // Toggle for Default location vs elsewhere
+  deliveryType: 'default' | 'elsewhere' = 'default';
+  
   // Array storing items pulled from popup popup
   tempOrderItems: any[] = [];
   showProductPopup = false; 
@@ -37,8 +40,26 @@ export class OrderFormComponent implements OnInit, AfterViewInit {
     this.form = this.fb.group({
       orderNumber: [{ value: '', disabled: true }, Validators.required],
       remarks: [''],
-      google_map_location: [''] // Stores Lat/Lng coords
+      google_map_location: [''], // Stores Lat/Lng coords
+      deliveryAddress: [''],
+      city: [''],
+      zip: [''],
+      contactPerson: [''],
+      phone: ['']
     });
+  }
+
+  setDeliveryType(type: 'default' | 'elsewhere') {
+    this.deliveryType = type;
+    if (type === 'default') {
+      const defaultLat = 27.69150;
+      const defaultLng = 85.33410;
+      if (this.map && this.marker) {
+        this.map.setView([defaultLat, defaultLng], 14);
+        this.marker.setLatLng([defaultLat, defaultLng]);
+        this.updateLocationForm(defaultLat, defaultLng);
+      }
+    }
   }
 
   ngOnInit() {
@@ -172,6 +193,22 @@ export class OrderFormComponent implements OnInit, AfterViewInit {
         return;
       }
 
+      let shippingAddress = 'Default Location';
+      if (this.deliveryType === 'elsewhere') {
+        const address = this.form.value.deliveryAddress?.trim();
+        const city = this.form.value.city?.trim();
+        const zip = this.form.value.zip?.trim();
+        const contact = this.form.value.contactPerson?.trim();
+        const phone = this.form.value.phone?.trim();
+
+        if (!address || !city || !contact || !phone) {
+          this.error = "Please fill in all delivery address details.";
+          return;
+        }
+
+        shippingAddress = `${address}, ${city}${zip ? ' - ' + zip : ''} (Contact: ${contact}, Phone: ${phone})`;
+      }
+
       this.loading = true;
       this.error = null;
 
@@ -179,9 +216,11 @@ export class OrderFormComponent implements OnInit, AfterViewInit {
         // Must use rawValue to get auto-filled but disabled number
         orderNumber: this.form.getRawValue().orderNumber,
         remarks: this.form.value.remarks,
-        status: 'processing', // Forced status
+        status: 'pending', // Set to pending to bypass initial notification
+        preventNotification: true, // Express bypass
         totalAmount: 0, // Since quote based, force value to 0
         google_map_location: this.form.value.google_map_location,
+        shippingAddress: shippingAddress,
         items: this.tempOrderItems
       };
       

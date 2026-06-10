@@ -1,4 +1,4 @@
-﻿using FirebaseAdmin.Messaging;
+using FirebaseAdmin.Messaging;
 
 namespace Marketplace.Api.Services.FcmNotificationService
 {
@@ -23,8 +23,6 @@ namespace Marketplace.Api.Services.FcmNotificationService
 
             return await FirebaseMessaging.DefaultInstance.SendAsync(message);
         }
-
-        // 🔥 Special helper for chat message
         public async Task<string> SendNewMessageNotificationAsync(
             string fcmToken,
             string senderName,
@@ -40,6 +38,26 @@ namespace Marketplace.Api.Services.FcmNotificationService
                 fcmToken,
                 $"New message from {senderName}",
                 messagePreview,
+                data
+            );
+        }
+
+        public async Task<string> SendOrderNotificationAsync(
+            string fcmToken,
+            string orderId,
+            string orderNumber)
+        {
+            var data = new Dictionary<string, string>
+            {
+                { "type", "order" },
+                { "orderId", orderId },
+                { "orderNumber", orderNumber }
+            };
+
+            return await SendToUserAsync(
+                fcmToken,
+                "New Order",
+                $"Order #{orderNumber} has been placed for products in your category.",
                 data
             );
         }

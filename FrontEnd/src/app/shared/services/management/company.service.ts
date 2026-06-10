@@ -25,6 +25,8 @@ export interface company {
   createdAt?: string;
   approveFg?: string;
   approveTs?: string | null;
+  assignedCategoryIds?: number[];
+  rejectComment?: string;
 }
 
 export interface ApproveCompanyRequest {

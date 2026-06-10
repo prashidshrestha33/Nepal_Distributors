@@ -6,6 +6,7 @@ import { DropdownItemTwoComponent } from '../../ui/dropdown/dropdown-item/dropdo
 import { AuthService } from '../../../services/auth.service';
 import { InactivityService } from '../../../services/inactivity.service';
 import { UiService } from '../../../../../app/ui.service';
+import { CompanyService } from '../../../services/management/company.service';
 @Component({
   selector: 'app-user-dropdown',
   templateUrl: './user-dropdown.component.html',
@@ -18,11 +19,13 @@ export class UserDropdownComponent implements OnInit {
   userInitials: string = 'G';
    catalogId: number | null = null;
      UserId: number | null = null;
+  credits: number | null = null;
 
   constructor(
     private authService: AuthService,
     private inactivityService: InactivityService,
-    private ui: UiService
+    private ui: UiService,
+    private companyService: CompanyService
   ) {
     this.loadUserData();
   }
@@ -58,8 +61,25 @@ export class UserDropdownComponent implements OnInit {
     }
   }
 
+  fetchLatestCredits() {
+    if (this.catalogId) {
+      this.companyService.getCompanyById(this.catalogId).subscribe({
+        next: (comp: any) => {
+          const c = comp?.result || comp?.data || comp;
+          this.credits = c?.credits ?? 0;
+        },
+        error: (err) => {
+          console.error("Failed to fetch latest credits", err);
+        }
+      });
+    }
+  }
+
   toggleDropdown() {
     this.isOpen = !this.isOpen;
+    if (this.isOpen) {
+      this.fetchLatestCredits();
+    }
   }
   OnComopneyProfileClick() {
    this.ui.openCompanyProfile(this.catalogId||0);

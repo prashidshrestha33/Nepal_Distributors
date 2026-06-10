@@ -1,4 +1,4 @@
-﻿using Marketpalce.Repository.Repositories.ComponyRepo;
+using Marketpalce.Repository.Repositories.ComponyRepo;
 using Marketpalce.Repository.Repositories.UserReop;
 using Marketplace.Api.Services.FacebookToken;
 using Marketplace.Api.Services.FcmNotificationService;
@@ -135,14 +135,15 @@ namespace Marketplace.Api.Controllers
             }
         }
         [HttpPost("setFCM")]
-        public async Task<IAsyncResult> SetFTM([FromQuery] string fciid)
+        public async Task<IActionResult> SetFTM([FromQuery] string fciid)
         {
             string userid = HttpContext.User.GetClaimValue("Userid");
-            _users.SetFcmId(fciid, userid);
-
-            var c =_users.SetFcmId(fciid, userid);
-            if (c == null) return (IAsyncResult)NotFound();
-            return (IAsyncResult)Ok(c);
+            if (string.IsNullOrEmpty(userid))
+            {
+                return BadRequest(new { error = "User ID claim is missing" });
+            }
+            var rowsAffected = await _users.SetFcmId(fciid, userid);
+            return Ok(new { success = rowsAffected > 0 });
         }
         [HttpPost("EditUser")]
         public async Task<IActionResult> EditUser([FromBody] MarketplaceUser req)
@@ -238,17 +239,46 @@ namespace Marketplace.Api.Controllers
         {  // Fire-and-forget task
             _ = Task.Run(async () =>
             {
-                // Wait 1 minute
-                await Task.Delay(TimeSpan.FromMinutes(.4));
-
-                if (!string.IsNullOrEmpty(token))
+                try
                 {
-                    await _fcm.SendToUserAsync(token, "Test Title", "Hello from API after 1 minute");
-                    Console.WriteLine("✅ Delayed notification sent");
+                    // Wait 5 seconds instead of 0.4 minutes
+                    await Task.Delay(TimeSpan.FromSeconds(5));
+
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        await _fcm.SendToUserAsync(token, "Test Title", "Hello from API after 5 seconds");
+                        Console.WriteLine("✅ Delayed notification sent");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ FCM background test error: {ex.Message}");
+                    Console.WriteLine(ex.ToString());
                 }
             });
 
-            return Ok("Notification will be sent in 1 minute");
+            return Ok("Notification will be sent in 5 seconds");
+        }
+
+        [HttpPost("sendpsh-sync")]
+        public async Task<IActionResult> SendSync(string token)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(token))
+                {
+                    return BadRequest(new { success = false, error = "Token cannot be empty." });
+                }
+
+                var result = await _fcm.SendToUserAsync(token, "Sync Test", "Hello from API synchronously");
+                return Ok(new { success = true, result });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ FCM sync test error: {ex.Message}");
+                Console.WriteLine(ex.ToString());
+                return StatusCode(500, new { success = false, message = ex.Message, details = ex.ToString() });
+            }
         }
     }
 }

@@ -29,9 +29,11 @@ namespace Marketpalce.Repository.Repositories.UserReop
     users.created_at AS CreatedAt,
     users.updated_at AS UpdatedAt,
     users.last_login_at AS LastLoginAt,
+    users.fmc_token AS FmcToken,
     case when isnull(companie.approve_fg,'n')='y' then 'y' else 'n'
     end AS ApproveFG,
-    companie.name as CompanyName
+    companie.name as CompanyName,
+    companie.company_type as CompanyType
     FROM dbo.users as users join 
 [dbo].[companies] as companie on users.company_id=companie.id WHERE 1=1";
             if (email != null)

@@ -1,18 +1,20 @@
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
-firebase.initializeApp({
-  apiKey: "AIzaSyADrjo-2F2rKT6myT4BH9aLNRcipPUagc0",
-  authDomain: "nepaldist-3c2b5.firebaseapp.com",
-  projectId: "nepaldist-3c2b5",
-  storageBucket: "nepaldist-3c2b5.firebasestorage.app",
-  messagingSenderId: "698076186328",
-  appId: "1:698076186328:web:b9fedc20c67d8c14b8b9ad"
-});
+const firebaseConfig = {
+  apiKey: "AIzaSyD_Oxy7Hx8ray5bH-pg7xApsBXdxA08oEo",
+  authDomain: "pushnotification-e8fcf.firebaseapp.com",
+  projectId: "pushnotification-e8fcf",
+  storageBucket: "pushnotification-e8fcf.firebasestorage.app",
+  messagingSenderId: "792555782680",
+  appId: "1:792555782680:web:c088c78d5a5adfa649b96d",
+  measurementId: "G-2E1YFY5QFQ"
+};
 
+firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
-mmessaging.onBackgroundMessage(function (payload) {
+messaging.onBackgroundMessage(function (payload) {
 
   const title = payload.notification?.title || "New Notification";
 

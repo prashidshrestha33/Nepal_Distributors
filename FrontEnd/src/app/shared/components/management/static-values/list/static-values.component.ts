@@ -1,15 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { StaticValueService } from '../../../../services/management/management.service';
 import type { StaticValue } from '../../../../services/management/management.service';
 import { BreadcrumbService } from '../../../../services/breadcrumb.service';
+import { environment } from '../../../../../../environments/environment';
 
 @Component({
   selector:  'app-static-values',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './static-values.component.html',
   styleUrl: './static-values.component.css'
 })
@@ -112,14 +113,27 @@ export class StaticValuesComponent implements OnInit {
    * Navigate back to catalog list
    */
   goBack(): void {
-    this.router.navigate(['/admin/static-value-catalogs']); // Adjust path as needed
+    this.router.navigate(['/admin/static-value-catalogs']);
   }
 
-  /**
-   * Clear search and show all items
-   */
   clearSearch(): void {
     this.searchTerm = '';
     this.filteredItems = [...this. items];
+  }
+
+  /** Returns true if the key looks like an uploaded image filename */
+  isImageKey(key?: string | null): boolean {
+    if (!key) return false;
+    const lower = key.toLowerCase();
+    return lower.endsWith('.jpg') || lower.endsWith('.jpeg') ||
+           lower.endsWith('.png') || lower.endsWith('.gif') ||
+           lower.endsWith('.webp') || lower.endsWith('.svg');
+  }
+
+  /** Resolves an uploaded image filename through the backend file endpoint */
+  getImageUrl(fileName: string): string {
+    if (!fileName) return '';
+    if (fileName.startsWith('http')) return fileName;
+    return `${environment.apiBaseUrl}/api/CompanyFile?fileName=${encodeURIComponent(fileName)}`;
   }
 }

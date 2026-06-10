@@ -6,7 +6,7 @@ import { PaginationComponent } from '../../Pagination/app-pagination.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule, FormGroup } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
-import { ProductService } from '../../../../services/management/management.service';
+import { ProductService, OrderService } from '../../../../services/management/management.service';
 import type { ImportStatusResponse, Product as ProductBase } from '../../../../services/management/management.service';
 import { Category, CategoryService, Users, StaticValueCatalog, StaticValueService, StaticValue } from '../../../../services/management/management.service';
 import { AuthService } from '../../../../services/auth.service';
@@ -86,8 +86,16 @@ export class ProductsComponent implements OnInit {
   selectedBrandId: number | null = null;
   selectedManufacturerId: number | null = null;
 
+  // Pending orders shortcut properties
+  pendingOrdersCount = 0;
+  showPendingOrdersModal = false;
+  pendingOrders: any[] = [];
+  loadingPendingOrders = false;
+  releasingOrderId: number | null = null;
+
   constructor(
     private productService: ProductService,
+    private orderService: OrderService,
     private router: Router,
     private categoryService: CategoryService,
     private cdr: ChangeDetectorRef,
@@ -102,6 +110,7 @@ export class ProductsComponent implements OnInit {
     this.loadProducts();
     this.loadCategoryTree();
     this.loadBrandStaticValues();
+    this.loadPendingOrdersCount();
 
     // Check for snackbar from navigation state
     const nav = this.router.getCurrentNavigation();
@@ -703,5 +712,61 @@ getImageUrl(imageName?: string): string {
           subscription.unsubscribe();
         }
       });
+  }
+
+  loadPendingOrdersCount() {
+    this.orderService.getOrders('pending').subscribe({
+      next: (orders) => {
+        this.pendingOrdersCount = orders.length;
+        this.pendingOrders = orders;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error fetching pending orders count', err)
+    });
+  }
+
+  openPendingOrdersModal() {
+    this.showPendingOrdersModal = true;
+    this.loadPendingOrders();
+  }
+
+  closePendingOrdersModal() {
+    this.showPendingOrdersModal = false;
+  }
+
+  loadPendingOrders() {
+    this.loadingPendingOrders = true;
+    this.orderService.getOrders('pending').subscribe({
+      next: (orders) => {
+        this.pendingOrders = orders;
+        this.pendingOrdersCount = orders.length;
+        this.loadingPendingOrders = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading pending orders in modal', err);
+        this.loadingPendingOrders = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  releasePendingOrder(id: number) {
+    if (confirm('Are you sure you want to release this order to sellers?')) {
+      this.releasingOrderId = id;
+      this.orderService.updateOrderStatus(id, 'processing').subscribe({
+        next: () => {
+          this.releasingOrderId = null;
+          this.loadPendingOrders();
+          this.showSnackbar('Order released successfully!', 'success');
+        },
+        error: (err) => {
+          console.error('Error releasing order in modal', err);
+          this.releasingOrderId = null;
+          this.showSnackbar('Failed to release order. Please try again.', 'error');
+          this.cdr.detectChanges();
+        }
+      });
+    }
   }
 }

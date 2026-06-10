@@ -1,0 +1,240 @@
+<div class="space-y-6 max-w-6xl mx-auto p-4 md:p-6">
+  <!-- Header Title -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200 pb-4">
+    <div>
+      <h1 class="text-3xl font-black tracking-tight text-gray-900">Track Your Order</h1>
+      <p class="text-sm text-gray-500 mt-1">Real-time status updates and details of your distributor order.</p>
+    </div>
+    
+    <!-- Order Selector Lookup -->
+    <div class="w-full md:w-80 bg-white shadow-sm border border-gray-200 rounded-xl p-3 flex flex-col gap-2">
+      <label for="order-select" class="text-xs font-bold text-gray-500 uppercase tracking-wider">Select Order to Track</label>
+      <select 
+        id="order-select" 
+        [(ngModel)]="selectedOrderId" 
+        (change)="onOrderSelect()"
+        class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option [ngValue]="null" disabled>-- Choose an order --</option>
+        <option *ngFor="let order of orders" [value]="order.id">
+          {{ order.orderNumber }} (Rs {{ order.totalAmount }})
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="flex flex-col justify-center items-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
+    <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+    <p class="text-gray-500 mt-4 font-medium animate-pulse">Fetching latest order updates...</p>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="error" class="bg-red-50 border border-red-200 text-red-800 rounded-2xl p-6 flex items-start gap-3">
+    <svg class="w-6 h-6 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+    </svg>
+    <div>
+      <h3 class="font-bold text-lg">Error Occurred</h3>
+      <p class="text-sm mt-1">{{ error }}</p>
+    </div>
+  </div>
+
+  <!-- No Order Selected State -->
+  <div *ngIf="!selectedOrderId && !loading && !error" class="flex flex-col items-center text-center py-16 bg-white rounded-2xl border border-gray-150 shadow-sm p-6">
+    <div class="bg-blue-50 p-4 rounded-full text-blue-600 mb-4">
+      <svg class="w-12 h-12" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"></path>
+      </svg>
+    </div>
+    <h3 class="text-xl font-bold text-gray-800">No Order Selected</h3>
+    <p class="text-gray-500 max-w-sm mt-2 text-sm">Please select one of your orders from the dropdown above to view its live status and details.</p>
+  </div>
+
+  <!-- Order Details & Timeline Section -->
+  <div *ngIf="orderDetails && !loading" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Left 2 Columns: Status & Items -->
+    <div class="lg:col-span-2 space-y-6">
+      
+      <!-- Timeline Card -->
+      <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+        <div class="flex items-center justify-between mb-8 border-b border-gray-150 pb-4">
+          <h2 class="text-lg font-bold text-gray-800">Order Progress</h2>
+          <span 
+            *ngIf="orderDetails.order.status === 'cancelled'"
+            class="bg-red-100 text-red-800 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider"
+          >
+            Cancelled
+          </span>
+          <span 
+            *ngIf="orderDetails.order.status !== 'cancelled'"
+            class="bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider"
+          >
+            {{ orderDetails.order.status }}
+          </span>
+        </div>
+
+        <!-- Progress Timeline (Horizontal on large, Vertical on small) -->
+        <div class="hidden md:flex items-center justify-between relative px-4 pb-4">
+          <!-- Connecting Line Background -->
+          <div class="absolute left-10 right-10 top-5 h-1 bg-gray-200 -z-10"></div>
+          <!-- Active Connector Fill -->
+          <div 
+            class="absolute left-10 top-5 h-1 bg-blue-600 transition-all duration-500 -z-10"
+            [style.width]="
+              orderDetails.order.status === 'delivered' ? 'calc(100% - 80px)' :
+              orderDetails.order.status === 'shipped' ? '66%' :
+              orderDetails.order.status === 'approved' ? '33%' : '0px'
+            "
+          ></div>
+
+          <!-- Timeline Items -->
+          <div *ngFor="let step of steps" class="flex flex-col items-center text-center w-24">
+            <!-- Node Circle -->
+            <div 
+              class="w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 shadow-sm"
+              [ngClass]="{
+                'bg-blue-600 border-blue-600 text-white': isStepCompleted(step.statusKey),
+                'bg-white border-blue-600 text-blue-600 ring-4 ring-blue-50': isStepActive(step.statusKey),
+                'bg-white border-gray-300 text-gray-400': !isStepCompleted(step.statusKey) && !isStepActive(step.statusKey)
+              }"
+            >
+              <!-- Completed Icon -->
+              <svg *ngIf="isStepCompleted(step.statusKey)" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <!-- Active Step Pulse Indicator -->
+              <div *ngIf="isStepActive(step.statusKey)" class="w-3 h-3 bg-blue-600 rounded-full animate-ping"></div>
+              <!-- Future Step Icon/Dot -->
+              <div *ngIf="!isStepCompleted(step.statusKey) && !isStepActive(step.statusKey)" class="w-2.5 h-2.5 bg-gray-300 rounded-full"></div>
+            </div>
+            
+            <p class="text-xs font-bold mt-3" [ngClass]="isStepCompleted(step.statusKey) || isStepActive(step.statusKey) ? 'text-gray-800' : 'text-gray-400'">
+              {{ step.label }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Vertical Timeline for Mobile -->
+        <div class="md:hidden flex flex-col space-y-6 relative pl-6">
+          <!-- Line vertical connector -->
+          <div class="absolute left-2.5 top-2 bottom-2 w-0.5 bg-gray-200"></div>
+          
+          <div *ngFor="let step of steps" class="flex items-start gap-4 relative">
+            <div 
+              class="absolute -left-6 w-5 h-5 rounded-full flex items-center justify-center border transition-all duration-300 shadow-sm"
+              [ngClass]="{
+                'bg-blue-600 border-blue-600 text-white': isStepCompleted(step.statusKey),
+                'bg-white border-blue-600 text-blue-600 ring-2 ring-blue-50': isStepActive(step.statusKey),
+                'bg-white border-gray-300 text-gray-400': !isStepCompleted(step.statusKey) && !isStepActive(step.statusKey)
+              }"
+            >
+              <svg *ngIf="isStepCompleted(step.statusKey)" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <div *ngIf="isStepActive(step.statusKey)" class="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse"></div>
+            </div>
+            
+            <div class="-mt-1">
+              <h4 class="text-sm font-bold" [ngClass]="isStepCompleted(step.statusKey) || isStepActive(step.statusKey) ? 'text-gray-800' : 'text-gray-400'">
+                {{ step.label }}
+              </h4>
+              <p class="text-xs text-gray-500 mt-0.5">{{ step.description }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items List Card -->
+      <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div class="bg-gray-50 px-6 py-4 border-b border-gray-150">
+          <h2 class="text-lg font-bold text-gray-800">Order Items</h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-gray-100/75 border-b border-gray-150">
+                <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-16">S.N.</th>
+                <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Product Name</th>
+                <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Rate</th>
+                <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Qty</th>
+                <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of orderDetails.items; let i = index" class="border-b border-gray-150 hover:bg-gray-50/50">
+                <td class="px-6 py-4 text-sm text-gray-500">{{ i + 1 }}</td>
+                <td class="px-6 py-4 text-sm font-bold text-gray-800">{{ item.productName || 'Unknown Product' }}</td>
+                <td class="px-6 py-4 text-sm text-gray-700 text-right">Rs {{ item.unitRate | number:'1.2-2' }}</td>
+                <td class="px-6 py-4 text-sm text-gray-700 text-center">{{ item.quantity }}</td>
+                <td class="px-6 py-4 text-sm font-bold text-gray-900 text-right">Rs {{ item.totalAmount | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Order Summary, Shipping Address & Details -->
+    <div class="space-y-6">
+      
+      <!-- Order Summary Card -->
+      <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-4">
+        <h2 class="text-lg font-bold text-gray-800 border-b border-gray-150 pb-2">Summary</h2>
+        
+        <div class="space-y-2 text-sm text-gray-600">
+          <div class="flex justify-between">
+            <span>Subtotal</span>
+            <span class="font-medium text-gray-950">Rs {{ (orderDetails.order.grandTotal - orderDetails.order.vatAmount - orderDetails.order.shippingCharge) | number:'1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span>VAT (13%)</span>
+            <span class="font-medium text-gray-950">Rs {{ orderDetails.order.vatAmount | number:'1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Shipping Charge</span>
+            <span class="font-medium text-gray-950">Rs {{ orderDetails.order.shippingCharge | number:'1.2-2' }}</span>
+          </div>
+          <div class="border-t border-dashed border-gray-200 my-2 pt-2 flex justify-between text-base font-extrabold text-gray-900">
+            <span>Grand Total</span>
+            <span class="text-blue-700 text-lg">Rs {{ orderDetails.order.grandTotal | number:'1.2-2' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shipping & Info Card -->
+      <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-4">
+        <h2 class="text-lg font-bold text-gray-800 border-b border-gray-150 pb-2">Delivery Details</h2>
+        
+        <div class="space-y-3 text-sm">
+          <div>
+            <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider">Shipping Address</span>
+            <span class="text-gray-800 font-medium mt-1 block">{{ orderDetails.order.shippingAddress || 'No Address Provided' }}</span>
+          </div>
+          
+          <div>
+            <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider">Required By Date</span>
+            <span class="text-gray-800 font-medium mt-1 block">
+              {{ orderDetails.order.requiredByDate ? (orderDetails.order.requiredByDate | date:'MMMM dd, yyyy') : 'As soon as possible' }}
+            </span>
+          </div>
+
+          <div>
+            <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider">Created At</span>
+            <span class="text-gray-800 font-medium mt-1 block">
+              {{ orderDetails.order.createdAt | date:'MMM dd, yyyy hh:mm a' }}
+            </span>
+          </div>
+
+          <div *ngIf="orderDetails.order.remarks">
+            <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider">Remarks</span>
+            <p class="text-gray-600 mt-1 italic text-xs bg-gray-50 border border-gray-150 p-2.5 rounded-lg">
+              "{{ orderDetails.order.remarks }}"
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -39,10 +39,17 @@ namespace Marketplace.Model.Models
     public class OrderRequestDto : OrderModel
     {
         public List<OrderItemModel>? Items { get; set; }
+        public bool? PreventNotification { get; set; }
     }
     public class OrderDetailsDto
     {
         public OrderModel? Order { get; set; }
         public List<OrderItemModel>? Items { get; set; }
+    }
+    public class FcmRecipientDto
+    {
+        public long UserId { get; set; }
+        public long? CompanyId { get; set; }
+        public string FmcToken { get; set; }
     }
 }

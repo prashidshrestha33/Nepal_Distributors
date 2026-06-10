@@ -44,6 +44,17 @@
       </button>
     </div>
 
+    <!-- Reject Reason Card -->
+    <div *ngIf="!editMode && company.approveFg?.toUpperCase() === 'N' && company.rejectComment" class="mb-6 bg-red-50 border border-red-200 rounded-2xl p-4 text-red-800 flex items-start gap-3">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mt-0.5 flex-shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+      <div>
+        <h4 class="font-bold text-sm">Rejection Details</h4>
+        <p class="text-xs mt-1 text-red-700 leading-relaxed font-semibold">{{ company.rejectComment }}</p>
+      </div>
+    </div>
+
     <!-- Content Grid -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
       <!-- Company Info -->
@@ -118,6 +129,46 @@
               {{ company?.location }}
             </p>
           </div>
+
+          <div class="col-span-2">
+            <h3 class="uppercase text-xs font-semibold text-gray-500 mb-1">Assigned Categories</h3>
+            <!-- Edit Mode Category Selector (Authorized Only) -->
+            <div *ngIf="editMode && isAuthorizedToEditCategories">
+              <ng-select [items]="nestedCategories" bindLabel="name" class="Selectorcustom" bindValue="id" [multiple]="true"
+                [closeOnSelect]="false" [searchable]="true" placeholder="Select categories"
+                [(ngModel)]="selectedCategoryIds" (change)="onCategoryChange()" class="w-full text-sm">
+                
+                <ng-template ng-label-tmp let-item="item">
+                  <span [style.paddingLeft.px]="(item.depth || 0) * 10">{{ item.name }}</span>
+                </ng-template>
+
+                <ng-template ng-option-tmp let-item="item">
+                  <span [style.paddingLeft.px]="(item.depth || 0) * 20">{{ item.name }}</span>
+                </ng-template>
+              </ng-select>
+            </div>
+            
+            <!-- Edit Mode (No Permission to edit categories) -->
+            <div *ngIf="editMode && !isAuthorizedToEditCategories" class="flex flex-wrap gap-2 py-1">
+              <span *ngFor="let catId of selectedCategoryIds" class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium">
+                {{ getCategoryName(catId) }}
+              </span>
+              <span *ngIf="selectedCategoryIds.length === 0" class="text-sm text-gray-500 italic">
+                No categories assigned
+              </span>
+            </div>
+
+            <!-- View Mode -->
+            <div *ngIf="!editMode" class="flex flex-wrap gap-2 py-1">
+              <span *ngFor="let catId of selectedCategoryIds" class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">
+                {{ getCategoryName(catId) }}
+              </span>
+              <span *ngIf="selectedCategoryIds.length === 0" class="text-sm text-gray-500 italic">
+                No categories assigned
+              </span>
+            </div>
+          </div>
+
           <div>
             <h3 class="uppercase text-xs font-semibold text-gray-500 mb-1">Approved Date</h3>
             <p class="font-semibold text-gray-900">{{ company.approveTs | date: 'MMM dd, yyyy' }}</p>

@@ -1,7 +1,8 @@
-import { Component, OnInit, inject, signal, OnDestroy } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HomepageService, HomepageResponse, HeroBanner } from './services/homepage.service';
 import { finalize } from 'rxjs/operators';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -19,14 +20,55 @@ export class App implements OnInit, OnDestroy {
   error = signal<string | null>(null);
   activeBannerIndex = signal<number>(0);
   
+  // Search and modal display states
+  searchQuery = signal<string>('');
+  showTermsModal = signal<boolean>(false);
+  showPrivacyModal = signal<boolean>(false);
+  showSearchPage = signal<boolean>(false);
+  selectedCategory = signal<number | null>(null);
+  
+  // Computed reactive selections for the page sections
+  filteredProducts = computed(() => {
+    const query = this.searchQuery().toLowerCase().trim();
+    const catId = this.selectedCategory();
+    let allProducts = this.homepageData()?.products || [];
+    
+    if (catId) {
+      allProducts = allProducts.filter(p => p.categoryId === catId || (p as any).CategoryId === catId);
+    }
+    
+    if (!query) return allProducts;
+    return allProducts.filter(p => {
+      const name = (p.name || p.Name || '').toLowerCase();
+      const desc = (p.description || p.Description || '').toLowerCase();
+      const company = (p.companyName || p.CompanyName || '').toLowerCase();
+      return name.includes(query) || desc.includes(query) || company.includes(query);
+    });
+  });
+
+  trendingProducts = computed(() => {
+    const list = this.filteredProducts();
+    const featured = list.filter(p => p.isFeatured || (p as any).IsFeatured);
+    return featured.length > 0 ? featured : list.filter((_, idx) => idx % 2 === 0);
+  });
+
+  newProducts = computed(() => {
+    return this.filteredProducts();
+  });
+
+  advertisedProducts = computed(() => {
+    // Select a subset of products (e.g. index % 3 === 1) as advertised, capped at 3 items
+    return this.filteredProducts().filter((_, idx) => idx % 3 === 1).slice(0, 3);
+  });
+  
   private carouselInterval: any;
   
   // Static stats for a premium B2B directory look
   stats = [
-    { value: '5,000+', label: 'Wholesale Products' },
-    { value: '500+', label: 'Verified Suppliers' },
-    { value: '77', label: 'Districts Covered' },
-    { value: 'NPR 0', label: 'Commission Fees' }
+    { value: '10,000+', label: 'Products Listed' },
+    { value: '500+', label: 'Verified Businesses' },
+    { value: '100+', label: 'Quoted Orders' },
+    { value: '77', label: 'Districts Covered' }
   ];
 
   ngOnInit() {
@@ -81,11 +123,7 @@ export class App implements OnInit, OnDestroy {
 
   // Navigation actions (can link to admin portal or alert)
   goToAdminPortal() {
-    // Links to admin panel (running on manage.nepaldistributors.com or localhost:4200)
-    const adminUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      ? 'http://localhost:4200'
-      : 'https://manage.nepaldistributors.com';
-    window.open(adminUrl, '_blank');
+    window.open(environment.adminUrl, '_blank');
   }
 
   scrollToSection(sectionId: string) {
@@ -99,11 +137,7 @@ export class App implements OnInit, OnDestroy {
   getProductImage(product: any): string {
     const defaultImage = product.defaultImage || product.DefaultImage;
     if (defaultImage) {
-      // If it starts with http, return as is. Otherwise prefix upload path
-      if (defaultImage.startsWith('http')) {
-        return defaultImage;
-      }
-      return `http://localhost:49857/UploadedImages/${defaultImage}`;
+      return this.getImageUrl(defaultImage);
     }
     // Return empty string to let CSS/HTML render placeholder card
     return '';
@@ -126,10 +160,7 @@ export class App implements OnInit, OnDestroy {
   getCategoryImage(category: any): string {
     const image = category.image || category.Image;
     if (image) {
-      if (image.startsWith('http')) {
-        return image;
-      }
-      return `http://localhost:49857/UploadedImages/${image}`;
+      return this.getImageUrl(image);
     }
     return '';
   }
@@ -146,5 +177,11 @@ export class App implements OnInit, OnDestroy {
 
   submitInquiry() {
     alert('Inquiry Sent Successfully! The supplier or admin will reach out to you shortly.');
+  }
+
+  getImageUrl(imageName: string): string {
+    if (!imageName) return '';
+    if (imageName.startsWith('http')) return imageName;
+    return `${environment.apiUrl}/CompanyFile?fileName=${encodeURIComponent(imageName)}`;
   }
 }

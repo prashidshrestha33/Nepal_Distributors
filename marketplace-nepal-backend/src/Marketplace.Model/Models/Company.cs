@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 
 namespace Marketplace.Models
@@ -27,6 +28,8 @@ namespace Marketplace.Models
         public DateTime? ApproveTs { get; set; }
         public string ApproveFg { get; set; }
         public string RejectComment { get; set; }
+
+        public List<long> AssignedCategoryIds { get; set; } = new();
     }
     public class GeoPoints
     {

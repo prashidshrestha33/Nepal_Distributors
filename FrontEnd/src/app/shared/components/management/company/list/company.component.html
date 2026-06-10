@@ -194,7 +194,7 @@
           <label class="block text-sm font-medium mb-1">Select Catagory</label>
           <ng-select [items]="nestedCategories" bindLabel="name" class="Selectorcustom" bindValue="id" [multiple]="true"
             [closeOnSelect]="false" [searchable]="true" placeholder="Select categories"
-            [(ngModel)]="selectedCategoryIds" class="w-full">
+            [(ngModel)]="selectedCategoryIds" (change)="onCategoryChange()" class="w-full">
 
             <ng-template ng-label-tmp let-item="item">
               <span [style.paddingLeft.px]="(item.depth || 0) * 10">{{ item.name }}</span>

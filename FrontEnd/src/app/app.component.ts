@@ -56,6 +56,21 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // ================= NOTIFICATION =================
 
+  private shouldRegisterFcm(): boolean {
+    try {
+      const claimsStr = localStorage.getItem('userClaims') || sessionStorage.getItem('userClaims');
+      if (!claimsStr) return true;
+      const claims = JSON.parse(claimsStr);
+      
+      const noFmcClaim = claims.no_fmc === 'y';
+      const tokenSet = localStorage.getItem('fcmToken_set');
+      
+      return noFmcClaim || !tokenSet;
+    } catch (e) {
+      return true;
+    }
+  }
+
   private async checkNotificationStatus() {
     if (Notification.permission === 'granted') {
       this.notificationsEnabled = true;
@@ -69,7 +84,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private async requestNotificationPermission() {
     try {
-      await this.notificationService.requestPermission();
+      if (this.shouldRegisterFcm()) {
+        await this.notificationService.requestPermission();
+      }
     } catch (error) {}
   }
 

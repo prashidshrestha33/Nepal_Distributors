@@ -560,11 +560,17 @@ namespace Marketplace.Api.Controllers
 
             var data = await repositorysitory.SearchProductsAsync(categoryIds, keyword, companyId);
 
+            // Filter data: only return approved products OR products belonging to the same company
+            var filteredData = data.Where(p => 
+                (p.Status != null && p.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase)) ||
+                (companyId.HasValue && p.CompanyId == companyId)
+            ).ToList();
+
             return Ok(new
             {
                 success = true,
-                count = data.Count(),
-                data
+                count = filteredData.Count,
+                data = filteredData
             });
         }
     }

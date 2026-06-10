@@ -1,4 +1,4 @@
-﻿# --------------------------
+# --------------------------
 # Node / Angular / Frontend
 # --------------------------
 node_modules/
@@ -77,3 +77,5 @@ FrontEnd/angular-tailwind.png
 /FrontEnd/public
 
 # End of file
+# Firebase admin SDK credentials
+marketplace-nepal-backend/src/Marketplace.Api/*firebase-adminsdk*.json

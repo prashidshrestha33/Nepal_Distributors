@@ -302,9 +302,9 @@ export class ProductService {
     return this.apiGateway.getWithResult<any>('/api/Product/stats', { requiresAuth: true, params });
   }
   
-SearchProducts(keyword:string,page: number = 1, pageSize: number = 20): Observable<ProductResponse> {
+  SearchProducts(keyword:string,page: number = 1, pageSize: number = 20): Observable<any> {
     const params = this.apiGateway.buildParams({ page, pageSize });
-    return this.apiGateway.getWithResult<ProductResponse>(
+    return this.apiGateway.get<any>(
       `/api/Product/search?keyword=${keyword}`,
       { requiresAuth: true, params }
     );
@@ -331,21 +331,25 @@ ApprovedProductById(id: number, payload: ApproveProduct): Observable<Product> {
 
   createProduct(product: Product, images?: { file?: File, isDefault: boolean, id?: number }[]): Observable<Product> {
     const formData = this.buildProductFormData(product, images);
-  return this.apiGateway.post<Product>(
-    '/api/Product/AddProduct',
-    formData,
-    { requiresAuth: true, headers: {} }
-  );
-}
+    return this.apiGateway.post<any>(
+      '/api/Product/AddProduct',
+      formData,
+      { requiresAuth: true, headers: {} }
+    ).pipe(
+      map(res => res.result || res)
+    );
+  }
 
-updateProduct(id: number, product: Product, images?: { file?: File, isDefault: boolean, id?: number }[], deletedImageIds: number[] = []): Observable<Product> {
-  const formData = this.buildProductFormData(product, images, deletedImageIds);
-  return this.apiGateway.post<Product>(
-    `/api/Product/${id}`,
-    formData,
-    { requiresAuth: true, headers: {} }
-  );
-}
+  updateProduct(id: number, product: Product, images?: { file?: File, isDefault: boolean, id?: number }[], deletedImageIds: number[] = []): Observable<Product> {
+    const formData = this.buildProductFormData(product, images, deletedImageIds);
+    return this.apiGateway.post<any>(
+      `/api/Product/${id}`,
+      formData,
+      { requiresAuth: true, headers: {} }
+    ).pipe(
+      map(res => res.result || res)
+    );
+  }
 
   private buildProductFormData(
   product: Product,
@@ -457,10 +461,14 @@ CSVImporter(file: File): Observable<HttpEvent<any>> {
 export class OrderService {
   constructor(private apiGateway:  ApiGatewayService) {}
 
-  getOrders(): Observable<Order[]> {
+  getOrders(status?: string): Observable<Order[]> {
+    const params: any = {};
+    if (status) {
+      params.status = status;
+    }
     return this.apiGateway.get<Order[]>(
       '/api/orders',
-      { requiresAuth: true }
+      { requiresAuth: true, params }
     );
   }
 
@@ -490,6 +498,14 @@ export class OrderService {
   approveOrder(id: number): Observable<Order> {
     return this.apiGateway.post<Order>(
       `/api/orders/${id}/approve`,
+      {},
+      { requiresAuth: true }
+    );
+  }
+
+  updateOrderStatus(orderId: number, status: string): Observable<any> {
+    return this.apiGateway.post<any>(
+      `/api/orders/update-status/${orderId}/${status}`,
       {},
       { requiresAuth: true }
     );
@@ -711,6 +727,18 @@ getStaticValueByFilter(filter: { catalogId?: string; staticId?: string; key?: st
     return this.apiGateway.delete<void>(
       `/api/static-values/${id}`,
       { requiresAuth: true }
+    );
+  }
+
+  uploadFile(file: File): Observable<{ fileName: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.apiGateway.post<any>(
+      '/api/StaticValue/UploadFile',
+      formData,
+      { requiresAuth: true }
+    ).pipe(
+      map(res => res.result || res)
     );
   }
 }

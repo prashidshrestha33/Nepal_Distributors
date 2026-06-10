@@ -1,121 +1,175 @@
 <div class="page-container">
   
-
+  <!-- Breadcrumbs & Heading -->
+  <div class="header-section">
+    <div class="breadcrumbs">Home &gt; Orders &gt; Create</div>
+    <div class="heading-row">
+      <h2 class="page-title">Quotation</h2>
+      <span class="order-badge">{{ form.getRawValue().orderNumber }}</span>
+    </div>
+  </div>
 
   <div *ngIf="error" class="alert-error">
     {{ error }}
   </div>
 
+  <!-- Form Side-by-Side Grid -->
   <div class="form-grid">
     
-    <!-- LEFT SIDE: QUOTATION FORM -->
-    <div class="card order-details-card">
-      <h3 class="card-title">Quotation Details</h3>
-      
-      <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        
-        <div class="form-group">
-          <label>Quotation Number</label>
-          <input type="text" formControlName="orderNumber" class="form-control" 
-                 style="background-color: #f1f3f5; font-weight: bold;" readonly>
+    <!-- LEFT SIDE: DELIVERY INFO -->
+    <div class="card delivery-card">
+      <div class="delivery-header">
+        <h3 class="card-title">Delivery Info</h3>
+        <div class="toggle-buttons">
+          <button type="button" 
+                  class="toggle-btn" 
+                  [class.active]="deliveryType === 'default'" 
+                  (click)="setDeliveryType('default')">Default</button>
+          <button type="button" 
+                  class="toggle-btn" 
+                  [class.active]="deliveryType === 'elsewhere'" 
+                  (click)="setDeliveryType('elsewhere')">Elsewhere</button>
         </div>
-
-        <div class="form-group">
-          <label>Delivery Location (Map)</label>
+      </div>
+      
+      <form [formGroup]="form">
+        <!-- Pinned Location Container -->
+        <div class="form-group location-group">
+          <label class="section-label">Pinned Location</label>
           
-          <input type="text" formControlName="google_map_location" class="form-control" 
-                 style="margin-bottom: 10px; background-color: #f8f9fa; font-size: 13px;" readonly>
+          <div class="map-wrapper">
+            <div id="map"></div>
+          </div>
+          
+          <!-- Coordinate Output -->
+          <div class="coordinate-pill-container">
+            <span class="location-marker-icon">📍</span>
+            <input type="text" formControlName="google_map_location" class="location-coord-text" readonly>
+          </div>
 
-          <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-            <input type="text" class="form-control" 
+          <p class="help-text" *ngIf="deliveryType === 'default'">
+            Delivering to primary warehouse coordinates associated with your account.
+          </p>
+
+          <!-- Else Search Input -->
+          <div class="search-location-group" *ngIf="deliveryType === 'elsewhere'">
+            <input type="text" class="form-control map-search" 
                    [(ngModel)]="mapSearchQuery" 
                    [ngModelOptions]="{standalone: true}" 
                    placeholder="Search city, street..." 
                    (keyup.enter)="searchLocation()">
-                   
-            <button type="button" class="btn-primary" (click)="searchLocation()" [disabled]="isSearchingMap">
-               {{ isSearchingMap ? 'Searching...' : 'Search' }}
+            <button type="button" class="btn-search-map" (click)="searchLocation()" [disabled]="isSearchingMap">
+               {{ isSearchingMap ? '...' : 'Search' }}
             </button>
           </div>
-          <div id="map" style="height: 300px; width: 100%; border: 1px solid #ccc; border-radius: 4px; z-index: 1;"></div>
-          
-          <small class="help-text">Click anywhere on the map or drag the pin to set a custom delivery location for this quotation.</small>
+          <p class="help-text" *ngIf="deliveryType === 'elsewhere'">
+            Click anywhere on the map or drag the pin to set a custom delivery location for this quotation.
+          </p>
         </div>
 
+        <!-- Elsewhere Address Fields -->
+        <div class="elsewhere-fields-container" *ngIf="deliveryType === 'elsewhere'">
+          <div class="form-group">
+            <input type="text" formControlName="deliveryAddress" class="form-control elsewhere-input" placeholder="Delivery address">
+          </div>
+          
+          <div class="elsewhere-row">
+            <div class="elsewhere-col-2">
+              <input type="text" formControlName="city" class="form-control elsewhere-input" placeholder="City">
+            </div>
+            <div class="elsewhere-col-1">
+              <input type="text" formControlName="zip" class="form-control elsewhere-input" placeholder="Zip">
+            </div>
+          </div>
 
-        <div class="form-group">
-          <label>Remarks / Notes</label>
-          <textarea formControlName="remarks" class="form-control" rows="5" 
-                    placeholder="Add special instructions or notes..."></textarea>
+          <div class="form-group">
+            <input type="text" formControlName="contactPerson" class="form-control elsewhere-input" placeholder="Contact Person">
+          </div>
+
+          <div class="form-group">
+            <input type="text" formControlName="phone" class="form-control elsewhere-input" placeholder="Phone">
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group notes-group">
+          <label class="section-label">General Notes</label>
+          <textarea formControlName="remarks" class="form-control remarks-input" rows="4" 
+                    placeholder="Special instructions..."></textarea>
         </div>
       </form>
     </div>
 
-    <!-- RIGHT SIDE: PRODUCT ITEMS -->
-    <div class="card order-items-card">
-      <div class="card-header-flex">
-        <h3 class="card-title" style="margin: 0;">Quotation Items</h3>
-        <button type="button" class="btn-primary" (click)="openProductSelection()">
+    <!-- RIGHT SIDE: REQUESTED ITEMS -->
+    <div class="card items-card">
+      <div class="items-header">
+        <div class="items-header-left">
+          <h3 class="card-title">Requested Items</h3>
+          <p class="items-count-text">{{ tempOrderItems.length }} items added to this request</p>
+        </div>
+        <button type="button" class="btn-add-products" (click)="openProductSelection()">
           + Add Products
         </button>
       </div>
       
-      <p class="empty-state" *ngIf="tempOrderItems.length === 0">
-        No products added yet. Click "Add Products".
-      </p>
+      <!-- EMPTY STATE -->
+      <div class="empty-state-container" *ngIf="tempOrderItems.length === 0">
+        <div class="empty-cart-circle">
+          <span class="empty-cart-icon">🛒</span>
+        </div>
+        <h4>Your request is empty</h4>
+        <p class="empty-subtext">Click "Add Products" to search or describe a custom item you're looking for.</p>
+      </div>
 
-      <div class="table-responsive" *ngIf="tempOrderItems.length > 0">
+      <!-- SELECTED ITEMS LIST -->
+      <div class="table-container" *ngIf="tempOrderItems.length > 0">
         <table class="items-table">
           <thead>
             <tr>
-              <th>Product ID</th>
-              <th>Product Name</th>
-              <th width="150px">Quantity</th>
-              <th width="60px"></th>
+              <th>Product Details</th>
+              <th width="120px">Quantity</th>
+              <th width="50px"></th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let item of tempOrderItems; let i = index">
-              <td><strong>PID-0{{ item.productId }}</strong></td>
-              <td>{{ item.productName }}</td>
-              
-              <!-- Clean value binding that totally skips ngModel errors -->
               <td>
-                <input type="number" class="qty-input" min="1" 
-                       [value]="item.quantity" 
-                       (input)="item.quantity = $any($event.target).value">
+                <div class="prod-info-cell">
+                  <span class="prod-id-label">PID-0{{ item.productId }}</span>
+                  <span class="prod-name-label">{{ item.productName }}</span>
+                </div>
               </td>
-              
               <td>
-                <button type="button" class="btn-icon-danger" (click)="removeOrderItem(i)" title="Remove">✖</button>
+                <div class="quantity-input-box">
+                  <input type="number" class="qty-input" min="1" 
+                         [value]="item.quantity" 
+                         (input)="item.quantity = $any($event.target).value">
+                  <span class="qty-unit-label">{{ item.unit || 'pcs' }}</span>
+                </div>
+              </td>
+              <td>
+                <button type="button" class="btn-remove-item" (click)="removeOrderItem(i)" title="Remove">✖</button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <!-- CARD FOOTER ACTIONS -->
+      <div class="card-footer-actions">
+        <button type="button" class="btn-cancel" (click)="goBack()">Cancel</button>
+        <button type="button" class="btn-submit" (click)="onSubmit()" [disabled]="loading || tempOrderItems.length === 0">
+          {{ loading ? 'Saving...' : 'Submit Quotation Request' }}
+        </button>
+      </div>
+
     </div>
 
   </div> <!-- End Form Grid -->
 
-  <!-- SUBMIT FOOTER -->
-  <div class="footer-actions card">
-    <div class="footer-totals">
-      <p>Total Items Selected: <strong>{{ tempOrderItems.length }}</strong></p>
-      <small style="color: #666;">* Sent directly to processing queue.</small>
-    </div>
-    <div class="footer-buttons">
-      <button type="button" class="btn-secondary" (click)="goBack()">Cancel</button>
-      <button type="button" class="btn-success" (click)="onSubmit()" [disabled]="loading || tempOrderItems.length === 0">
-        <span *ngIf="loading">Saving...</span>
-        <span *ngIf="!loading">Save Quotation</span>
-      </button>
-    </div>
-  </div>
 </div>
 
-<!-- ============================================== -->
-<!-- POPUP EMBEDDED DIRECTLY IN THE HTML FOR SAFETY -->
-<!-- ============================================== -->
+<!-- Select Products Modal Dialog -->
 <app-product-list-popup 
     *ngIf="showProductPopup"
     [companyId]="2" 

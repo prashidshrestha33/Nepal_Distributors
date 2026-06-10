@@ -29,6 +29,7 @@ import { ProductFormComponent } from './shared/components/management/products/fo
 // Management Components - Orders
 import { OrdersComponent } from './shared/components/management/orders/list/orders.component';
 import { OrderFormComponent } from './shared/components/management/orders/form/order-form.component';
+import { PendingOrdersComponent } from './shared/components/management/orders/pending/pending-orders.component';
 
 // Management Components - Notifications
 import { NotificationsComponent } from './shared/components/management/notifications/list/notifications.component';
@@ -43,6 +44,7 @@ import { QuotationFormComponent } from './shared/components/management/quotation
 import { StaticValuesComponent } from './shared/components/management/static-values/list/static-values.component';
 import { StaticValuesCatalogComponent } from './shared/components/management/static-values/Static-value-catalog/static-values-catalog.component';
 import { StaticValueFormComponent } from './shared/components/management/static-values/form/static-value-form.component';
+import { HomepageStaticValuesCatalogComponent } from './shared/components/management/static-values/homepage-static-values-catalog/homepage-static-values-catalog.component';
 import { register } from 'swiper/element';
 import { ProductDetailsComponent } from './shared/components/management/products/details/product-details.component';
 
@@ -174,6 +176,21 @@ export const routes: Routes = [
             title: 'Add Order'
           },
           {
+            path: 'orders/pending',
+            component: PendingOrdersComponent,
+            title: 'Pending Orders'
+          },
+          {
+            path: 'orders/track',
+            loadComponent: () => import('./shared/components/management/orders/track/track-order.component').then(m => m.TrackOrderComponent),
+            title: 'Track Order'
+          },
+          {
+            path: 'orders/track/:id',
+            loadComponent: () => import('./shared/components/management/orders/track/track-order.component').then(m => m.TrackOrderComponent),
+            title: 'Track Order Detail'
+          },
+          {
             path: 'notifications',
             component: NotificationsComponent,
             title: 'Notifications'
@@ -206,6 +223,11 @@ export const routes: Routes = [
             path: 'static-values-catalog',
             component: StaticValuesCatalogComponent,
             title: 'Static Values Catalog'
+          },
+          {
+            path: 'homepage-static-values-catalog',
+            component: HomepageStaticValuesCatalogComponent,
+            title: 'Homepage Settings'
           },
           {
             path: 'static-values/add',
@@ -320,6 +342,11 @@ export const routes: Routes = [
         path: 'static-values-Catalog',
         component: StaticValuesCatalogComponent,
         title: 'Static Values Catalog'
+      },
+      {
+        path: 'homepage-static-values-catalog',
+        component: HomepageStaticValuesCatalogComponent,
+        title: 'Homepage Settings'
       },
       {
         path: 'static-values/add',

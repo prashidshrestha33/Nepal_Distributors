@@ -119,12 +119,20 @@ SELECT TOP (1)
    CAST(google_map_location AS NVARCHAR(MAX)) AS GoogleMapLocation,
   created_at AS CreatedAt,
   updated_at AS UpdatedAt,
-approve_fg AS ApproveFg,
-CAST(approve_ts AS datetime) AS ApproveTs
+  approve_fg AS ApproveFg,
+  CAST(approve_ts AS datetime) AS ApproveTs,
+  reject_comment AS RejectComment
 FROM dbo.companies
 WHERE id = @Id;";
 
-            return await _db.QueryFirstOrDefaultAsync<Company>(sql, new { Id = id });
+            var company = await _db.QueryFirstOrDefaultAsync<Company>(sql, new { Id = id });
+            if (company != null)
+            {
+                const string sqlCategories = "SELECT category_id FROM dbo.companies_category_assigned WHERE company_id = @CompanyId";
+                var categoryIds = await _db.QueryAsync<long>(sqlCategories, new { CompanyId = id });
+                company.AssignedCategoryIds = categoryIds.ToList();
+            }
+            return company;
         }
 
         public async Task<IEnumerable<Company>> ListAsync(int page = 1, int pageSize = 50)
@@ -376,7 +384,6 @@ SET
         ELSE google_map_location 
     END,
     updated_at = SYSUTCDATETIME(),
-    approve_dt = ISNULL(@ApproveDt, approve_dt),
     approve_ts = SYSUTCDATETIME()
 WHERE id = @CompanyId;
 ";
@@ -403,7 +410,6 @@ WHERE id = @CompanyId;
                     Tier = company.Tier,
                     Location = company.Location,
                     GoogleMapLocation = googleMapWKT, // <-- properly formatted
-                    ApproveDt = company.ApproveDt
                 });
             }
             catch (Exception ex)
@@ -413,6 +419,10 @@ WHERE id = @CompanyId;
             }
         }
 
-
+        public async Task ClearCompanyCategoriesAsync(long companyId)
+        {
+            const string sql = "DELETE FROM dbo.companies_category_assigned WHERE company_id = @CompanyId";
+            await _db.ExecuteAsync(sql, new { CompanyId = companyId });
+        }
     }
 }

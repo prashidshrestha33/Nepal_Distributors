@@ -41,12 +41,24 @@ namespace Marketplace.Api.Services.Hassing
                 new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
             };
 
+            if (string.IsNullOrEmpty(user.FmcToken))
+            {
+                claims.Add(new Claim("no_fmc", "y"));
+            }
+
             // Emit role claims properly (one claim per role)
             if (!string.IsNullOrEmpty(user.Role))
             {
                 var roles = user.Role.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var r in roles)
-                    claims.Add(new Claim(ClaimTypes.Role, r.Trim()));
+                {
+                    var trimmedRole = r.Trim();
+                    claims.Add(new Claim(ClaimTypes.Role, trimmedRole));
+                    if (!string.IsNullOrEmpty(user.CompanyType))
+                    {
+                        claims.Add(new Claim(ClaimTypes.Role, $"{trimmedRole}_{user.CompanyType.Trim()}"));
+                    }
+                }
             }
 
             var creds = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)), SecurityAlgorithms.HmacSha256);

@@ -91,6 +91,36 @@ namespace Marketplace.Api.Controllers
 
             return Conflict("A record with that key may already exist.");
         }
+
+        // UPLOAD FILE FOR STATIC VALUE
+        [HttpPost("UploadFile")]
+        [AllowAnonymous]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadFile(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("No file uploaded.");
+
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".pdf", ".svg", ".webp" };
+            if (Array.IndexOf(allowedExtensions, ext) == -1)
+                return BadRequest("Invalid file type.");
+
+            var uniqueFileName = $"{Guid.NewGuid()}{ext}";
+            var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
+
+            if (!Directory.Exists(uploadPath))
+                Directory.CreateDirectory(uploadPath);
+
+            var filePath = Path.Combine(uploadPath, uniqueFileName);
+            using (var fs = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(fs);
+            }
+
+            return Ok(new { fileName = uniqueFileName });
+        }
+
         [HttpGet("GetStaticValueSingle")]
         public async Task<ActionResult<StaticValue>> GetStaticValueSingle(
           string staticId = null,

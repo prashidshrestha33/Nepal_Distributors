@@ -1,31 +1,60 @@
 <div class="space-y-6">
   <div class="flex justify-between items-center">
-    <h1 class="text-2xl font-bold text-gray-800">Static Values</h1>
-    <a href="/static-values/add?catalogId={{catalogId}}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg">Add Value</a>
+    <h1 class="text-2xl font-bold text-gray-800">{{ catalogTitle }}</h1>
+    <a [routerLink]="['/management/static-values/add']" [queryParams]="{ catalogId: catalogId }"
+       class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg">+ Add Entry</a>
   </div>
+
   <div class="bg-white rounded-lg shadow p-4">
-    <input type="text" placeholder="Search..." [(ngModel)]="searchTerm" (keyup)="onSearch()" 
+    <input type="text" placeholder="Search..." [(ngModel)]="searchTerm" (keyup)="onSearch()"
       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
   </div>
-  <div class="bg-white rounded-lg shadow overflow-hidden">
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="bg-white rounded-lg shadow p-10 flex justify-center">
+    <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading" class="bg-white rounded-lg shadow overflow-hidden">
     <table class="w-full">
       <thead class="bg-gray-100 border-b">
         <tr>
-          <th class="px-6 py-3 text-left text-sm font-semibold">Key</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold">Value</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold">Display order</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold">{{ keyTitle }}</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold">{{ dataTitle }}</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold">Order</th>
           <th class="px-6 py-3 text-center text-sm font-semibold">Actions</th>
         </tr>
       </thead>
       <tbody>
+        <!-- Empty state -->
+        <tr *ngIf="filteredItems.length === 0">
+          <td colspan="4" class="px-6 py-12 text-center text-gray-400 text-sm">
+            No entries found. Click <strong>+ Add Entry</strong> to get started.
+          </td>
+        </tr>
+
         <tr *ngFor="let item of filteredItems" class="border-b hover:bg-gray-50">
-          <td class="px-6 py-4 text-sm">{{ item.staticValueKey }}</td>
+          <!-- Key: show thumbnail if it looks like an image filename, otherwise raw text -->
+          <td class="px-6 py-4 text-sm">
+            <ng-container *ngIf="isImageKey(item.staticValueKey); else textKey">
+              <div class="flex items-center gap-3">
+                <img [src]="getImageUrl(item.staticValueKey!)" alt="preview"
+                     class="h-12 w-16 object-contain rounded border border-gray-200 bg-gray-50"
+                     (error)="$any($event.target).style.display='none'">
+                <span class="text-gray-500 text-xs truncate max-w-[120px]" [title]="item.staticValueKey">{{ item.staticValueKey }}</span>
+              </div>
+            </ng-container>
+            <ng-template #textKey>
+              <span>{{ item.staticValueKey || '—' }}</span>
+            </ng-template>
+          </td>
           <td class="px-6 py-4 text-sm">{{ item.staticData }}</td>
           <td class="px-6 py-4 text-sm">{{ item.displayOrder }}</td>
-            <td class="px-6 py-4 text-center">
-             <a href="/static-values/add?staticid={{item.staticId!}}&catalogId={{catalogId}}" class="text-blue-500 text-sm"> Edit </a>
-
-            <button (click)="delete(item.staticId!)" class="text-red-500 text-sm ml-2">Delete</button>
+          <td class="px-6 py-4 text-center">
+            <a [routerLink]="['/management/static-values/add']" [queryParams]="{ staticid: item.staticId, catalogId: catalogId }"
+               class="text-blue-500 hover:text-blue-700 text-sm font-semibold">Edit</a>
+            <button (click)="delete(item.staticId!)" class="text-red-500 hover:text-red-700 text-sm ml-4 font-semibold">Delete</button>
           </td>
         </tr>
       </tbody>

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Marketplace.Api.Models
 {
@@ -43,6 +43,7 @@ namespace Marketplace.Api.Models
         public string? Address { get; set; }
         public string? GoogleMapLocation { get; set; }
         public string? RegistrationDocument { get; set; }
+        public string? AssignCategory { get; set; }
     }
     public class CompanyDetailDto
     {

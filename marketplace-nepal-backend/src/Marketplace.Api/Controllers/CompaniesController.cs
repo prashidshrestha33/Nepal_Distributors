@@ -17,7 +17,7 @@ namespace Marketplace.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "sadmin")]
+    [Authorize(Roles = "sadmin,Cadmin_importer,Cadmin_manufacturer,Cadmin_wholesaler,Cadmin_retailer,Cadmin_distributor,Cadmin_Importer,Cadmin_Manufacturer,Cadmin_Wholesaler,Cadmin_Retailer,Cadmin_Distributor")]
     public class CompaniesController : ControllerBase
     {
         private readonly ICompanyRepository _companies;
@@ -72,6 +72,7 @@ namespace Marketplace.Api.Controllers
             return Ok(items);
         }
         [HttpPost("approve")]
+        [Authorize(Roles = "sadmin")]
         public async Task<IActionResult> ApproveCompany([FromBody] ApproveCompanyRequest req)
         {
             if (req == null || req.CompanyId <= 0)
@@ -196,8 +197,26 @@ namespace Marketplace.Api.Controllers
                     ApproveFg = "n"
                 };
                 var updated = await _companies.UpdateCompanyAsync(company);
-                    if (updated <= 0)
-                        return NotFound(new { error = "Company not found." });
+                if (updated <= 0)
+                    return NotFound(new { error = "Company not found." });
+
+                if (model.Company.AssignCategory != null)
+                {
+                    long companyId = long.Parse(model.Company.CompanyId);
+                    await _companies.ClearCompanyCategoriesAsync(companyId);
+
+                    if (!string.IsNullOrWhiteSpace(model.Company.AssignCategory))
+                    {
+                        var categoryIds = model.Company.AssignCategory
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(x => long.Parse(x.Trim()));
+
+                        foreach (var categoryId in categoryIds)
+                        {
+                            await _companies.AssignCategoryAsync(categoryId, companyId);
+                        }
+                    }
+                }
 
                 return Ok(new
                 {

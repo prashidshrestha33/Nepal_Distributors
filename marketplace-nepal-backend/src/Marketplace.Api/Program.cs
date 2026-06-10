@@ -36,6 +36,7 @@ var connectionString = configuration.GetConnectionString("DefaultConnection")
                        ?? throw new InvalidOperationException("DefaultConnection not configured");
 builder.Services.AddScoped<IDbConnection>(_ => new SqlConnection(connectionString));
 
+
 // --- Password hasher: register custom PBKDF2+SHA256 hasher (or swap to default if desired) ---
 builder.Services.AddSingleton(typeof(IPasswordHasher<>), typeof(CustomPasswordHasher<>));
 
@@ -103,7 +104,7 @@ if (FirebaseApp.DefaultInstance == null)
 {
     FirebaseApp.Create(new AppOptions()
     {
-        Credential = GoogleCredential.FromFile("nepaldist-3c2b5-firebase-adminsdk-fbsvc-c3d02a4065.json")
+        Credential = GoogleCredential.FromFile("nepaldesc-firebase-adminsdk-fbsvc-5f2603813e.json")
     });
 }
 builder.Services.AddControllers(options =>
